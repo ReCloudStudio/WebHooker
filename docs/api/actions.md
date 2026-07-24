@@ -1,0 +1,111 @@
+# Actions
+
+User action endpoints allow commenting on issues, merging PRs, and adding reactions. All action endpoints require a valid Bearer token from the OAuth flow.
+
+## Authentication
+
+All action endpoints require the `Authorization` header:
+
+```
+Authorization: Bearer <github-access-token>
+```
+
+If the token is missing or invalid, the endpoint returns `401`.
+
+## Endpoints
+
+### Comment on Issue
+
+```
+POST /api/comment
+```
+
+Creates a comment on an issue or pull request.
+
+**Request Body:**
+
+```json
+{
+  "owner": "org",
+  "repo": "repo",
+  "issueNumber": 42,
+  "body": "Comment text here"
+}
+```
+
+| Field         | Type   | Required | Description                       |
+| ------------- | ------ | -------- | --------------------------------- |
+| `owner`       | string | Yes      | Repository owner                  |
+| `repo`        | string | Yes      | Repository name                   |
+| `issueNumber` | number | Yes      | Issue or PR number                |
+| `body`        | string | Yes      | Comment body (Markdown supported) |
+
+**Response:** `200` with GitHub API response.
+
+### Merge Pull Request
+
+```
+POST /api/merge
+```
+
+Merges a pull request.
+
+**Request Body:**
+
+```json
+{
+  "owner": "org",
+  "repo": "repo",
+  "pullNumber": 42,
+  "mergeMethod": "squash"
+}
+```
+
+| Field         | Type   | Required | Description                                       |
+| ------------- | ------ | -------- | ------------------------------------------------- |
+| `owner`       | string | Yes      | Repository owner                                  |
+| `repo`        | string | Yes      | Repository name                                   |
+| `pullNumber`  | number | Yes      | Pull request number                               |
+| `mergeMethod` | string | No       | `merge`, `squash`, or `rebase` (default: `merge`) |
+
+**Response:** `200` with GitHub merge response.
+
+### Add Reaction
+
+```
+POST /api/react
+```
+
+Adds an emoji reaction to an issue or comment.
+
+**Request Body:**
+
+```json
+{
+  "owner": "org",
+  "repo": "repo",
+  "issueNumber": 42,
+  "content": "rocket"
+}
+```
+
+| Field         | Type   | Required | Description                  |
+| ------------- | ------ | -------- | ---------------------------- |
+| `owner`       | string | Yes      | Repository owner             |
+| `repo`        | string | Yes      | Repository name              |
+| `issueNumber` | number | Yes      | Issue, PR, or comment number |
+| `content`     | string | Yes      | Reaction type (see below)    |
+
+**Reaction Types:**
+
+`+1`, `-1`, `laugh`, `confused`, `heart`, `hooray`, `rocket`, `eyes`
+
+**Response:** `200` with GitHub reaction response.
+
+## Error Responses
+
+| Status | Body                        | Cause                           |
+| ------ | --------------------------- | ------------------------------- |
+| `401`  | `{"error": "Unauthorized"}` | Missing or invalid Bearer token |
+| `400`  | `{"error": "..."}`          | Invalid request body            |
+| `500`  | `{"error": "..."}`          | GitHub API error                |

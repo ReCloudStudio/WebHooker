@@ -1,0 +1,34 @@
+# Routes
+# Each route defines a filter chain and target Discord channel
+
+routes:
+  - id: all-push
+    name: "All Push Events"
+    enabled: true
+    filters:
+      - type: event
+        match: push
+    target:
+      channelId: "CHANNEL_ID_HERE"
+
+  # - id: specific-repo
+  #   name: "Specific Repo"
+  #   enabled: true
+  #   filters:
+  #     - type: repo
+  #       match: "org/repo"
+  #     - type: event
+  #       match: [pull_request, issues]
+  #   target:
+  #     channelId: "CHANNEL_ID_HERE"
+  #     threadId: "THREAD_ID_HERE"
+
+  # - id: exclude-bot
+  #   name: "Exclude Bot Actions"
+  #   enabled: true
+  #   filters:
+  #     - type: actor
+  #       match: "[bot]"
+  #       exclude: true
+  #   target:
+  #     channelId: "CHANNEL_ID_HERE"

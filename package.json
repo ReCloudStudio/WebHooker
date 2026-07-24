@@ -1,0 +1,35 @@
+{
+  "name": "webhooker",
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "lint:md": "markdownlint '**/*.md' --ignore node_modules --ignore dist",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "jose": "^6.0.10",
+    "octokit": "^4.1.0",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250115.0",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
+    "eslint": "^9.18.0",
+    "markdownlint-cli": "^0.49.1",
+    "prettier": "^3.9.6",
+    "typescript": "^5.7.0",
+    "vitepress": "^1.6.4",
+    "wrangler": "^3.105.0"
+  }
+}
