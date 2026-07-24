@@ -8,3 +8,5 @@ docs/.vitepress/cache/
 .wrangler
 data/
 config.yaml
+.direnv/
+result
