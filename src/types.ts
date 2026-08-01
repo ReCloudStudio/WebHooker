@@ -7,6 +7,9 @@ export interface Env {
   DISCORD_TOKEN?: string;
   DISCORD_CHANNEL_ID?: string;
   BASE_URL?: string;
+  ADMIN_USER_IDS?: string;
+  DISCORD_GATEWAY_ENABLED?: string;
+  ASSETS?: Fetcher;
   KV: KVNamespace;
   DISCORD_GATEWAY: DurableObjectNamespace;
 }
@@ -22,7 +25,6 @@ export interface Config {
   };
   discord: {
     token: string;
-    defaultChannelId: string;
   };
   routes: Route[];
 }

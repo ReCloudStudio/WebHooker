@@ -1,78 +1,37 @@
 import type { Env, Config, Route } from "./types";
 import { log } from "./log";
 
-const DEFAULT_ROUTES: Route[] = [
-  {
-    id: "all-push",
-    name: "All Push Events",
-    enabled: true,
-    filters: [{ type: "event", match: "push" }],
-    target: { channelId: "" },
-  },
-  {
-    id: "pull-requests",
-    name: "Pull Requests",
-    enabled: true,
-    filters: [{ type: "event", match: "pull_request" }],
-    target: { channelId: "" },
-  },
-  {
-    id: "issues",
-    name: "Issues",
-    enabled: true,
-    filters: [{ type: "event", match: "issues" }],
-    target: { channelId: "" },
-  },
-  {
-    id: "issue-comments",
-    name: "Issue Comments",
-    enabled: true,
-    filters: [{ type: "event", match: "issue_comment" }],
-    target: { channelId: "" },
-  },
-  {
-    id: "workflow-runs",
-    name: "Workflow Runs",
-    enabled: true,
-    filters: [{ type: "event", match: "workflow_run" }],
-    target: { channelId: "" },
-  },
-  {
-    id: "releases",
-    name: "Releases",
-    enabled: true,
-    filters: [{ type: "event", match: "release" }],
-    target: { channelId: "" },
-  },
-  {
-    id: "branch-activity",
-    name: "Branch Create/Delete",
-    enabled: true,
-    filters: [{ type: "event", match: ["create", "delete"] }],
-    target: { channelId: "" },
-  },
-];
+const CONFIG_CACHE_TTL = 60_000;
+const ROUTES_KEY = "config:routes";
+let configCache: { config: Config; expiresAt: number } | null = null;
+
+export async function loadRoutes(kv: KVNamespace): Promise<Route[]> {
+  try {
+    const stored = await kv.get<Route[]>(ROUTES_KEY, "json");
+    if (stored) return stored;
+  } catch (err) {
+    log.warn({ err }, "Failed to load routes from KV");
+  }
+  return [];
+}
+
+export async function saveRoutes(kv: KVNamespace, routes: Route[]): Promise<void> {
+  await kv.put(ROUTES_KEY, JSON.stringify(routes));
+  configCache = null;
+}
+
+export function invalidateConfigCache(): void {
+  configCache = null;
+}
 
 export async function loadConfig(env: Env): Promise<Config> {
-  let routes = DEFAULT_ROUTES;
-
-  try {
-    const stored = await env.KV.get("config:routes", "json");
-    if (stored) {
-      routes = stored as Route[];
-    }
-  } catch (err) {
-    log.warn({ err }, "Failed to load routes from KV, using defaults");
+  if (configCache && Date.now() < configCache.expiresAt) {
+    return configCache.config;
   }
 
-  const defaultChannelId = env.DISCORD_CHANNEL_ID ?? "";
+  const routes = await loadRoutes(env.KV);
 
-  routes = routes.map((r) => ({
-    ...r,
-    target: { ...r.target, channelId: r.target.channelId || defaultChannelId },
-  }));
-
-  return {
+  const config: Config = {
     baseUrl: env.BASE_URL ?? "https://webhooker.example.workers.dev",
     github: {
       webhookSecret: env.GITHUB_WEBHOOK_SECRET,
@@ -83,8 +42,10 @@ export async function loadConfig(env: Env): Promise<Config> {
     },
     discord: {
       token: env.DISCORD_TOKEN ?? "",
-      defaultChannelId,
     },
     routes,
   };
+
+  configCache = { config, expiresAt: Date.now() + CONFIG_CACHE_TTL };
+  return config;
 }
