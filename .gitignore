@@ -1,5 +1,9 @@
 node_modules/
 dist/
+admin/node_modules/
+admin/.output/
+admin/.nuxt/
+admin/dist
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 .env

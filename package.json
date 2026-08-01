@@ -30,6 +30,6 @@
     "prettier": "^3.9.6",
     "typescript": "^5.7.0",
     "vitepress": "^1.6.4",
-    "wrangler": "^3.105.0"
+    "wrangler": "4"
   }
 }
