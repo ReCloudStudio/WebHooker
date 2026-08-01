@@ -4,6 +4,7 @@ import { verifySignature, parseEvent } from "./webhook";
 import { dispatchEvent } from "./discord";
 import { createOAuthRoutes } from "./oauth-routes";
 import { createActionRoutes } from "./action-routes";
+import { createAdminRoutes } from "./admin-routes";
 import { log } from "./log";
 
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -15,6 +16,7 @@ export function createServer(): Hono<{ Bindings: Env }> {
 
   app.route("/auth", createOAuthRoutes());
   app.route("/", createActionRoutes());
+  app.route("/admin", createAdminRoutes());
 
   app.post("/webhook", async (c) => {
     const contentLength = Number(c.req.header("content-length") ?? 0);
@@ -48,6 +50,13 @@ export function createServer(): Hono<{ Bindings: Env }> {
     dispatchEvent(config, event, c.env).catch((err) => log.error(err, "Dispatch failed"));
 
     return c.json({ ok: true });
+  });
+
+  app.notFound((c) => {
+    if (c.env.ASSETS) {
+      return c.env.ASSETS.fetch(c.req.raw);
+    }
+    return c.json({ error: "Not found" }, 404);
   });
 
   return app;

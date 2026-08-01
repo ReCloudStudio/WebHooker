@@ -1,11 +1,17 @@
 import { Hono } from "hono";
 import { getOAuthURL, handleOAuthCallback } from "./github-oauth";
-import { removeToken } from "./token-store";
+import { removeToken, saveDiscordLink } from "./token-store";
+import { isAdminUser, createAdminSession, adminCookie } from "./admin-session";
 import type { Env } from "./types";
 
 interface PendingState {
   redirectTo: string;
   expiresAt: number;
+  discordUserId?: string;
+}
+
+function linkedPage(login: string): string {
+  return `<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>绑定成功</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f6f7f9;color:#1f2328}.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:32px 40px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}.ok{color:#16a34a;font-size:40px}h1{font-size:18px;margin:12px 0 4px}p{color:#57606a;font-size:14px;margin:0}</style></head><body><div class="card"><div class="ok">✓</div><h1>GitHub 账号已绑定</h1><p>已连接为 <b>@${login}</b>，现在可以回到 Discord 用 GitHub 评论了。</p></div></body></html>`;
 }
 
 function generateRandomHex(length: number): string {
@@ -64,6 +70,26 @@ export function createOAuthRoutes(): Hono<{ Bindings: Env }> {
 
     if (!result) {
       return c.json({ error: "OAuth failed" }, 400);
+    }
+
+    // Discord account-linking flow: bind the Discord user to this GitHub account.
+    if (pending.discordUserId) {
+      await saveDiscordLink(c.env.KV, pending.discordUserId, result.userId);
+      const isBrowserLink = (c.req.header("accept") ?? "").includes("text/html");
+      if (isBrowserLink) {
+        return c.html(linkedPage(result.login));
+      }
+      return c.json({ ok: true, discordUserId: pending.discordUserId, login: result.login });
+    }
+
+    const isBrowser = (c.req.header("accept") ?? "").includes("text/html");
+    if (isBrowser) {
+      if (!isAdminUser(c.env, result.userId, result.login)) {
+        return c.redirect("/?error=forbidden");
+      }
+      const sessionId = await createAdminSession(c.env.KV, result.userId, result.login);
+      c.header("Set-Cookie", adminCookie(sessionId));
+      return c.redirect(pending.redirectTo);
     }
 
     return c.json({

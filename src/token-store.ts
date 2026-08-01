@@ -5,6 +5,14 @@ interface StoredToken {
   refreshToken?: string;
 }
 
+async function hashToken(token: string): Promise<string> {
+  const data = new TextEncoder().encode(token);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function saveToken(
   kv: KVNamespace,
   userId: string,
@@ -20,6 +28,9 @@ export async function saveToken(
   };
   const ttl = Math.max(Math.floor(expiresInSeconds * 0.9), 60);
   await kv.put(`token:${userId}`, JSON.stringify(token), { expirationTtl: ttl });
+
+  const tokenHash = await hashToken(accessToken);
+  await kv.put(`token-reverse:${tokenHash}`, userId, { expirationTtl: ttl });
 }
 
 export async function getToken(kv: KVNamespace, userId: string): Promise<string | null> {
@@ -40,6 +51,12 @@ export async function getRefreshToken(kv: KVNamespace, userId: string): Promise<
 }
 
 export async function removeToken(kv: KVNamespace, userId: string): Promise<void> {
+  const raw = await kv.get(`token:${userId}`, "json");
+  if (raw) {
+    const t = raw as StoredToken;
+    const tokenHash = await hashToken(t.accessToken);
+    await kv.delete(`token-reverse:${tokenHash}`);
+  }
   await kv.delete(`token:${userId}`);
 }
 
@@ -47,16 +64,32 @@ export async function findUserIdByToken(
   kv: KVNamespace,
   accessToken: string,
 ): Promise<string | null> {
-  const list = await kv.list({ prefix: "token:" });
-  for (const key of list.keys) {
-    const raw = await kv.get(key.name, "json");
-    if (!raw) continue;
-    const t = raw as StoredToken;
-    if (Date.now() >= t.expiresAt) {
-      await kv.delete(key.name);
-      continue;
-    }
-    if (t.accessToken === accessToken) return t.userId;
-  }
-  return null;
+  const tokenHash = await hashToken(accessToken);
+  return await kv.get(`token-reverse:${tokenHash}`, "text");
+}
+
+/**
+ * Link a Discord user id to a GitHub user id so that bot commands can act
+ * as that GitHub account. The actual OAuth token lives under `token:{githubUserId}`.
+ */
+export async function saveDiscordLink(
+  kv: KVNamespace,
+  discordUserId: string,
+  githubUserId: string,
+): Promise<void> {
+  await kv.put(`discord-link:${discordUserId}`, githubUserId);
+}
+
+export async function getDiscordLink(
+  kv: KVNamespace,
+  discordUserId: string,
+): Promise<string | null> {
+  return await kv.get(`discord-link:${discordUserId}`, "text");
+}
+
+export async function removeDiscordLink(
+  kv: KVNamespace,
+  discordUserId: string,
+): Promise<void> {
+  await kv.delete(`discord-link:${discordUserId}`);
 }
