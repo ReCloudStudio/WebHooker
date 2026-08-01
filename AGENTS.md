@@ -10,10 +10,11 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Durable 
 
 - Runtime: Cloudflare Workers
 - HTTP framework: Hono
-- Discord Gateway: Durable Object (persistent WebSocket + channel cache)
-- Storage: Cloudflare KV (tokens, OAuth state, route config)
+- Discord Gateway: optional (`DISCORD_GATEWAY_ENABLED=true`); only keeps bot online — messages always sent via REST
+- Storage: Cloudflare KV (tokens, OAuth state, route config, admin sessions)
 - Signature verification: Web Crypto API (HMAC-SHA256, timing-safe)
 - GitHub OAuth: octokit + jose (JWT)
+- Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist
 - Local dev: wrangler + Miniflare
 
 ## Architecture
@@ -22,15 +23,19 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Durable 
 src/
 ├── index.ts              # CF Workers entry (fetch + scheduled), exports DiscordGateway DO
 ├── types.ts              # Env, Config, Route, Filter, WebhookEvent, FormattedMessage
-├── config.ts             # Loads routes from KV (fallback to 7 defaults), builds Config from env
-├── server.ts             # Hono app: /health, /webhook, mounts /auth + /
+├── config.ts             # loadRoutes/saveRoutes (KV config:routes, cache w/ 60s TTL), loadConfig from env
+├── server.ts             # Hono app: /health, /webhook, mounts /auth, /admin + /
 ├── webhook.ts            # HMAC verify (Web Crypto), parseEvent, extractBranch, matchRoute
-├── discord.ts            # Dispatch via DO RPC, initGateway (scheduled)
-├── discord-gateway.ts    # Durable Object: Discord Gateway WS, heartbeat, channel cache, send
+├── discord.ts            # Dispatch via REST (or DO RPC when gateway enabled), initGateway (scheduled)
+├── discord-rest.ts       # Discord REST sendMessage with retry + rate-limit handling
+├── discord-gateway.ts    # Optional Durable Object: Discord Gateway WS, heartbeat, channel cache, send
 ├── formatter.ts          # 23 event formatters + generic fallback (~1380 lines)
 ├── github-oauth.ts       # OAuth URL, callback token exchange, getUserOctokit
-├── oauth-routes.ts       # GET /auth/github, callback, DELETE /token/:userId (KV state)
+├── oauth-routes.ts       # GET /auth/github, callback (sets admin session if redirect=/admin), DELETE /token/:userId
 ├── action-routes.ts      # POST /api/comment|merge|react (Bearer token auth via KV lookup)
+├── admin-routes.ts       # /admin UI + GET/PUT /admin/api/routes (session + ADMIN_USER_IDS auth, validation)
+├── admin-session.ts      # Session CRUD (KV session:{id}), isAdminUser, cookie helpers
+├── admin-ui.ts           # ADMIN_HTML: single-file config console (vanilla HTML/CSS/JS)
 ├── token-store.ts        # KV-based token CRUD with findUserIdByToken reverse lookup
 └── log.ts                # JSON console logger (info/warn/error/fatal)
 ```

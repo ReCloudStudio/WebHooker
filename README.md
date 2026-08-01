@@ -10,6 +10,7 @@ GitHub webhook → Discord dispatcher. Receives webhook events via Cloudflare Wo
 - Rich Discord embeds with color coding, author avatars, fields, and timestamps
 - Route to channels or threads
 - GitHub App OAuth for user actions (comment, merge, react)
+- **Web UI config console** (`/admin`) — manage routes with GitHub OAuth + admin whitelist
 - Durable Object for persistent Discord Gateway connection + channel cache
 - Cloudflare KV for token/state/config storage
 - Graceful degradation (webhook-only mode if Discord unavailable)
@@ -40,20 +41,21 @@ npx wrangler dev     # Start local dev server
 
 ### Secrets (`.dev.vars` for local, Worker Secrets for production)
 
-| Variable                | Description                    |
-| ----------------------- | ------------------------------ |
-| `GITHUB_WEBHOOK_SECRET` | Webhook secret from GitHub     |
-| `GITHUB_APP_ID`         | GitHub App ID                  |
-| `GITHUB_PRIVATE_KEY`    | App private key (PEM)          |
-| `GITHUB_CLIENT_ID`      | OAuth client ID                |
-| `GITHUB_CLIENT_SECRET`  | OAuth client secret            |
-| `DISCORD_TOKEN`         | Bot token                      |
-| `DISCORD_CHANNEL_ID`    | Default target channel         |
-| `BASE_URL`              | Public URL for OAuth callbacks |
+| Variable                  | Description                                                                                   |
+| ------------------------- | --------------------------------------------------------------------------------------------- |
+| `GITHUB_WEBHOOK_SECRET`   | Webhook secret from GitHub                                                                    |
+| `GITHUB_APP_ID`           | GitHub App ID                                                                                 |
+| `GITHUB_PRIVATE_KEY`      | App private key (PEM)                                                                         |
+| `GITHUB_CLIENT_ID`        | OAuth client ID                                                                               |
+| `GITHUB_CLIENT_SECRET`    | OAuth client secret                                                                           |
+| `DISCORD_TOKEN`           | Bot token                                                                                     |
+| `BASE_URL`                | Public URL for OAuth callbacks                                                                |
+| `ADMIN_USER_IDS`          | Comma-separated GitHub user IDs (or logins) allowed to access `/admin`                        |
+| `DISCORD_GATEWAY_ENABLED` | `true` to enable the Discord Gateway (bot online status); messaging works without it via REST |
 
 ### Routes
 
-Routes are stored in KV (`config:keys` as JSON). On first boot, 7 default routes are used. To customize, store a JSON array in KV:
+Routes are stored in KV (`config:routes` as JSON). There are **no default routes** — every route (including its target `channelId` / `threadId`) must be defined explicitly, either via the Web UI (`/admin`) or by storing a JSON array in KV:
 
 ```json
 [
@@ -66,6 +68,18 @@ Routes are stored in KV (`config:keys` as JSON). On first boot, 7 default routes
   }
 ]
 ```
+
+The `target.channelId` is required and is used as-is; there is no fallback to a default channel.
+
+### Web UI (`/admin`)
+
+The built-in config console lets you manage routes in the browser (add / edit / delete / toggle / reorder), no KV access needed:
+
+1. Set `ADMIN_USER_IDS` to the GitHub user IDs (or logins) allowed to manage the console, e.g. `ADMIN_USER_IDS=12345,RhenCloud`.
+2. Visit `/admin` and sign in with GitHub. Only users in the whitelist get access.
+3. Changes are written to KV `config:routes` immediately and picked up by the webhook pipeline.
+
+Sign out at `/admin/logout`.
 
 See `config.example.yaml` for full syntax examples.
 
@@ -100,6 +114,14 @@ Set `exclude: true` to invert any filter.
 - `POST /api/merge` — Merge pull request
 - `POST /api/react` — Add reaction to issue
 
+### Admin (require admin OAuth session)
+
+- `GET /admin` — Config console UI
+- `GET /admin/login` — Start admin sign-in (GitHub OAuth)
+- `GET /admin/logout` — Sign out
+- `GET /admin/api/routes` — List routes
+- `PUT /admin/api/routes` — Replace routes
+
 ## GitHub App Setup
 
 ### 1. Create App
@@ -128,6 +150,58 @@ Set `exclude: true` to invert any filter.
 1. Go to App → OAuth settings
 2. Set **Callback URL**: `https://your-domain/auth/github/callback`
 3. Copy Client ID and Client Secret to env
+
+## Discord Bot Setup
+
+Create a bot at <https://discord.com/developers/applications>, copy its token to `DISCORD_TOKEN`.
+
+### OAuth2 Invite
+
+Add the bot to your server with the `bot` scope and the following permissions:
+
+| Permission               | Value          | Why                                             |
+| ------------------------ | -------------- | ----------------------------------------------- |
+| View Channels            | `1024`         | See the target channel to post messages         |
+| Send Messages            | `2048`         | Send embeds/messages to channels                |
+| Send Messages in Threads | `274877906944` | Send to threads when a route targets `threadId` |
+
+Combined permission integer: `274877910016`
+
+Invite URL (replace `CLIENT_ID` with your bot's client ID):
+
+```
+https://discord.com/oauth2/authorize?client_id=YOUR_BOT_CLIENT_ID&permissions=274877910016&scope=bot
+```
+
+### Intents
+
+The Gateway connection uses the **GUILDS** intent only (`1 << 0`). No privileged intents (e.g. Message Content) are required.
+
+### Gateway (optional)
+
+The Discord Gateway connection only keeps the bot showing as **online** — it is **not** required for sending messages. Messages are sent via the Discord REST API, so push works with just `DISCORD_TOKEN`.
+
+- `DISCORD_GATEWAY_ENABLED=false` (default): messages are sent directly via REST; the Gateway is not connected.
+- `DISCORD_GATEWAY_ENABLED=true`: the Durable Object connects to the Gateway to keep the bot online; messages are still sent via REST.
+
+### Bot Command (`!gh`)
+
+When the Gateway is enabled, reply (quote) a bot-issued issue / PR notification and type:
+
+```
+!gh <comment text>
+```
+
+The bot posts the text as a GitHub comment on that issue / PR (authenticated as the GitHub App).
+
+**Extra requirements:**
+
+| Item              | How                                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| Gateway enabled   | `DISCORD_GATEWAY_ENABLED=true`                                                            |
+| Privileged intent | Enable **Message Content** in Discord Developer Portal → Bot → Privileged Gateway Intents |
+| Permissions       | **Read Message History** (to read the quoted message) in addition to sending              |
+| GitHub App        | Installed on the repo with **Issues (write)** permission                                  |
 
 ## Deployment
 

@@ -14,19 +14,42 @@ WebHooker requires several secrets to function. For local development, store the
 | `GITHUB_CLIENT_ID`      | OAuth client ID from App settings               |
 | `GITHUB_CLIENT_SECRET`  | OAuth client secret from App settings           |
 | `DISCORD_TOKEN`         | Discord bot token                               |
-| `DISCORD_CHANNEL_ID`    | Default Discord channel ID for messages         |
 
 ### Optional Secrets
 
-| Variable   | Description                    | Default                 |
-| ---------- | ------------------------------ | ----------------------- |
-| `BASE_URL` | Public URL for OAuth callbacks | `http://localhost:8787` |
+| Variable                  | Description                                                                                           | Default                 |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------- |
+| `BASE_URL`                | Public URL for OAuth callbacks                                                                        | `http://localhost:8787` |
+| `ADMIN_USER_IDS`          | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                              | Disabled                |
+| `DISCORD_GATEWAY_ENABLED` | Set to `true` to connect the Discord Gateway (bot online status); messaging works without it via REST | `false`                 |
+
+## Web UI
+
+WebHooker ships with a built-in config console at `/admin` for managing routes in the browser. It is protected by GitHub OAuth plus an admin whitelist.
+
+### Setup
+
+1. Configure `ADMIN_USER_IDS` with the GitHub user IDs allowed to manage routes. Logins are also accepted, e.g. `ADMIN_USER_IDS=12345,RhenCloud`. If unset, the console is disabled.
+2. Open `/admin` and sign in with GitHub.
+3. Only users in the whitelist receive a session cookie; everyone else gets `403`.
+
+### Endpoints
+
+| Endpoint                | Description                 |
+| ----------------------- | --------------------------- |
+| `GET /admin`            | Config console UI           |
+| `GET /admin/login`      | Start GitHub OAuth sign-in  |
+| `GET /admin/logout`     | Destroy session             |
+| `GET /admin/api/routes` | List routes (admin only)    |
+| `PUT /admin/api/routes` | Replace routes (admin only) |
+
+The console lets you add, edit, delete, and toggle routes. Saved routes are written to KV `config:routes` immediately and the config cache is invalidated so the webhook pipeline picks them up on the next run.
 
 ## Routes
 
 Routes define which events get forwarded to which Discord channels. They are stored in Cloudflare KV under the key `config:routes` as a JSON array.
 
-On first boot, 7 default routes are used if no KV config exists.
+There are **no default routes** — each route must define its own target. If no routes are configured, no events are forwarded.
 
 ### Route Schema
 
@@ -40,23 +63,13 @@ On first boot, 7 default routes are used if no KV config exists.
     { "type": "repo", "match": "org/repo", "exclude": false }
   ],
   "target": {
-    "channelId": "DISCORD_CHANNEL_ID",
+    "channelId": "REQUIRED_CHANNEL_ID",
     "threadId": "OPTIONAL_THREAD_ID"
   }
 }
 ```
 
-### Default Routes
-
-| ID                | Event(s)           | Description                      |
-| ----------------- | ------------------ | -------------------------------- |
-| `all-push`        | `push`             | All push events                  |
-| `pull-requests`   | `pull_request`     | All PR activity                  |
-| `issues`          | `issues`           | Issue open/close/edit            |
-| `issue-comments`  | `issue_comment`    | Issue and PR comments            |
-| `workflow-runs`   | `workflow_run`     | CI/CD workflow completions       |
-| `releases`        | `release`          | Release publish/edit             |
-| `branch-activity` | `create`, `delete` | Branch/tag creation and deletion |
+`target.channelId` is required and used as-is; there is no fallback to a default channel.
 
 ### Custom Route Example
 
@@ -108,8 +121,9 @@ Filters accept either a single string or an array of strings:
 
 ## KV Storage Layout
 
-| Key Pattern      | Value                        | TTL          |
-| ---------------- | ---------------------------- | ------------ |
-| `config:routes`  | JSON array of routes         | Permanent    |
-| `token:{userId}` | `{ accessToken, expiresAt }` | Until expiry |
-| `state:{hex}`    | `{ userId, createdAt }`      | 600 seconds  |
+| Key Pattern      | Value                             | TTL          |
+| ---------------- | --------------------------------- | ------------ |
+| `config:routes`  | JSON array of routes              | Permanent    |
+| `session:{id}`   | Admin session `{ userId, login }` | 7 days       |
+| `token:{userId}` | `{ accessToken, expiresAt }`      | Until expiry |
+| `state:{hex}`    | `{ userId, createdAt }`           | 600 seconds  |

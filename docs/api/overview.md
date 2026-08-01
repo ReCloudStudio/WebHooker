@@ -20,6 +20,17 @@ https://your-worker.workers.dev
 | `POST`   | `/api/comment`          | Bearer token   | Create issue comment     |
 | `POST`   | `/api/merge`            | Bearer token   | Merge pull request       |
 | `POST`   | `/api/react`            | Bearer token   | Add reaction to issue    |
+| `GET`    | `/admin`                | Admin session  | Config console UI        |
+| `GET`    | `/admin/api/routes`     | Admin session  | List routes              |
+| `PUT`    | `/admin/api/routes`     | Admin session  | Replace routes           |
+
+## Admin Console
+
+See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup. Admin endpoints require a session cookie obtained via `GET /admin/login` (GitHub OAuth); the signed-in user must be listed in `ADMIN_USER_IDS`.
+
+- `GET /admin` — Serves the config console HTML
+- `GET /admin/api/routes` — Returns `{ "routes": Route[] }`
+- `PUT /admin/api/routes` — Body `{ "routes": Route[] }`; validates each route (id pattern, unique id, name, enabled, ≥1 valid filter, string `target.channelId`) and persists to KV `config:routes`. Returns `200 { ok, count }` or `400 { error }` / `401 { error }`.
 
 ## Health Check
 

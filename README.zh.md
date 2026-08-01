@@ -10,6 +10,7 @@ GitHub webhook → Discord 分发服务。通过 Cloudflare Workers 接收 webho
 - 富 Discord embed：颜色编码、作者头像、字段、时间戳
 - 路由到频道或子区
 - GitHub App OAuth 用户授权（评论、合并、反应）
+- **Web 配置控制台**（`/admin`）— 通过 GitHub OAuth + 管理员白名单管理路由
 - Durable Object 维持 Discord Gateway WebSocket 连接 + 频道缓存
 - Cloudflare KV 存储 token/状态/配置
 - 优雅降级（Discord 不可用时仅 webhook 模式）
@@ -40,20 +41,21 @@ npx wrangler dev     # 启动本地开发服务器
 
 ### 密钥（本地用 `.dev.vars`，生产用 Worker Secrets）
 
-| 变量                    | 说明                        |
-| ----------------------- | --------------------------- |
-| `GITHUB_WEBHOOK_SECRET` | GitHub webhook 密钥         |
-| `GITHUB_APP_ID`         | GitHub App ID               |
-| `GITHUB_PRIVATE_KEY`    | App 私钥（PEM）             |
-| `GITHUB_CLIENT_ID`      | OAuth Client ID             |
-| `GITHUB_CLIENT_SECRET`  | OAuth Client Secret         |
-| `DISCORD_TOKEN`         | 机器人 token                |
-| `DISCORD_CHANNEL_ID`    | 默认目标频道                |
-| `BASE_URL`              | 公网地址（用于 OAuth 回调） |
+| 变量                      | 说明                                                                       |
+| ------------------------- | -------------------------------------------------------------------------- |
+| `GITHUB_WEBHOOK_SECRET`   | GitHub webhook 密钥                                                        |
+| `GITHUB_APP_ID`           | GitHub App ID                                                              |
+| `GITHUB_PRIVATE_KEY`      | App 私钥（PEM）                                                            |
+| `GITHUB_CLIENT_ID`        | OAuth Client ID                                                            |
+| `GITHUB_CLIENT_SECRET`    | OAuth Client Secret                                                        |
+| `DISCORD_TOKEN`           | 机器人 token                                                               |
+| `BASE_URL`                | 公网地址（用于 OAuth 回调）                                                |
+| `ADMIN_USER_IDS`          | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                  |
+| `DISCORD_GATEWAY_ENABLED` | 设为 `true` 启用 Discord Gateway（bot 在线状态）；不启用也能通过 REST 推送 |
 
 ### 路由配置
 
-路由存储在 KV（`config:routes`，JSON 格式）。首次启动使用 7 个默认路由。自定义时在 KV 中存储 JSON 数组：
+路由存储在 KV（`config:routes`，JSON 格式）。**没有默认路由**——每条路由（包括目标 `channelId` / `threadId`）都必须显式定义，可通过 Web 控制台（`/admin`）或直接向 KV 存储 JSON 数组：
 
 ```json
 [
@@ -66,6 +68,18 @@ npx wrangler dev     # 启动本地开发服务器
   }
 ]
 ```
+
+`target.channelId` 必填且按原样使用，不存在默认频道回退。
+
+### Web 控制台（`/admin`）
+
+内置的配置控制台让你在浏览器中管理路由（新增 / 编辑 / 删除 / 开关），无需操作 KV：
+
+1. 设置 `ADMIN_USER_IDS` 为允许管理控制台的 GitHub 用户 ID（或登录名），例如 `ADMIN_USER_IDS=12345,RhenCloud`。
+2. 访问 `/admin` 并用 GitHub 登录，仅白名单内用户可进入。
+3. 修改会立即写入 KV `config:routes`，webhook 管线随即生效。
+
+在 `/admin/logout` 退出登录。
 
 完整语法示例见 `config.example.yaml`。
 
@@ -100,6 +114,14 @@ npx wrangler dev     # 启动本地开发服务器
 - `POST /api/merge` — 合并 PR
 - `POST /api/react` — 添加 issue 反应
 
+### 管理接口（需要管理员 OAuth 会话）
+
+- `GET /admin` — 配置控制台页面
+- `GET /admin/login` — 开始管理员登录（GitHub OAuth）
+- `GET /admin/logout` — 退出登录
+- `GET /admin/api/routes` — 列出路由
+- `PUT /admin/api/routes` — 替换路由
+
 ## GitHub App 配置教程
 
 ### 1. 创建 App
@@ -127,6 +149,58 @@ npx wrangler dev     # 启动本地开发服务器
 1. 进入 App → OAuth settings
 2. 设置 **Callback URL**：`https://your-domain/auth/github/callback`
 3. 复制 Client ID 和 Client Secret 到环境变量
+
+## Discord 机器人配置
+
+在 <https://discord.com/developers/applications> 创建机器人，将 Token 复制到 `DISCORD_TOKEN`。
+
+### OAuth2 邀请
+
+使用 `bot` scope 将机器人加入服务器，需要以下权限：
+
+| 权限                                        | 数值           | 用途                                     |
+| ------------------------------------------- | -------------- | ---------------------------------------- |
+| 查看频道 (View Channels)                    | `1024`         | 查看目标频道以发送消息                   |
+| 发送消息 (Send Messages)                    | `2048`         | 向频道发送 embed/消息                    |
+| 在线程中发送消息 (Send Messages in Threads) | `274877906944` | 当路由配置了 `threadId` 时向线程发送消息 |
+
+权限组合整数值：`274877910016`
+
+邀请链接（将 `CLIENT_ID` 替换为机器人的 Client ID）：
+
+```
+https://discord.com/oauth2/authorize?client_id=你的机器人CLIENT_ID&permissions=274877910016&scope=bot
+```
+
+### Intents
+
+Gateway 连接仅使用 **GUILDS** intent（`1 << 0`）。无需特权 intent（如 Message Content）。
+
+### Gateway（可选）
+
+Discord Gateway 连接仅用于让 bot 显示为**在线**——发送消息**不需要**它。消息通过 Discord REST API 发送，因此只要有 `DISCORD_TOKEN` 即可推送。
+
+- `DISCORD_GATEWAY_ENABLED=false`（默认）：直接通过 REST 发送消息，不建立 Gateway 连接。
+- `DISCORD_GATEWAY_ENABLED=true`：由 Durable Object 连接 Gateway 以维持 bot 在线状态；消息仍走 REST。
+
+### Bot 指令（`!gh`）
+
+启用 Gateway 后，**引用（回复）**一条 bot 推送的 issue / PR 通知，然后输入：
+
+```
+!gh <评论内容>
+```
+
+bot 会以 GitHub App 的身份把内容发为对该 issue / PR 的评论。
+
+**额外要求：**
+
+| 项目         | 说明                                                                                    |
+| ------------ | --------------------------------------------------------------------------------------- |
+| 启用 Gateway | `DISCORD_GATEWAY_ENABLED=true`                                                          |
+| 特权 intent  | 在 Discord Developer Portal → Bot → Privileged Gateway Intents 开启 **Message Content** |
+| 权限         | 除发送外还需 **Read Message History**（读取被引用的消息）                               |
+| GitHub App   | 已安装到该仓库且有 **Issues (write)** 权限                                              |
 
 ## 部署
 
