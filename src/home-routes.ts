@@ -4,6 +4,7 @@ import type { Env } from "./types";
 type Lang = "zh" | "en";
 
 const DEFAULT_REPO = "https://github.com/ReCloudStudio/WebHooker";
+const DEFAULT_DOCS = "https://webhooker.docs.worldexecute.me";
 
 function pickLang(raw: string | undefined): Lang {
   return raw === "en" ? "en" : "zh";
@@ -33,10 +34,11 @@ function icon(name: string): string {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">${paths[name] ?? ""}</svg>`;
 }
 
-function layout(lang: Lang, repo: string, docs: string): string {
+function layout(lang: Lang, repo: string, docsBase: string): string {
   const t = (zh: string, en: string): string => (lang === "zh" ? zh : en);
   const q = (p: string): string => `${p}?lang=${lang}`;
   const altLang: Lang = lang === "zh" ? "en" : "zh";
+  const docs = lang === "zh" ? `${docsBase}/zh` : `${docsBase}/`;
 
   const items: LinkItem[] = [
     {
@@ -183,8 +185,8 @@ export function createHomeRoutes(): Hono<{ Bindings: Env }> {
   app.get("/", (c) => {
     const lang = pickLang(c.req.query("lang"));
     const repo = c.env.GITHUB_REPO_URL ?? DEFAULT_REPO;
-    const docs = c.env.DOCS_URL ?? `${repo}#readme`;
-    return c.html(layout(lang, repo, docs));
+    const docsBase = (c.env.DOCS_URL ?? DEFAULT_DOCS).replace(/\/+$/, "");
+    return c.html(layout(lang, repo, docsBase));
   });
 
   return app;
