@@ -1,18 +1,14 @@
 import { log } from "./log";
+import { sendMessage } from "./discord-rest";
+import {
+  getOAuthURL,
+  commentAsUser,
+  getCommentAsUser,
+  editCommentAsUser,
+  deleteCommentAsUser,
+} from "./github-oauth";
+import { getDiscordLink, removeDiscordLink } from "./token-store";
 import type { Env } from "./types";
-
-interface ChannelInfo {
-  id: string;
-  name: string;
-  type: number;
-  guild_id?: string;
-}
-
-interface GuildInfo {
-  id: string;
-  name: string;
-  channels: ChannelInfo[];
-}
 
 interface SendMessageBody {
   channelId: string;
@@ -21,22 +17,91 @@ interface SendMessageBody {
 }
 
 const DISCORD_API = "https://discord.com/api/v10";
-const GATEWAY_URL = "wss://gateway.discord.gg/?v=10&encoding=json";
-const HEARTBEAT_INTERVAL_BUFFER = 5000;
-const RECONNECT_DELAY = 5000;
+const GATEWAY_URL = "https://gateway.discord.gg/?v=10&encoding=json";
+const BASE_RECONNECT_DELAY = 1000;
+const MAX_RECONNECT_DELAY = 60_000;
 const ALARM_INTERVAL = 30;
+
+// Discord interaction protocol constants
+const INTERACTION_TYPE = { COMMAND: 2, MODAL_SUBMIT: 5 } as const;
+const CALLBACK_TYPE = { MESSAGE: 4, MODAL: 9 } as const;
+const COMMAND_TYPE = { CHAT_INPUT: 1, MESSAGE: 3 } as const;
+const OPTION_TYPE = { SUB_COMMAND: 1, SUB_COMMAND_GROUP: 2, STRING: 3 } as const;
+const EPHEMERAL = 64;
+
+// Right-click (message context-menu) command names → operation.
+const MSG_CMD_ADD = "GitHub: 添加评论";
+const MSG_CMD_EDIT = "GitHub: 编辑评论";
+const MSG_CMD_DEL = "GitHub: 删除评论";
+
+// Modal custom_id encodings (delimiter '|' never appears in owner/repo).
+const MODAL_ADD = "ghc|add|"; // ghc|add|owner|repo|issueNumber
+const MODAL_EDIT = "ghc|edit|"; // ghc|edit|owner|repo|commentId
+
+const APP_COMMANDS = [
+  {
+    name: "gh",
+    type: COMMAND_TYPE.CHAT_INPUT,
+    description: "GitHub 集成",
+    options: [
+      { type: OPTION_TYPE.SUB_COMMAND, name: "login", description: "绑定你的 GitHub 账号以用本人身份评论" },
+      { type: OPTION_TYPE.SUB_COMMAND, name: "logout", description: "解绑你的 GitHub 账号" },
+      {
+        type: OPTION_TYPE.SUB_COMMAND_GROUP,
+        name: "comment",
+        description: "对 issue/PR 评论进行增删改",
+        options: [
+          {
+            type: OPTION_TYPE.SUB_COMMAND,
+            name: "add",
+            description: "在 issue/PR 下新增评论",
+            options: [
+              { type: OPTION_TYPE.STRING, name: "link", description: "issue/PR 链接", required: true },
+            ],
+          },
+          {
+            type: OPTION_TYPE.SUB_COMMAND,
+            name: "edit",
+            description: "编辑一条评论",
+            options: [
+              { type: OPTION_TYPE.STRING, name: "link", description: "评论链接（含 #issuecomment-）", required: true },
+            ],
+          },
+          {
+            type: OPTION_TYPE.SUB_COMMAND,
+            name: "del",
+            description: "删除一条评论",
+            options: [
+              { type: OPTION_TYPE.STRING, name: "link", description: "评论链接（含 #issuecomment-）", required: true },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  { name: MSG_CMD_ADD, type: COMMAND_TYPE.MESSAGE },
+  { name: MSG_CMD_EDIT, type: COMMAND_TYPE.MESSAGE },
+  { name: MSG_CMD_DEL, type: COMMAND_TYPE.MESSAGE },
+];
+
+// Comment link (has the comment id); check this BEFORE the plain issue regex.
+const GITHUB_COMMENT_RE =
+  /github\.com\/([^/\s]+)\/([^/\s]+)\/(?:issues|pull)\/\d+#issuecomment-(\d+)/;
+const GITHUB_ISSUE_RE = /github\.com\/([^/\s]+)\/([^/\s]+)\/(?:issues|pull)\/(\d+)/;
 
 export class DiscordGateway {
   private state: DurableObjectState;
   private env: Env;
   private socket: WebSocket | null = null;
-  private heartbeatInterval: number | null = null;
   private heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatInterval: number | null = null;
   private lastSequence: number | null = null;
   private sessionId: string | null = null;
-  private guilds: Map<string, GuildInfo> = new Map();
   private token: string | null = null;
   private connecting = false;
+  private reconnectAttempt = 0;
+  private applicationId: string | null = null;
+  private registeredGuilds = new Set<string>();
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
@@ -52,10 +117,12 @@ export class DiscordGateway {
     switch (body.action) {
       case "start": {
         this.token = body.token as string;
+        await this.state.storage.put("token", this.token);
         if (this.connecting || this.socket) {
           return new Response(JSON.stringify({ ok: true, status: "already_connected" }));
         }
-        this.connect();
+        await this.connect();
+        await this.state.storage.setAlarm(Date.now() + ALARM_INTERVAL * 1000);
         return new Response(JSON.stringify({ ok: true }));
       }
       case "send": {
@@ -68,7 +135,6 @@ export class DiscordGateway {
           JSON.stringify({
             connected: this.socket?.readyState === WebSocket.OPEN,
             sessionId: this.sessionId,
-            guildCount: this.guilds.size,
           }),
         );
       }
@@ -77,33 +143,59 @@ export class DiscordGateway {
     }
   }
 
-  private connect(): void {
+  private async connect(): Promise<void> {
     if (!this.token) return;
+    if (this.connecting || this.socket) return;
     this.connecting = true;
+    log.info("Connecting to Discord Gateway");
 
     try {
-      this.socket = new WebSocket(GATEWAY_URL);
+      const resp = await fetch(GATEWAY_URL, {
+        headers: { Upgrade: "websocket" },
+      });
+      const ws = resp.webSocket;
+      if (!ws) {
+        this.connecting = false;
+        log.error({ status: resp.status }, "Gateway did not return a WebSocket");
+        this.scheduleReconnect();
+        return;
+      }
 
-      this.socket.addEventListener("message", (event) => {
+      ws.accept();
+      this.socket = ws;
+      this.connecting = false;
+
+      ws.addEventListener("message", (event) => {
         this.handleMessage(event.data as string);
       });
 
-      this.socket.addEventListener("close", () => {
-        this.connecting = false;
+      ws.addEventListener("close", (event) => {
         this.socket = null;
         this.clearHeartbeat();
-        log.warn("Gateway disconnected, reconnecting...");
-        setTimeout(() => this.connect(), RECONNECT_DELAY);
+        log.warn(
+          { code: (event as CloseEvent).code, reason: (event as CloseEvent).reason },
+          "Gateway disconnected, scheduling reconnect via alarm",
+        );
+        this.scheduleReconnect();
       });
 
-      this.socket.addEventListener("error", (err) => {
-        log.error({ err }, "Gateway WebSocket error");
+      ws.addEventListener("error", (event) => {
+        log.error({ err: String((event as ErrorEvent).message ?? event) }, "Gateway WebSocket error");
       });
     } catch (err) {
       this.connecting = false;
-      log.error({ err }, "Failed to connect to Gateway");
-      setTimeout(() => this.connect(), RECONNECT_DELAY);
+      log.error({ err: String(err) }, "Failed to connect to Gateway");
+      this.scheduleReconnect();
     }
+  }
+
+  private scheduleReconnect(): void {
+    const delay = Math.min(
+      BASE_RECONNECT_DELAY * 2 ** this.reconnectAttempt,
+      MAX_RECONNECT_DELAY,
+    );
+    this.reconnectAttempt++;
+    this.state.storage.setAlarm(Date.now() + delay);
   }
 
   private handleMessage(data: string): void {
@@ -118,7 +210,12 @@ export class DiscordGateway {
 
     switch (msg.op) {
       case 0:
+        this.reconnectAttempt = 0;
         this.handleDispatch(msg.t!, msg.d);
+        break;
+      case 1:
+        // Heartbeat request from Discord — respond immediately
+        this.sendHeartbeat();
         break;
       case 10:
         this.handleHello(msg.d as { heartbeat_interval: number });
@@ -126,12 +223,21 @@ export class DiscordGateway {
       case 11:
         break;
       case 7:
+        log.warn("Gateway requested reconnect (op 7)");
         this.reconnect();
+        break;
+      case 9:
+        log.warn({ resumable: msg.d }, "Gateway Invalid Session (op 9)");
+        this.lastSequence = null;
+        this.sessionId = null;
+        // Discord asks to wait 1-5s before a fresh identify
+        setTimeout(() => this.identify(), 2000 + Math.floor(Math.random() * 3000));
         break;
     }
   }
 
   private handleHello(d: { heartbeat_interval: number }): void {
+    log.info({ heartbeatInterval: d.heartbeat_interval }, "Gateway HELLO received");
     this.heartbeatInterval = d.heartbeat_interval;
     this.heartbeat();
     this.identify();
@@ -139,16 +245,15 @@ export class DiscordGateway {
 
   private heartbeat(): void {
     this.clearHeartbeat();
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
-
-    this.socket.send(JSON.stringify({ op: 1, d: this.lastSequence }));
-
+    this.sendHeartbeat();
     if (this.heartbeatInterval) {
-      this.heartbeatTimer = setTimeout(
-        () => this.heartbeat(),
-        this.heartbeatInterval + HEARTBEAT_INTERVAL_BUFFER,
-      );
+      this.heartbeatTimer = setTimeout(() => this.heartbeat(), this.heartbeatInterval);
     }
+  }
+
+  private sendHeartbeat(): void {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+    this.socket.send(JSON.stringify({ op: 1, d: this.lastSequence }));
   }
 
   private clearHeartbeat(): void {
@@ -159,13 +264,24 @@ export class DiscordGateway {
   }
 
   private identify(): void {
-    if (!this.socket || !this.token) return;
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN || !this.token) {
+      log.warn({ hasSocket: !!this.socket, readyState: this.socket?.readyState ?? null }, "Cannot identify");
+      return;
+    }
+    log.info("Sending IDENTIFY");
     this.socket.send(
       JSON.stringify({
         op: 2,
         d: {
           token: this.token,
+          // GUILDS only — interactions are delivered regardless of intents,
+          // and GUILDS lets us receive GUILD_CREATE to register slash commands.
           intents: 1 << 0,
+          properties: {
+            os: "linux",
+            browser: "webhooker",
+            device: "webhooker",
+          },
         },
       }),
     );
@@ -176,12 +292,310 @@ export class DiscordGateway {
     switch (event) {
       case "READY":
         this.sessionId = d.session_id as string;
-        log.info({ user: (d.user as { username?: string })?.username }, "Gateway READY");
+        this.applicationId = (d.application as { id?: string })?.id ?? this.applicationId;
+        log.info(
+          { user: (d.user as { username?: string })?.username, appId: this.applicationId },
+          "Gateway READY",
+        );
         break;
       case "GUILD_CREATE": {
-        const guild = d as unknown as GuildInfo;
-        this.guilds.set(guild.id, guild);
+        const guildId = d.id as string | undefined;
+        if (guildId) {
+          this.registerGuildCommands(guildId).catch((err) =>
+            log.error({ err: String(err), guildId }, "Failed to register guild commands"),
+          );
+        }
         break;
+      }
+      case "INTERACTION_CREATE":
+        this.handleInteraction(d).catch((err) =>
+          log.error({ err: String(err) }, "Interaction handler failed"),
+        );
+        break;
+    }
+  }
+
+  private botToken(): string {
+    return this.token ?? this.env.DISCORD_TOKEN ?? "";
+  }
+
+  /** Register the slash + message commands for a guild (instant availability). */
+  private async registerGuildCommands(guildId: string): Promise<void> {
+    if (!this.applicationId || this.registeredGuilds.has(guildId)) return;
+    const res = await fetch(
+      `${DISCORD_API}/applications/${this.applicationId}/guilds/${guildId}/commands`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bot ${this.botToken()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(APP_COMMANDS),
+      },
+    );
+    if (res.ok) {
+      this.registeredGuilds.add(guildId);
+      log.info({ guildId }, "Registered guild application commands");
+    } else {
+      const err = await res.text();
+      log.warn({ guildId, status: res.status, err }, "Command registration failed");
+    }
+  }
+
+  private async handleInteraction(d: Record<string, unknown>): Promise<void> {
+    const interaction = d as {
+      id: string;
+      token: string;
+      type: number;
+      guild_id?: string;
+      member?: { user?: { id?: string } };
+      user?: { id?: string };
+      data?: Record<string, unknown>;
+    };
+    const userId = interaction.member?.user?.id ?? interaction.user?.id ?? null;
+    const id = interaction.id;
+    const token = interaction.token;
+
+    if (interaction.type === INTERACTION_TYPE.COMMAND) {
+      const data = interaction.data as {
+        name?: string;
+        type?: number;
+        target_id?: string;
+        options?: Array<{ name: string; options?: Array<{ name: string; value?: string; options?: Array<{ name: string; value?: string }> }> }>;
+        resolved?: { messages?: Record<string, { embeds?: Array<{ url?: string }>; content?: string }> };
+      };
+
+      // Right-click (message context-menu) commands.
+      if (data.type === COMMAND_TYPE.MESSAGE) {
+        const op =
+          data.name === MSG_CMD_ADD ? "add" : data.name === MSG_CMD_EDIT ? "edit" : data.name === MSG_CMD_DEL ? "del" : null;
+        if (!op) return;
+        const target = data.target_id ? data.resolved?.messages?.[data.target_id] : undefined;
+        const source = target?.embeds?.[0]?.url ?? target?.content ?? "";
+        return this.commentOp(id, token, userId, op, source);
+      }
+
+      // Slash command /gh ...
+      if (data.name === "gh" && data.type === COMMAND_TYPE.CHAT_INPUT) {
+        const top = data.options?.[0];
+        if (top?.name === "login") return this.cmdLogin(id, token, userId);
+        if (top?.name === "logout") return this.cmdLogout(id, token, userId);
+        if (top?.name === "comment") {
+          const sub = top.options?.[0];
+          const op = sub?.name === "add" ? "add" : sub?.name === "edit" ? "edit" : sub?.name === "del" ? "del" : null;
+          if (!op) return;
+          const link = sub?.options?.find((o) => o.name === "link")?.value ?? "";
+          return this.commentOp(id, token, userId, op, link);
+        }
+        return;
+      }
+      return;
+    }
+
+    if (interaction.type === INTERACTION_TYPE.MODAL_SUBMIT) {
+      return this.modalSubmit(id, token, userId, interaction.data);
+    }
+  }
+
+  /** Respond to an interaction with an ephemeral text message. */
+  private async respond(id: string, token: string, content: string): Promise<void> {
+    await this.interactionCallback(id, token, {
+      type: CALLBACK_TYPE.MESSAGE,
+      data: { content, flags: EPHEMERAL },
+    });
+  }
+
+  private async interactionCallback(id: string, token: string, body: unknown): Promise<void> {
+    const res = await fetch(`${DISCORD_API}/interactions/${id}/${token}/callback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      log.warn({ status: res.status, err }, "Interaction callback failed");
+    }
+  }
+
+  private async cmdLogin(id: string, token: string, userId: string | null): Promise<void> {
+    if (!userId) return this.respond(id, token, "无法识别你的 Discord 账号。");
+    const clientId = this.env.GITHUB_CLIENT_ID;
+    if (!clientId) return this.respond(id, token, "服务器未配置 GitHub OAuth（GITHUB_CLIENT_ID）。");
+
+    const state = crypto.randomUUID().replace(/-/g, "");
+    await this.env.KV.put(
+      `state:${state}`,
+      JSON.stringify({ redirectTo: "/", discordUserId: userId, expiresAt: Date.now() + 600_000 }),
+      { expirationTtl: 600 },
+    );
+    const url = getOAuthURL(clientId, state);
+    await this.respond(
+      id,
+      token,
+      `点击链接授权 GitHub，即可用**本人身份**评论（仅你可见，10 分钟内有效）：\n${url}`,
+    );
+  }
+
+  private async cmdLogout(id: string, token: string, userId: string | null): Promise<void> {
+    if (!userId) return this.respond(id, token, "无法识别你的 Discord 账号。");
+    await removeDiscordLink(this.env.KV, userId);
+    await this.respond(id, token, "已解绑你的 GitHub 账号。");
+  }
+
+  /** Map a GitHub op error code to a user-facing (Chinese) message. */
+  private errText(err: unknown): string {
+    const t = err instanceof Error ? err.message : String(err);
+    if (t === "GITHUB_TOKEN_EXPIRED") return "GitHub 授权已过期或无效，请重新使用 `/gh login` 绑定。";
+    if (t === "GITHUB_FORBIDDEN") return "GitHub 拒绝了此操作：你的账号没有权限修改/删除这条评论。";
+    if (t === "GITHUB_NOT_FOUND") return "找不到目标（可能评论已被删除或仓库不可访问）。";
+    return `操作失败：${t}`;
+  }
+
+  /**
+   * Unified entry for add/edit/del, from either a slash command (source = link
+   * option) or a right-click message command (source = notification embed url).
+   */
+  private async commentOp(
+    id: string,
+    token: string,
+    userId: string | null,
+    op: "add" | "edit" | "del",
+    source: string,
+  ): Promise<void> {
+    if (!userId) return this.respond(id, token, "无法识别你的 Discord 账号。");
+    const githubUserId = await getDiscordLink(this.env.KV, userId);
+    if (!githubUserId) {
+      return this.respond(id, token, "你还没有绑定 GitHub 账号，请先使用 `/gh login`。");
+    }
+
+    if (op === "add") {
+      const m = source.match(GITHUB_ISSUE_RE);
+      if (!m) return this.respond(id, token, "找不到 issue / PR 链接（右键 issue/PR 通知，或用 link 传入链接）。");
+      return this.openCommentModal(id, token, `${MODAL_ADD}${m[1]}|${m[2]}|${m[3]}`, `评论 ${m[1]}/${m[2]}#${m[3]}`);
+    }
+
+    // edit / del both need a specific comment id.
+    const m = source.match(GITHUB_COMMENT_RE);
+    if (!m) {
+      return this.respond(id, token, "找不到评论链接（需含 `#issuecomment-...`，请右键某条评论通知，或粘贴评论链接）。");
+    }
+    const [, owner, repo, commentId] = m;
+
+    if (op === "del") {
+      try {
+        await deleteCommentAsUser(this.env.KV, githubUserId, owner!, repo!, Number(commentId));
+        return this.respond(id, token, `已删除评论 ${owner}/${repo}#issuecomment-${commentId}。`);
+      } catch (err) {
+        return this.respond(id, token, this.errText(err));
+      }
+    }
+
+    // edit: fetch current body to prefill the modal.
+    let prefill = "";
+    try {
+      const { body } = await getCommentAsUser(this.env.KV, githubUserId, owner!, repo!, Number(commentId));
+      prefill = body;
+    } catch (err) {
+      return this.respond(id, token, this.errText(err));
+    }
+    return this.openCommentModal(
+      id,
+      token,
+      `${MODAL_EDIT}${owner}|${repo}|${commentId}`,
+      `编辑评论 #${commentId}`,
+      prefill,
+    );
+  }
+
+  /** Open a modal to collect/edit comment body. */
+  private async openCommentModal(
+    id: string,
+    token: string,
+    customId: string,
+    title: string,
+    prefill = "",
+  ): Promise<void> {
+    await this.interactionCallback(id, token, {
+      type: CALLBACK_TYPE.MODAL,
+      data: {
+        custom_id: customId,
+        title: title.slice(0, 45),
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "body",
+                label: "评论内容",
+                style: 2,
+                required: true,
+                max_length: 2000,
+                value: prefill.slice(0, 2000) || undefined,
+              },
+            ],
+          },
+        ],
+      },
+    });
+  }
+
+  private async modalSubmit(
+    id: string,
+    token: string,
+    userId: string | null,
+    data: unknown,
+  ): Promise<void> {
+    const d = data as {
+      custom_id?: string;
+      components?: Array<{ components?: Array<{ custom_id?: string; value?: string }> }>;
+    };
+    const customId = d.custom_id;
+    if (!userId || !customId) return;
+
+    const body = d.components?.[0]?.components?.find((c) => c.custom_id === "body")?.value?.trim();
+    if (!body) return this.respond(id, token, "评论内容不能为空。");
+
+    const githubUserId = await getDiscordLink(this.env.KV, userId);
+    if (!githubUserId) {
+      return this.respond(id, token, "你还没有绑定 GitHub 账号，请先使用 `/gh login`。");
+    }
+
+    // ghc|add|owner|repo|issueNumber
+    if (customId.startsWith(MODAL_ADD)) {
+      const [owner, repo, number] = customId.slice(MODAL_ADD.length).split("|");
+      if (!owner || !repo || !number) return this.respond(id, token, "内部错误：无法解析目标 issue。");
+      try {
+        const { htmlUrl, login } = await commentAsUser(
+          this.env.KV,
+          githubUserId,
+          owner,
+          repo,
+          Number(number),
+          body,
+        );
+        return this.respond(id, token, `已以 **@${login}** 身份评论：${htmlUrl}`);
+      } catch (err) {
+        return this.respond(id, token, this.errText(err));
+      }
+    }
+
+    // ghc|edit|owner|repo|commentId
+    if (customId.startsWith(MODAL_EDIT)) {
+      const [owner, repo, commentId] = customId.slice(MODAL_EDIT.length).split("|");
+      if (!owner || !repo || !commentId) return this.respond(id, token, "内部错误：无法解析目标评论。");
+      try {
+        const { htmlUrl } = await editCommentAsUser(
+          this.env.KV,
+          githubUserId,
+          owner,
+          repo,
+          Number(commentId),
+          body,
+        );
+        return this.respond(id, token, `已更新评论：${htmlUrl}`);
+      } catch (err) {
+        return this.respond(id, token, this.errText(err));
       }
     }
   }
@@ -193,15 +607,7 @@ export class DiscordGateway {
       this.socket = null;
     }
     this.connecting = false;
-    setTimeout(() => this.connect(), RECONNECT_DELAY);
-  }
-
-  private findChannel(channelId: string): { channel: ChannelInfo | null; guild: GuildInfo | null } {
-    for (const guild of this.guilds.values()) {
-      const ch = guild.channels.find((c) => c.id === channelId);
-      if (ch) return { channel: ch, guild };
-    }
-    return { channel: null, guild: null };
+    this.scheduleReconnect();
   }
 
   private async postMessage(
@@ -209,50 +615,18 @@ export class DiscordGateway {
     message: unknown,
     threadId?: string,
   ): Promise<{ ok: boolean; error?: string }> {
-    const url = threadId
-      ? `${DISCORD_API}/channels/${threadId}/messages`
-      : `${DISCORD_API}/channels/${channelId}/messages`;
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: {
-            Authorization: `Bot ${this.token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(message),
-        });
-
-        if (res.status === 429) {
-          const rateLimit = (await res.json()) as { retry_after?: number };
-          const retryAfter = (rateLimit.retry_after ?? 1) * 1000;
-          log.warn({ retryAfter, attempt }, "Rate limited");
-          await new Promise((r) => setTimeout(r, retryAfter));
-          continue;
-        }
-
-        if (!res.ok) {
-          const err = await res.text();
-          log.error({ status: res.status, err, channelId }, "Discord API error");
-          return { ok: false, error: err };
-        }
-
-        return { ok: true };
-      } catch (err) {
-        log.error({ err, attempt, channelId }, "Failed to send message");
-        if (attempt === 2) return { ok: false, error: String(err) };
-        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
-      }
-    }
-
-    return { ok: false, error: "Max retries exceeded" };
+    const token = this.token ?? this.env.DISCORD_TOKEN;
+    if (!token) return { ok: false, error: "Discord token is not configured" };
+    return sendMessage(token, channelId, message, threadId);
   }
 
   async alarm(): Promise<void> {
+    if (!this.token) {
+      this.token = (await this.state.storage.get<string>("token")) ?? this.env.DISCORD_TOKEN ?? "";
+    }
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       log.info("Alarm: restarting Gateway connection");
-      this.connect();
+      await this.connect();
     }
     await this.state.storage.setAlarm(Date.now() + ALARM_INTERVAL * 1000);
   }
