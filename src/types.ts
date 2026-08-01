@@ -9,6 +9,7 @@ export interface Env {
   BASE_URL?: string;
   ADMIN_USER_IDS?: string;
   DISCORD_GATEWAY_ENABLED?: string;
+  LEGAL_CONTACT?: string;
   ASSETS?: Fetcher;
   KV: KVNamespace;
   DISCORD_GATEWAY: DurableObjectNamespace;
