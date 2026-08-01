@@ -45,9 +45,21 @@ export function createServer(): Hono<{ Bindings: Env }> {
       return c.json({ error: "Invalid event" }, 400);
     }
 
+    const delivery = headers["x-github-delivery"];
+    if (delivery) {
+      const seen = await c.env.KV.get(`delivery:${delivery}`);
+      if (seen) {
+        return c.json({ ok: true, duplicate: true });
+      }
+      await c.env.KV.put(`delivery:${delivery}`, "1", { expirationTtl: 300 });
+    }
+
     const { loadConfig } = await import("./config");
     const config = await loadConfig(c.env);
-    dispatchEvent(config, event, c.env).catch((err) => log.error(err, "Dispatch failed"));
+    const dispatch = dispatchEvent(config, event, c.env).catch((err) =>
+      log.error(err, "Dispatch failed"),
+    );
+    c.executionCtx.waitUntil(dispatch);
 
     return c.json({ ok: true });
   });

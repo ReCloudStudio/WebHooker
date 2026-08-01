@@ -9,8 +9,8 @@ export { DiscordGateway };
 const app = createServer();
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    return app.fetch(request, env);
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    return app.fetch(request, env, ctx);
   },
 
   async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {

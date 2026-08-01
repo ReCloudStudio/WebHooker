@@ -1,5 +1,21 @@
 import type { WebhookEvent, Route, Filter } from "./types";
 
+const keyCache = new Map<string, CryptoKey>();
+
+async function getHmacKey(secret: string): Promise<CryptoKey> {
+  const cached = keyCache.get(secret);
+  if (cached) return cached;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  keyCache.set(secret, key);
+  return key;
+}
+
 export async function verifySignature(
   payload: string,
   signature: string | undefined,
@@ -8,13 +24,7 @@ export async function verifySignature(
   if (!signature) return false;
 
   const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
+  const key = await getHmacKey(secret);
   const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
   const expected = `sha256=${Array.from(new Uint8Array(sig))
     .map((b) => b.toString(16).padStart(2, "0"))
@@ -79,7 +89,7 @@ function extractBranch(event: WebhookEvent): string | undefined {
   return undefined;
 }
 
-function matchFilter(filter: Filter, event: WebhookEvent): boolean {
+function matchFilter(filter: Filter, event: WebhookEvent, keywordBody?: string): boolean {
   let value: string | undefined;
 
   switch (filter.type) {
@@ -99,7 +109,7 @@ function matchFilter(filter: Filter, event: WebhookEvent): boolean {
       value = extractBranch(event);
       break;
     case "keyword": {
-      const body = JSON.stringify(event.payload).toLowerCase();
+      const body = keywordBody ?? JSON.stringify(event.payload).toLowerCase();
       const patterns = Array.isArray(filter.match) ? filter.match : [filter.match];
       return patterns.some((p) => {
         try {
@@ -123,5 +133,7 @@ function matchFilter(filter: Filter, event: WebhookEvent): boolean {
 
 export function matchRoute(route: Route, event: WebhookEvent): boolean {
   if (!route.enabled) return false;
-  return route.filters.every((f) => matchFilter(f, event));
+  const hasKeyword = route.filters.some((f) => f.type === "keyword");
+  const keywordBody = hasKeyword ? JSON.stringify(event.payload).toLowerCase() : undefined;
+  return route.filters.every((f) => matchFilter(f, event, keywordBody));
 }
