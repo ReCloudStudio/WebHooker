@@ -10,17 +10,17 @@ function sign(body: string, secret: string): string {
 describe("verifySignature", () => {
   const secret = "test-secret";
 
-  it("returns true for valid signature", () => {
+  it("returns true for valid signature", async () => {
     const body = '{"hello":"world"}';
-    expect(verifySignature(body, sign(body, secret), secret)).toBe(true);
+    expect(await verifySignature(body, sign(body, secret), secret)).toBe(true);
   });
 
-  it("returns false for invalid signature", () => {
-    expect(verifySignature("body", "sha256=invalid", secret)).toBe(false);
+  it("returns false for invalid signature", async () => {
+    expect(await verifySignature("body", "sha256=invalid", secret)).toBe(false);
   });
 
-  it("returns false for missing signature", () => {
-    expect(verifySignature("body", undefined, secret)).toBe(false);
+  it("returns false for missing signature", async () => {
+    expect(await verifySignature("body", undefined, secret)).toBe(false);
   });
 });
 
