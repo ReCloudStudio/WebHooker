@@ -6,8 +6,11 @@
 	"vars": {
 		"DISCORD_GATEWAY_ENABLED": "true"
 	},
+	"build": {
+		"command": "cd admin && bun install --frozen-lockfile && bun run generate"
+	},
 	"assets": {
-		"directory": "./admin/dist",
+		"directory": "./admin/.output/public",
 		"binding": "ASSETS",
 		"run_worker_first": true,
 		"not_found_handling": "single-page-application"
