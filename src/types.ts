@@ -40,6 +40,17 @@ export interface Route {
     threadId?: string;
   };
   lang?: string;
+  groupId?: string;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  /**
+   * GitHub user ids or logins (case-insensitive) allowed to manage this group.
+   * Super admins (ADMIN_USER_IDS) always have access regardless of this list.
+   */
+  adminIds: string[];
 }
 
 export interface Filter {

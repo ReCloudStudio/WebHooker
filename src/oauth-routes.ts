@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { getOAuthURL, handleOAuthCallback } from "./github-oauth";
 import { removeToken, saveDiscordLink } from "./token-store";
-import { isAdminUser, createAdminSession, adminCookie } from "./admin-session";
+import { createAdminSession, adminCookie } from "./admin-session";
+import { loadGroups, resolveScope, hasAnyAccess } from "./groups";
 import type { Env } from "./types";
 
 interface PendingState {
@@ -84,8 +85,10 @@ export function createOAuthRoutes(): Hono<{ Bindings: Env }> {
 
     const isBrowser = (c.req.header("accept") ?? "").includes("text/html");
     if (isBrowser) {
-      if (!isAdminUser(c.env, result.userId, result.login)) {
-        return c.redirect("/?error=forbidden");
+      const groups = await loadGroups(c.env.KV);
+      const scope = resolveScope(c.env, groups, result.userId, result.login);
+      if (!hasAnyAccess(scope)) {
+        return c.redirect("/admin?error=forbidden");
       }
       const sessionId = await createAdminSession(c.env.KV, result.userId, result.login);
       c.header("Set-Cookie", adminCookie(sessionId));
