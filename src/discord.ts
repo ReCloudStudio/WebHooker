@@ -2,7 +2,13 @@ import type { Config, FormattedMessage, WebhookEvent, Env } from "./types";
 import { formatEvent } from "./formatter";
 import { matchRoute } from "./webhook";
 import { log } from "./log";
-import { loadTranslations } from "./i18n";
+import { loadTranslations, type Translations } from "./i18n";
+import { sendMessage } from "./discord-rest";
+import { recordSend } from "./send-log";
+
+export function isGatewayEnabled(env: Env): boolean {
+  return env.DISCORD_GATEWAY_ENABLED === "true";
+}
 
 async function getGatewayProxy(env: Env): Promise<DurableObjectStub> {
   const id = env.DISCORD_GATEWAY.idFromName("discord-gateway");
@@ -10,6 +16,7 @@ async function getGatewayProxy(env: Env): Promise<DurableObjectStub> {
 }
 
 export async function initGateway(env: Env): Promise<void> {
+  if (!isGatewayEnabled(env)) return;
   if (!env.DISCORD_TOKEN) return;
   const stub = await getGatewayProxy(env);
   await stub.fetch(
@@ -22,44 +29,44 @@ export async function initGateway(env: Env): Promise<void> {
 }
 
 export async function dispatchEvent(config: Config, event: WebhookEvent, env: Env): Promise<void> {
+  const langs = [...new Set(config.routes.map((r) => r.lang ?? "en"))];
+  const trMap = new Map<string, Translations>();
+  await Promise.all(
+    langs.map(async (lang) => {
+      trMap.set(lang, await loadTranslations(lang, env.KV));
+    }),
+  );
+
   for (const route of config.routes) {
     if (!matchRoute(route, event)) continue;
 
+    const target = route.target.threadId
+      ? `${route.target.channelId}/${route.target.threadId}`
+      : route.target.channelId;
+
     try {
-      const tr = await loadTranslations(route.lang ?? "en", env.KV);
+      const tr = trMap.get(route.lang ?? "en")!;
       const message = formatEvent(route, event, tr);
-      await sendWithRetry(route.target.channelId, message, env, route.target.threadId);
+      await sendToChannel(route.target.channelId, message, env, route.target.threadId);
+      await recordSend(env.KV, {
+        ts: Date.now(),
+        routeId: route.id,
+        event: event.event,
+        repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
+        target,
+        ok: true,
+      });
     } catch (err) {
+      await recordSend(env.KV, {
+        ts: Date.now(),
+        routeId: route.id,
+        event: event.event,
+        repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
+        target,
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
       log.error({ routeId: route.id, err }, "Route failed");
-    }
-  }
-}
-
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function sendWithRetry(
-  channelId: string,
-  message: FormattedMessage,
-  env: Env,
-  threadId?: string,
-  maxRetries = 3,
-): Promise<void> {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      await sendToChannel(channelId, message, env, threadId);
-      return;
-    } catch (err: unknown) {
-      const error = err as Record<string, unknown>;
-      const isRateLimit = error.code === 50035 || error.status === 429;
-      if (isRateLimit && attempt < maxRetries) {
-        const retryAfter = ((error.retry_after as number) ?? (attempt + 1) * 2) as number;
-        log.warn({ retryAfter, attempt, maxRetries }, "Rate limited, retrying");
-        await sleep(retryAfter * 1000);
-        continue;
-      }
-      throw err;
     }
   }
 }
@@ -70,6 +77,13 @@ async function sendToChannel(
   env: Env,
   threadId?: string,
 ): Promise<void> {
+  const token = env.DISCORD_TOKEN ?? "";
+  if (!isGatewayEnabled(env)) {
+    const result = await sendMessage(token, channelId, message, threadId);
+    if (!result.ok) throw new Error(result.error ?? "Send failed");
+    return;
+  }
+
   const stub = await getGatewayProxy(env);
   const res = await stub.fetch(
     new Request("https://do.internal", {

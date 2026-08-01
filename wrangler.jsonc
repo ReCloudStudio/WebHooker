@@ -1,26 +1,42 @@
 {
-  "name": "webhooker",
-  "main": "src/index.ts",
-  "compatibility_date": "2025-01-01",
-  "compatibility_flags": ["nodejs_compat"],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "DISCORD_GATEWAY",
-        "class_name": "DiscordGateway",
-      },
-    ],
-  },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_classes": ["DiscordGateway"],
-    },
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "KV",
-      "id": "placeholder-will-be-replaced",
-    },
-  ],
+	"name": "webhooker",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-01-01",
+	"compatibility_flags": [],
+	"vars": {
+		"DISCORD_GATEWAY_ENABLED": "true"
+	},
+	"assets": {
+		"directory": "./admin/dist",
+		"binding": "ASSETS",
+		"run_worker_first": true,
+		"not_found_handling": "single-page-application"
+	},
+	"triggers": {
+		"crons": [
+			"*/5 * * * *"
+		]
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "DISCORD_GATEWAY",
+				"class_name": "DiscordGateway",
+			},
+		],
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"DiscordGateway"
+			],
+		},
+	],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "53abb6d985a44b80b2b08d510f73928a"
+		},
+	],
 }
