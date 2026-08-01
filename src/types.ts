@@ -10,6 +10,8 @@ export interface Env {
   ADMIN_USER_IDS?: string;
   DISCORD_GATEWAY_ENABLED?: string;
   LEGAL_CONTACT?: string;
+  DOCS_URL?: string;
+  GITHUB_REPO_URL?: string;
   ASSETS?: Fetcher;
   KV: KVNamespace;
   DISCORD_GATEWAY: DurableObjectNamespace;

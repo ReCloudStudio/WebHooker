@@ -6,6 +6,7 @@ import { createOAuthRoutes } from "./oauth-routes";
 import { createActionRoutes } from "./action-routes";
 import { createAdminRoutes } from "./admin-routes";
 import { createLegalRoutes } from "./legal-routes";
+import { createHomeRoutes } from "./home-routes";
 import { log } from "./log";
 
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -18,6 +19,7 @@ export function createServer(): Hono<{ Bindings: Env }> {
   app.route("/auth", createOAuthRoutes());
   app.route("/", createActionRoutes());
   app.route("/", createLegalRoutes());
+  app.route("/", createHomeRoutes());
   app.route("/admin", createAdminRoutes());
 
   app.post("/webhook", async (c) => {
