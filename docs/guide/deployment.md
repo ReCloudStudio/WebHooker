@@ -26,12 +26,29 @@ This outputs a namespace ID. Update `wrangler.jsonc` with the ID:
 ```bash
 npx wrangler secret put GITHUB_WEBHOOK_SECRET
 npx wrangler secret put GITHUB_APP_ID
-npx wrangler secret put GITHUB_PRIVATE_KEY
+npx wrangler secret put GITHUB_PRIVATE_KEY   # PKCS#8 PEM (BEGIN PRIVATE KEY)
 npx wrangler secret put GITHUB_CLIENT_ID
 npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler secret put DISCORD_TOKEN
-npx wrangler secret put DISCORD_CHANNEL_ID
+npx wrangler secret put ADMIN_USER_IDS       # comma-separated GitHub IDs/logins allowed into the Web UI
 ```
+
+::: tip Target channels are configured per route
+There is no global channel secret. Each route in the [Web UI](/guide/configuration#web-ui) declares its own target channel (and optional thread), so `DISCORD_CHANNEL_ID` is not needed.
+:::
+
+::: warning GitHub App private key must be PKCS#8
+GitHub issues private keys in PKCS#1 format (`BEGIN RSA PRIVATE KEY`). Cloudflare Workers' JWT signing requires PKCS#8. Convert first:
+
+```bash
+openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
+  -in your-app.private-key.pem -out gh_pk_pkcs8.pem
+```
+
+Then upload `gh_pk_pkcs8.pem` as `GITHUB_PRIVATE_KEY`.
+:::
+
+The Discord Gateway is optional. Set `DISCORD_GATEWAY_ENABLED` in `wrangler.jsonc` `vars` (`"false"` by default). See [Gateway (optional)](#gateway-optional) below.
 
 ### 3. Deploy
 
@@ -81,8 +98,22 @@ Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
 1. Go to <https://discord.com/developers/applications>
 2. Create a new application → go to Bot section
 3. Copy the bot token to `DISCORD_TOKEN`
-4. Invite the bot to your server with `bot` scope and `Send Messages` permission
-5. Copy the target channel ID to `DISCORD_CHANNEL_ID`
+4. Invite the bot with the `bot` and `applications.commands` scopes and the `View Channels` + `Send Messages` + `Send Messages in Threads` permissions (combined integer `274877910016`):
+
+   ```text
+   https://discord.com/oauth2/authorize?client_id=YOUR_BOT_CLIENT_ID&permissions=274877910016&scope=bot+applications.commands
+   ```
+
+5. Configure target channels **per route** in the Web UI (`/admin`) — no global channel ID is required.
+
+### Gateway (optional)
+
+Messages are sent via the Discord **REST API**, so pushing works with just `DISCORD_TOKEN`. The Gateway connection is only needed to (a) show the bot as **online** and (b) enable the in-Discord slash / context-menu commands.
+
+- `DISCORD_GATEWAY_ENABLED=false` (default): REST-only, no Gateway connection.
+- `DISCORD_GATEWAY_ENABLED=true`: a Durable Object holds the Gateway connection and registers the `/gh` slash command plus the `GitHub: 添加/编辑/删除评论` message commands per guild.
+
+When enabled, users run `/gh login` to link their GitHub account and can then comment on issues/PRs as themselves. See the [README](https://github.com/ReCloudStudio/WebHooker#bot-commands-comment-on-github-as-yourself) for the full command reference.
 
 ## Custom Domain (Optional)
 

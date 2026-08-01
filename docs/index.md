@@ -19,9 +19,9 @@ features:
   - title: Flexible Filtering
     details: Filter by event type, repo, actor, action, branch (including PRs), and keyword (with regex support). Exclude patterns with a flag.
   - title: Cloudflare Workers
-    details: Runs on Cloudflare's edge network with Durable Objects for persistent Discord Gateway connections and KV for storage.
-  - title: OAuth & User Actions
-    details: "GitHub App OAuth flow enables user-initiated actions: comment on issues, merge PRs, add reactions — all via Bearer token auth."
+    details: Runs on Cloudflare's edge network. Sends via the Discord REST API, with an optional Durable Object Gateway connection for online status and slash commands.
+  - title: Web UI & Slash Commands
+    details: "Manage routes and view send logs from a built-in admin console. Link your GitHub account and comment on issues/PRs as yourself via /gh commands."
   - title: Signature Verification
     details: HMAC-SHA256 webhook signature verification using the Web Crypto API with timing-safe comparison.
   - title: Graceful Degradation

@@ -26,12 +26,29 @@ npx wrangler kv namespace create KV
 ```bash
 npx wrangler secret put GITHUB_WEBHOOK_SECRET
 npx wrangler secret put GITHUB_APP_ID
-npx wrangler secret put GITHUB_PRIVATE_KEY
+npx wrangler secret put GITHUB_PRIVATE_KEY   # PKCS#8 PEM（BEGIN PRIVATE KEY）
 npx wrangler secret put GITHUB_CLIENT_ID
 npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler secret put DISCORD_TOKEN
-npx wrangler secret put DISCORD_CHANNEL_ID
+npx wrangler secret put ADMIN_USER_IDS       # 逗号分隔的 GitHub ID/登录名，允许进入 Web UI
 ```
+
+::: tip 目标频道按路由配置
+不存在全局频道密钥。每条路由在 [Web 控制台](/zh/guide/configuration#web-控制台) 中声明各自的目标频道（及可选的子区/thread），因此不需要 `DISCORD_CHANNEL_ID`。
+:::
+
+::: warning GitHub App 私钥必须是 PKCS#8
+GitHub 下发的私钥为 PKCS#1 格式（`BEGIN RSA PRIVATE KEY`）。Cloudflare Workers 的 JWT 签名要求 PKCS#8，需先转换：
+
+```bash
+openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
+  -in your-app.private-key.pem -out gh_pk_pkcs8.pem
+```
+
+然后将 `gh_pk_pkcs8.pem` 作为 `GITHUB_PRIVATE_KEY` 上传。
+:::
+
+Discord Gateway 是可选的。在 `wrangler.jsonc` 的 `vars` 中设置 `DISCORD_GATEWAY_ENABLED`（默认为 `"false"`）。参见下方 [Gateway（可选）](#gateway可选)。
 
 ### 3. 部署
 
@@ -81,8 +98,22 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
 1. 打开 <https://discord.com/developers/applications>
 2. 创建新应用 → 进入 Bot 部分
 3. 将 Bot Token 复制到 `DISCORD_TOKEN`
-4. 使用 `bot` 权限范围邀请 Bot 到你的服务器，并勾选 `Send Messages` 权限
-5. 将目标频道 ID 复制到 `DISCORD_CHANNEL_ID`
+4. 使用 `bot` 与 `applications.commands` 两个 scope 邀请 Bot，并勾选 `View Channels` + `Send Messages` + `Send Messages in Threads` 权限（组合整数 `274877910016`）：
+
+   ```text
+   https://discord.com/oauth2/authorize?client_id=YOUR_BOT_CLIENT_ID&permissions=274877910016&scope=bot+applications.commands
+   ```
+
+5. 在 Web UI（`/admin`）中**按路由**配置目标频道——无需全局频道 ID。
+
+### Gateway（可选）
+
+消息通过 Discord **REST API** 发送，因此仅凭 `DISCORD_TOKEN` 即可推送。Gateway 连接仅用于：(a) 让 Bot 显示为**在线**，(b) 启用 Discord 内的斜杠 / 右键菜单命令。
+
+- `DISCORD_GATEWAY_ENABLED=false`（默认）：仅 REST，不建立 Gateway 连接。
+- `DISCORD_GATEWAY_ENABLED=true`：由一个 Durable Object 持有 Gateway 连接，并按服务器注册 `/gh` 斜杠命令以及 `GitHub: 添加/编辑/删除评论` 消息命令。
+
+启用后，用户运行 `/gh login` 绑定自己的 GitHub 账号，即可以本人身份评论 issue/PR。完整命令说明见 [README](https://github.com/ReCloudStudio/WebHooker#bot-commands-comment-on-github-as-yourself)。
 
 ## 自定义域名（可选）
 

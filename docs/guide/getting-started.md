@@ -30,13 +30,17 @@ Edit `.dev.vars` with your actual values:
 ```bash
 GITHUB_WEBHOOK_SECRET=your-webhook-secret
 GITHUB_APP_ID=your-app-id
-GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+GITHUB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 GITHUB_CLIENT_ID=your-client-id
 GITHUB_CLIENT_SECRET=your-client-secret
 DISCORD_TOKEN=your-bot-token
-DISCORD_CHANNEL_ID=your-channel-id
+ADMIN_USER_IDS=your-github-id,your-github-login
 BASE_URL=http://localhost:8787
 ```
+
+::: tip
+`GITHUB_PRIVATE_KEY` must be in **PKCS#8** format (`BEGIN PRIVATE KEY`). Convert a GitHub-issued PKCS#1 key with `openssl pkcs8 -topk8 -nocrypt -in app.pem -out pkcs8.pem`. Target channels are set per route in the Web UI, so no `DISCORD_CHANNEL_ID` is needed. To keep the bot online and enable `/gh` slash commands locally, also set `DISCORD_GATEWAY_ENABLED=true`.
+:::
 
 ::: warning
 `.dev.vars` is gitignored and contains secrets. Never commit it.

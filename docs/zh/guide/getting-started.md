@@ -30,13 +30,17 @@ cp .env.example .dev.vars
 ```bash
 GITHUB_WEBHOOK_SECRET=your-webhook-secret
 GITHUB_APP_ID=your-app-id
-GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+GITHUB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 GITHUB_CLIENT_ID=your-client-id
 GITHUB_CLIENT_SECRET=your-client-secret
 DISCORD_TOKEN=your-bot-token
-DISCORD_CHANNEL_ID=your-channel-id
+ADMIN_USER_IDS=your-github-id,your-github-login
 BASE_URL=http://localhost:8787
 ```
+
+::: tip
+`GITHUB_PRIVATE_KEY` 必须是 **PKCS#8** 格式（`BEGIN PRIVATE KEY`）。用 `openssl pkcs8 -topk8 -nocrypt -in app.pem -out pkcs8.pem` 转换 GitHub 下发的 PKCS#1 私钥。目标频道在 Web UI 中按路由设置，因此不需要 `DISCORD_CHANNEL_ID`。若要让 Bot 保持在线并在本地启用 `/gh` 斜杠命令，可额外设置 `DISCORD_GATEWAY_ENABLED=true`。
+:::
 
 ::: warning
 `.dev.vars` 已被 gitignore，包含敏感信息，请勿提交。
@@ -59,14 +63,14 @@ curl http://localhost:8787/health
 
 ## 可用脚本
 
-| 脚本 | 说明 |
-| --- | --- |
-| `npm run dev` | 启动本地开发服务器 (wrangler) |
-| `npm run deploy` | 部署到 Cloudflare |
-| `npm run typecheck` | TypeScript 类型检查 |
-| `npm run lint` | ESLint |
-| `npm run lint:md` | Markdownlint |
-| `npm run format` | 使用 Prettier 格式化 |
-| `npm run format:check` | 检查 Prettier 格式 |
-| `npm run docs:dev` | 启动文档开发服务器 |
-| `npm run docs:build` | 构建文档站点 |
+| 脚本                   | 说明                          |
+| ---------------------- | ----------------------------- |
+| `npm run dev`          | 启动本地开发服务器 (wrangler) |
+| `npm run deploy`       | 部署到 Cloudflare             |
+| `npm run typecheck`    | TypeScript 类型检查           |
+| `npm run lint`         | ESLint                        |
+| `npm run lint:md`      | Markdownlint                  |
+| `npm run format`       | 使用 Prettier 格式化          |
+| `npm run format:check` | 检查 Prettier 格式            |
+| `npm run docs:dev`     | 启动文档开发服务器            |
+| `npm run docs:build`   | 构建文档站点                  |
