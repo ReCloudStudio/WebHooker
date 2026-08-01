@@ -167,10 +167,10 @@ Add the bot to your server with the `bot` scope and the following permissions:
 
 Combined permission integer: `274877910016`
 
-Invite URL (replace `CLIENT_ID` with your bot's client ID):
+Invite URL (replace `CLIENT_ID` with your bot's client ID). The `applications.commands` scope is required so the slash / context-menu commands can be registered:
 
 ```
-https://discord.com/oauth2/authorize?client_id=YOUR_BOT_CLIENT_ID&permissions=274877910016&scope=bot
+https://discord.com/oauth2/authorize?client_id=YOUR_BOT_CLIENT_ID&permissions=274877910016&scope=bot+applications.commands
 ```
 
 ### Intents
@@ -184,24 +184,38 @@ The Discord Gateway connection only keeps the bot showing as **online** — it i
 - `DISCORD_GATEWAY_ENABLED=false` (default): messages are sent directly via REST; the Gateway is not connected.
 - `DISCORD_GATEWAY_ENABLED=true`: the Durable Object connects to the Gateway to keep the bot online; messages are still sent via REST.
 
-### Bot Command (`!gh`)
+### Bot Commands (comment on GitHub as yourself)
 
-When the Gateway is enabled, reply (quote) a bot-issued issue / PR notification and type:
+When the Gateway is enabled, the bot registers native **slash** and **message context-menu** commands per guild on connect. Comments are posted using **your own** linked GitHub account (OAuth), and permission is delegated to GitHub — if GitHub rejects the action (e.g. editing someone else's comment) the bot tells you so. All replies are ephemeral (only you see them).
+
+**1. Link your account** (once):
 
 ```
-!gh <comment text>
+/gh login     → returns an ephemeral link to authorize your GitHub account
+/gh logout    → unlink your GitHub account
 ```
 
-The bot posts the text as a GitHub comment on that issue / PR (authenticated as the GitHub App).
+**2. Add / edit / delete a comment** — two equivalent ways:
 
-**Extra requirements:**
+- **Right-click a notification** (recommended): right-click a bot-issued issue / PR / comment notification → **Apps** → **GitHub: 添加评论 / 编辑评论 / 删除评论**. The target is auto-extracted from the notification embed; no link needed.
+- **Slash command with a link**:
 
-| Item              | How                                                                                       |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| Gateway enabled   | `DISCORD_GATEWAY_ENABLED=true`                                                            |
-| Privileged intent | Enable **Message Content** in Discord Developer Portal → Bot → Privileged Gateway Intents |
-| Permissions       | **Read Message History** (to read the quoted message) in addition to sending              |
-| GitHub App        | Installed on the repo with **Issues (write)** permission                                  |
+  ```
+  /gh comment add  link:<issue or PR url>          e.g. https://github.com/owner/repo/issues/123
+  /gh comment edit link:<comment url>              url must contain #issuecomment-<id>
+  /gh comment del  link:<comment url>              url must contain #issuecomment-<id>
+  ```
+
+  For `edit` / `del`, copy the specific comment link on GitHub (comment ⋯ menu → **Copy link**). `add` / `edit` open a modal to enter/adjust the comment body (prefilled for edit).
+
+**Requirements:**
+
+| Item            | How                                                                   |
+| --------------- | --------------------------------------------------------------------- |
+| Gateway enabled | `DISCORD_GATEWAY_ENABLED=true` (interactions arrive over the Gateway) |
+| Invite scope    | Bot invited with `applications.commands` (see invite URL above)       |
+| OAuth           | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` and `BASE_URL` configured |
+| User linked     | Each user runs `/gh login` first                                      |
 
 ## Deployment
 

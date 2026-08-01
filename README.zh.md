@@ -166,10 +166,10 @@ npx wrangler dev     # 启动本地开发服务器
 
 权限组合整数值：`274877910016`
 
-邀请链接（将 `CLIENT_ID` 替换为机器人的 Client ID）：
+邀请链接（将 `CLIENT_ID` 替换为机器人的 Client ID）。需要 `applications.commands` scope，否则无法注册斜杠 / 右键菜单命令：
 
 ```
-https://discord.com/oauth2/authorize?client_id=你的机器人CLIENT_ID&permissions=274877910016&scope=bot
+https://discord.com/oauth2/authorize?client_id=你的机器人CLIENT_ID&permissions=274877910016&scope=bot+applications.commands
 ```
 
 ### Intents
@@ -183,24 +183,38 @@ Discord Gateway 连接仅用于让 bot 显示为**在线**——发送消息**�
 - `DISCORD_GATEWAY_ENABLED=false`（默认）：直接通过 REST 发送消息，不建立 Gateway 连接。
 - `DISCORD_GATEWAY_ENABLED=true`：由 Durable Object 连接 Gateway 以维持 bot 在线状态；消息仍走 REST。
 
-### Bot 指令（`!gh`）
+### Bot 指令（以本人身份评论 GitHub）
 
-启用 Gateway 后，**引用（回复）**一条 bot 推送的 issue / PR 通知，然后输入：
+启用 Gateway 后，bot 会在连接时为每个服务器注册原生的**斜杠命令**与**消息右键菜单命令**。评论以**你本人**绑定的 GitHub 账号（OAuth）发出，权限交由 GitHub 判定——若 GitHub 拒绝（例如去修改他人评论），bot 会提示你无权限。所有回复均为 ephemeral（仅你可见）。
+
+**1. 绑定账号**（一次即可）：
 
 ```
-!gh <评论内容>
+/gh login     → 返回一个 ephemeral 授权链接，用于绑定你的 GitHub 账号
+/gh logout    → 解除绑定
 ```
 
-bot 会以 GitHub App 的身份把内容发为对该 issue / PR 的评论。
+**2. 添加 / 编辑 / 删除评论** —— 两种等价方式：
 
-**额外要求：**
+- **右键点击通知**（推荐）：右键一条 bot 推送的 issue / PR / 评论通知 → **应用（Apps）** → **GitHub: 添加评论 / 编辑评论 / 删除评论**。目标会从通知 embed 中自动提取，无需粘贴链接。
+- **斜杠命令 + 链接**：
 
-| 项目         | 说明                                                                                    |
-| ------------ | --------------------------------------------------------------------------------------- |
-| 启用 Gateway | `DISCORD_GATEWAY_ENABLED=true`                                                          |
-| 特权 intent  | 在 Discord Developer Portal → Bot → Privileged Gateway Intents 开启 **Message Content** |
-| 权限         | 除发送外还需 **Read Message History**（读取被引用的消息）                               |
-| GitHub App   | 已安装到该仓库且有 **Issues (write)** 权限                                              |
+  ```
+  /gh comment add  link:<issue 或 PR 链接>          例如 https://github.com/owner/repo/issues/123
+  /gh comment edit link:<评论链接>                  链接需包含 #issuecomment-<id>
+  /gh comment del  link:<评论链接>                  链接需包含 #issuecomment-<id>
+  ```
+
+  `edit` / `del` 需要具体的评论链接（在 GitHub 上：评论 ⋯ 菜单 → **Copy link**）。`add` / `edit` 会弹出 modal 让你输入 / 修改评论内容（编辑时预填原文）。
+
+**要求：**
+
+| 项目         | 说明                                                             |
+| ------------ | ---------------------------------------------------------------- |
+| 启用 Gateway | `DISCORD_GATEWAY_ENABLED=true`（交互通过 Gateway 送达）          |
+| 邀请 scope   | 邀请时带上 `applications.commands`（见上方邀请链接）             |
+| OAuth        | 已配置 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 与 `BASE_URL` |
+| 用户绑定     | 每个用户先执行 `/gh login`                                       |
 
 ## 部署
 
