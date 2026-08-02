@@ -110,6 +110,15 @@ export const en = {
     workflow_run: {
       title: "{repo}: {name} — {conclusion}",
     },
+    workflow_job: {
+      title: "{repo}: Job {name} — {conclusion}",
+    },
+    status: {
+      title: "{repo}: {context} — {state}",
+    },
+    ping: {
+      title: "{repo}: Webhook ping",
+    },
     release: {
       action_release: "{emoji}**{action}** release `{tag}`",
       title: "{repo}: {name}",

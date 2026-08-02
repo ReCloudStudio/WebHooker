@@ -39,7 +39,7 @@ export function formatDeployment(
   if (deployment.ref) {
     fields.push({
       name: t("fields.branch_tag"),
-      value: `\`${deployment.ref}\``,
+      value: `\`${deployment.ref.replace("refs/heads/", "")}\``,
       inline: true,
     });
   }

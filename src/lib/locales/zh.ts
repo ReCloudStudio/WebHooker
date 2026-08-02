@@ -48,6 +48,8 @@ export const zh = {
     status: "状态",
     run: "运行",
     job: "作业",
+    workflow: "工作流",
+    context: "上下文",
     duration: "耗时",
     type: "类型",
     name: "名称",
@@ -107,6 +109,15 @@ export const zh = {
     },
     workflow_run: {
       title: "{repo}: {name} — {conclusion}",
+    },
+    workflow_job: {
+      title: "{repo}: 作业 {name} — {conclusion}",
+    },
+    status: {
+      title: "{repo}: {context} — {state}",
+    },
+    ping: {
+      title: "{repo}: Webhook ping",
     },
     release: {
       action_release: "{emoji}**{action}** 发布 `{tag}`",

@@ -170,6 +170,76 @@ describe("message title spec", () => {
     expect(msg.fields![3].value).toBe("abc123d");
   });
 
+  it("workflow_job shows job status, workflow, branch and commit", () => {
+    const job = {
+      html_url: "https://github.com/acme/widget/actions/runs/2/job/9",
+      name: "test",
+      status: "completed",
+      conclusion: "failure",
+      workflow_name: "CI",
+      head_branch: "main",
+      head_sha: "abc123def456",
+    };
+    const msg = formatEvent(
+      route,
+      event("workflow_job", { workflow_job: job, repository: repo, sender }),
+    );
+    expect(msg.title).toBe("acme/widget: Job test — failure");
+    expect(msg.fields![0].value).toBe("❌ failure");
+    expect(msg.fields![1].value).toBe("test");
+    expect(msg.fields![2].value).toBe("CI");
+    expect(msg.fields![3].value).toBe("`main`");
+    expect(msg.fields![4].value).toBe("`abc123d`");
+  });
+
+  it("status shows context, state and commit", () => {
+    const msg = formatEvent(
+      route,
+      event("status", {
+        state: "pending",
+        context: "continuous-integration/travis-ci",
+        description: "The Travis CI build is in progress",
+        target_url: "https://travis-ci.org/acme/widget/builds/1",
+        sha: "abc123def456",
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(msg.title).toBe("acme/widget: continuous-integration/travis-ci — pending");
+    expect(msg.fields![0].value).toBe("⏳ pending");
+    expect(msg.fields![1].value).toBe("continuous-integration/travis-ci");
+    expect(msg.fields![2].value).toBe("`abc123d`");
+    expect(msg.fields![3].value).toBe("The Travis CI build is in progress");
+  });
+
+  it("deployment shows environment, branch and commit", () => {
+    const deployment = {
+      environment: "production",
+      ref: "refs/heads/main",
+      sha: "abc123def456",
+      description: "Deploy request from octocat",
+      html_url: "https://github.com/acme/widget/deployments/1",
+    };
+    const msg = formatEvent(
+      route,
+      event("deployment", { deployment, repository: repo, sender }),
+    );
+    expect(msg.title).toBe("acme/widget: Deployment to `production` — created");
+    expect(msg.fields![0].value).toBe("🚀 created");
+    expect(msg.fields![1].value).toBe("production");
+    expect(msg.fields![2].value).toBe("`main`");
+    expect(msg.fields![3].value).toBe("`abc123d`");
+  });
+
+  it("ping shows the webhook confirmation", () => {
+    const msg = formatEvent(
+      route,
+      event("ping", { zen: "Keep it logically awesome.", hook_id: 1, repository: repo, sender }),
+    );
+    expect(msg.title).toBe("acme/widget: Webhook ping");
+    expect(msg.fields![0].value).toBe("1");
+  });
+
   it("unknown events fall back to repo: event: action", () => {
     const msg = formatEvent(
       route,
