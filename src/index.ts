@@ -1,10 +1,7 @@
 import { createServer } from "./server";
-import { initGateway } from "./discord";
-import { DiscordGateway } from "./discord-gateway";
+import { syncCommands } from "./discord-interactions";
 import type { Env } from "./types";
 import { log } from "./log";
-
-export { DiscordGateway };
 
 const app = createServer();
 
@@ -15,9 +12,9 @@ export default {
 
   async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     try {
-      await initGateway(env);
+      await syncCommands(env);
     } catch (err) {
-      log.error({ err }, "Gateway init from cron failed");
+      log.error({ err }, "Discord command sync from cron failed");
     }
   },
 };

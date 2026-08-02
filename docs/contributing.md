@@ -14,14 +14,14 @@ npm run dev                  # Start local dev server
 
 ```text
 src/
-├── index.ts              # CF Workers entry (fetch + scheduled), exports DiscordGateway DO
+├── index.ts              # CF Workers entry (fetch + scheduled), scheduled = command sync
 ├── types.ts              # Env, Config, Route, Filter, WebhookEvent, FormattedMessage
 ├── config.ts             # Loads routes from KV (returns [] if unset), builds Config from env
-├── server.ts             # Hono app: /health, /webhook, mounts /auth, /admin + /
+├── server.ts             # Hono app: /health, /webhook, /discord/interactions, mounts /auth, /admin + /
 ├── webhook.ts            # HMAC verify (Web Crypto), parseEvent, extractBranch, matchRoute
-├── discord.ts            # Dispatch via Discord REST (DO RPC when gateway enabled), initGateway (scheduled)
+├── discord.ts            # Dispatch to Discord via REST (sendMessage)
 ├── discord-rest.ts       # Discord REST sendMessage with retry + rate-limit handling
-├── discord-gateway.ts    # Durable Object: Discord Gateway WS, heartbeat, channel cache, send
+├── discord-interactions.ts # Ed25519 verify + interaction handlers (/gh, buttons, modals) + command registration
 ├── formatter.ts          # 23 event formatters + generic fallback
 ├── github-oauth.ts       # OAuth URL, callback token exchange, getUserOctokit
 ├── oauth-routes.ts       # GET /auth/github, callback, DELETE /token/:userId (KV state)

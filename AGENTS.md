@@ -2,17 +2,17 @@
 
 ## Project Purpose
 
-Cloudflare Worker that receives GitHub webhooks and dispatches processed events to Discord channels/threads via a Durable Object-maintained Gateway connection.
+Cloudflare Worker that receives GitHub webhooks and dispatches processed events to Discord channels/threads, and receives Discord interactions (slash commands, buttons, modals) via the Interactions Endpoint.
 
-Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Durable Object (Discord Gateway) → Discord
+Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord (REST)
 
 ## Key Decisions
 
 - Runtime: Cloudflare Workers
 - HTTP framework: Hono
-- Discord Gateway: optional (`DISCORD_GATEWAY_ENABLED=true`); only keeps bot online — messages always sent via REST
+- Discord interactions: HTTPS Interactions Endpoint (`POST /discord/interactions`, Ed25519-signed) — no Discord Gateway / Durable Object; bot stays offline, messages always sent via REST
 - Storage: Cloudflare KV (tokens, OAuth state, route config, admin sessions)
-- Signature verification: Web Crypto API (HMAC-SHA256, timing-safe)
+- Signature verification: Web Crypto API (HMAC-SHA256 for GitHub, Ed25519 for Discord)
 - GitHub OAuth: octokit + jose (JWT)
 - Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist
 - Local dev: wrangler + Miniflare
@@ -21,14 +21,14 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Durable 
 
 ```text
 src/
-├── index.ts              # CF Workers entry (fetch + scheduled), exports DiscordGateway DO
+├── index.ts              # CF Workers entry (fetch + scheduled), scheduled = command sync
 ├── types.ts              # Env, Config, Route, Filter, WebhookEvent, FormattedMessage
 ├── config.ts             # loadRoutes/saveRoutes (KV config:routes, cache w/ 60s TTL), loadConfig from env
-├── server.ts             # Hono app: /health, /webhook, mounts /auth, /admin + /
+├── server.ts             # Hono app: /health, /webhook, /discord/interactions, mounts /auth, /admin + /
 ├── webhook.ts            # HMAC verify (Web Crypto), parseEvent, extractBranch, matchRoute
-├── discord.ts            # Dispatch via REST (or DO RPC when gateway enabled), initGateway (scheduled)
+├── discord.ts            # Dispatch to Discord via REST (sendMessage)
 ├── discord-rest.ts       # Discord REST sendMessage with retry + rate-limit handling
-├── discord-gateway.ts    # Optional Durable Object: Discord Gateway WS, heartbeat, channel cache, send
+├── discord-interactions.ts # Ed25519 verify + interaction handlers (/gh, buttons, modals) + command registration
 ├── formatter.ts          # 24 event formatters + generic fallback (~1570 lines)
 ├── github-oauth.ts       # OAuth URL, callback token exchange, getUserOctokit
 ├── oauth-routes.ts       # GET /auth/github, callback (sets admin session if redirect=/admin), DELETE /token/:userId
@@ -43,10 +43,12 @@ src/
 ## Responsibilities
 
 - Verify GitHub webhook signatures (Web Crypto HMAC-SHA256)
+- Verify Discord interactions (Web Crypto Ed25519, X-Signature-Ed25519 over timestamp + body)
 - Filter events by: event type, repo name, actor, action, branch, keyword (regex supported)
 - Format 23+ event types as Discord embeds
-- Route messages to Discord channels/threads via Durable Object RPC
-- Maintain Discord Gateway connection with heartbeat and alarm-based keepalive
+- Route messages to Discord channels/threads via REST
+- Serve `/gh` slash commands + message context-menu commands + PR merge/close buttons + comment modals
+- Sync application commands from the scheduled trigger (global ~1h propagation + per-guild instant)
 
 ## Message Format Spec
 
@@ -76,13 +78,20 @@ npm run lint          # ESLint
 - **Production**: `wrangler secret put <NAME>` for each secret
 - **Routes**: KV key `config:routes` (JSON array, empty until configured)
 - **KV namespace**: Required binding for token/state/config storage
+- **Discord**: `DISCORD_PUBLIC_KEY` (Interactions Endpoint signature verification, from Discord Developer Portal) and `DISCORD_APPLICATION_ID` (optional, auto-resolved via `GET /oauth2/applications/@me` when omitted) are required for interactions
 
 ## Deployment
 
 ```bash
 npx wrangler secret put GITHUB_WEBHOOK_SECRET
 npx wrangler secret put DISCORD_TOKEN
+npx wrangler secret put DISCORD_PUBLIC_KEY
 npx wrangler kv namespace create KV
 # Update wrangler.jsonc with KV ID
 npx wrangler deploy
 ```
+
+## Notes
+
+- Commands sync from the scheduled trigger (`*/5 * * * *`): registered per-guild for instant availability and globally (24h dedup, ~1h propagation).
+- The bot is always offline (no Discord Gateway); interactions arrive via the HTTP endpoint.

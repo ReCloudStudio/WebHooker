@@ -3,9 +3,6 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2025-01-01",
 	"compatibility_flags": [],
-	"vars": {
-		"DISCORD_GATEWAY_ENABLED": "true"
-	},
 	"build": {
 		"command": "cd admin && bun install --frozen-lockfile && bun run generate"
 	},
@@ -20,18 +17,10 @@
 			"*/5 * * * *"
 		]
 	},
-	"durable_objects": {
-		"bindings": [
-			{
-				"name": "DISCORD_GATEWAY",
-				"class_name": "DiscordGateway",
-			},
-		],
-	},
 	"migrations": [
 		{
-			"tag": "v1",
-			"new_sqlite_classes": [
+			"tag": "v2",
+			"deleted_classes": [
 				"DiscordGateway"
 			],
 		},

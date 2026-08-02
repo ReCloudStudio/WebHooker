@@ -1,6 +1,6 @@
 # Introduction
 
-WebHooker is a GitHub webhook dispatcher built on Cloudflare Workers. It receives GitHub webhook events, applies configurable filters, formats them into rich Discord embeds, and delivers them to Discord channels or threads through the Discord REST API. An optional Durable Object holds a Gateway connection to keep the bot online and power the in-Discord `/gh` commands. Routes are managed through a built-in Web UI.
+WebHooker is a GitHub webhook dispatcher built on Cloudflare Workers. It receives GitHub webhook events, applies configurable filters, formats them into rich Discord embeds, and delivers them to Discord channels or threads through the Discord REST API. In-Discord `/gh` interactions arrive via an HTTPS Interactions Endpoint (Ed25519-verified). Routes are managed through a built-in Web UI.
 
 ## Architecture
 
@@ -10,9 +10,9 @@ GitHub Webhook → Cloudflare Worker (Hono)
                  ├── GET  /auth/github → OAuth flow
                  ├── POST /api/* → user actions (Bearer token auth)
                  ├── /admin → routes & send-log Web UI (admin session)
-                 └── GET  /health → status check
+                  └── GET  /health → status check
 
-(optional) Durable Object ⇄ Discord Gateway  →  bot online + /gh slash & context commands
+POST /discord/interactions → verify (Ed25519) → handle /gh slash & context commands
 ```
 
 ### Components
@@ -20,7 +20,7 @@ GitHub Webhook → Cloudflare Worker (Hono)
 | Component                           | Role                                                                                                                     |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | **Cloudflare Worker**               | HTTP ingress, signature verification, delivery dedup, event parsing, route matching, REST send                           |
-| **Durable Object (DiscordGateway)** | _Optional._ Keeps the Gateway connection alive (bot online) and handles `/gh` interactions                               |
+| **Interactions Endpoint**            | Verifies Ed25519 signatures and handles `/gh` interactions (slash commands, context-menu commands, buttons, modals) |
 | **KV**                              | Token storage (`token:{userId}`), OAuth state (`state:{hex}`), route config (`config:routes`), send logs, delivery dedup |
 
 ### Data Flow
@@ -37,7 +37,7 @@ GitHub Webhook → Cloudflare Worker (Hono)
 
 - **Runtime**: Cloudflare Workers
 - **HTTP Framework**: Hono
-- **Discord delivery**: Discord REST API (Gateway via optional Durable Object for online status + `/gh` commands)
+- **Discord delivery**: Discord REST API (interactions via an Ed25519-verified HTTPS Interactions Endpoint)
 - **Web UI**: Nuxt 3 static SPA served from Worker assets
 - **Storage**: Cloudflare KV
 - **Auth**: Web Crypto API (HMAC-SHA256), jose (JWT), octokit (GitHub API)

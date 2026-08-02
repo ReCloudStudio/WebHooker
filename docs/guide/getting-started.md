@@ -34,12 +34,13 @@ GITHUB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 GITHUB_CLIENT_ID=your-client-id
 GITHUB_CLIENT_SECRET=your-client-secret
 DISCORD_TOKEN=your-bot-token
+DISCORD_PUBLIC_KEY=your-public-key
 ADMIN_USER_IDS=your-github-id,your-github-login
 BASE_URL=http://localhost:8787
 ```
 
 ::: tip
-`GITHUB_PRIVATE_KEY` must be in **PKCS#8** format (`BEGIN PRIVATE KEY`). Convert a GitHub-issued PKCS#1 key with `openssl pkcs8 -topk8 -nocrypt -in app.pem -out pkcs8.pem`. Target channels are set per route in the Web UI, so no `DISCORD_CHANNEL_ID` is needed. To keep the bot online and enable `/gh` slash commands locally, also set `DISCORD_GATEWAY_ENABLED=true`.
+`GITHUB_PRIVATE_KEY` must be in **PKCS#8** format (`BEGIN PRIVATE KEY`). Convert a GitHub-issued PKCS#1 key with `openssl pkcs8 -nocrypt -in app.pem -out pkcs8.pem`. Target channels are set per route in the Web UI, so no `DISCORD_CHANNEL_ID` is needed. To enable `/gh` commands locally, copy the **Public Key** from the Developer Portal into `DISCORD_PUBLIC_KEY` and set the Interactions Endpoint URL to `http://localhost:8787/discord/interactions`.
 :::
 
 ::: warning

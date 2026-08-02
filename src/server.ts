@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Env } from "./types";
 import { verifySignature, parseEvent } from "./webhook";
 import { dispatchEvent } from "./discord";
+import { handleInteractionRequest } from "./discord-interactions";
 import { createOAuthRoutes } from "./oauth-routes";
 import { createActionRoutes } from "./action-routes";
 import { createAdminRoutes } from "./admin-routes";
@@ -67,6 +68,8 @@ export function createServer(): Hono<{ Bindings: Env }> {
 
     return c.json({ ok: true });
   });
+
+  app.post("/discord/interactions", (c) => handleInteractionRequest(c.req.raw, c.env));
 
   app.notFound((c) => {
     if (c.env.ASSETS) {

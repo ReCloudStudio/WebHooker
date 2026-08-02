@@ -42,7 +42,6 @@ function createEnv(overrides: Partial<Env> = {}): Env {
   return {
     GITHUB_WEBHOOK_SECRET: "secret",
     KV: createMockKV(),
-    DISCORD_GATEWAY: {} as DurableObjectNamespace,
     ...overrides,
   };
 }

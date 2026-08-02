@@ -34,12 +34,13 @@ GITHUB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 GITHUB_CLIENT_ID=your-client-id
 GITHUB_CLIENT_SECRET=your-client-secret
 DISCORD_TOKEN=your-bot-token
+DISCORD_PUBLIC_KEY=your-public-key
 ADMIN_USER_IDS=your-github-id,your-github-login
 BASE_URL=http://localhost:8787
 ```
 
 ::: tip
-`GITHUB_PRIVATE_KEY` 必须是 **PKCS#8** 格式（`BEGIN PRIVATE KEY`）。用 `openssl pkcs8 -topk8 -nocrypt -in app.pem -out pkcs8.pem` 转换 GitHub 下发的 PKCS#1 私钥。目标频道在 Web UI 中按路由设置，因此不需要 `DISCORD_CHANNEL_ID`。若要让 Bot 保持在线并在本地启用 `/gh` 斜杠命令，可额外设置 `DISCORD_GATEWAY_ENABLED=true`。
+`GITHUB_PRIVATE_KEY` 必须是 **PKCS#8** 格式（`BEGIN PRIVATE KEY`）。用 `openssl pkcs8 -nocrypt -in app.pem -out pkcs8.pem` 转换 GitHub 下发的 PKCS#1 私钥。目标频道在 Web UI 中按路由设置，因此不需要 `DISCORD_CHANNEL_ID`。若要在本地启用 `/gh` 命令，请在开发者门户复制 **Public Key** 填入 `DISCORD_PUBLIC_KEY`，并把 Interactions Endpoint URL 设为 `http://localhost:8787/discord/interactions`。
 :::
 
 ::: warning

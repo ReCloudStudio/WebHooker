@@ -11,7 +11,7 @@ GitHub webhook → Discord 分发服务。通过 Cloudflare Workers 接收 webho
 - 路由到频道或子区
 - GitHub App OAuth 用户授权（评论、合并、反应）
 - **Web 配置控制台**（`/admin`）— 通过 GitHub OAuth + 管理员白名单管理路由
-- Durable Object 维持 Discord Gateway WebSocket 连接 + 频道缓存
+- **Discord Interactions Endpoint**（Ed25519 验签）支持 `/gh` 斜杠命令、消息右键菜单命令、PR 合并/关闭按钮与评论 modal
 - Cloudflare KV 存储 token/状态/配置
 - 优雅降级（Discord 不可用时仅 webhook 模式）
 
@@ -19,14 +19,15 @@ GitHub webhook → Discord 分发服务。通过 Cloudflare Workers 接收 webho
 
 ```text
 GitHub Webhook → Cloudflare Worker (Hono)
-                 ├── POST /webhook → 验证 → 过滤 → 格式化 → DO (Discord Gateway) → Discord
+                 ├── POST /webhook → 验证 → 过滤 → 格式化 → Discord (REST)
+                 ├── POST /discord/interactions → 验证 (Ed25519) → 处理命令/按钮/modal
                  ├── GET  /auth/github → OAuth 流程
                  ├── POST /api/* → 用户操作（Bearer token 鉴权）
                  └── GET  /health → 健康检查
 ```
 
 - **Cloudflare Worker** — HTTP 入口、签名验证、路由分发
-- **Durable Object (DiscordGateway)** — 持久 WebSocket 连接 Discord Gateway、频道缓存、消息发送（含重试）
+- **Interactions Endpoint** — HTTPS 回调（无 Discord Gateway 连接、无 Durable Object）；bot 保持离线，命令通过 API 注册
 - **KV** — Token 存储（`token:{userId}`）、OAuth state（`state:{hex}`）、路由配置（`config:routes`）
 
 ## 快速开始
@@ -49,9 +50,10 @@ npx wrangler dev     # 启动本地开发服务器
 | `GITHUB_CLIENT_ID`        | OAuth Client ID                                                            |
 | `GITHUB_CLIENT_SECRET`    | OAuth Client Secret                                                        |
 | `DISCORD_TOKEN`           | 机器人 token                                                               |
+| `DISCORD_PUBLIC_KEY`      | Discord 应用的公钥（开发者门户获取）—— 交互功能必需                         |
+| `DISCORD_APPLICATION_ID`  | Discord 应用 ID（可选；省略时通过 `GET /oauth2/applications/@me` 自动获取） |
 | `BASE_URL`                | 公网地址（用于 OAuth 回调）                                                |
 | `ADMIN_USER_IDS`          | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                  |
-| `DISCORD_GATEWAY_ENABLED` | 设为 `true` 启用 Discord Gateway（bot 在线状态）；不启用也能通过 REST 推送 |
 
 ### 路由配置
 
@@ -172,20 +174,15 @@ npx wrangler dev     # 启动本地开发服务器
 https://discord.com/oauth2/authorize?client_id=你的机器人CLIENT_ID&permissions=274877910016&scope=bot+applications.commands
 ```
 
-### Intents
+### Interactions Endpoint
 
-Gateway 连接仅使用 **GUILDS** intent（`1 << 0`）。无需特权 intent（如 Message Content）。
+将应用的 **Public Key**（开发者门户 → General Information）复制到 `DISCORD_PUBLIC_KEY`，并将 **Interactions Endpoint URL** 设为 `https://your-domain/discord/interactions`。所有交互（斜杠命令、按钮、modal）均通过 Ed25519 签名验证。
 
-### Gateway（可选）
-
-Discord Gateway 连接仅用于让 bot 显示为**在线**——发送消息**不需要**它。消息通过 Discord REST API 发送，因此只要有 `DISCORD_TOKEN` 即可推送。
-
-- `DISCORD_GATEWAY_ENABLED=false`（默认）：直接通过 REST 发送消息，不建立 Gateway 连接。
-- `DISCORD_GATEWAY_ENABLED=true`：由 Durable Object 连接 Gateway 以维持 bot 在线状态；消息仍走 REST。
+bot 从不连接 Discord Gateway，因此显示为**离线**——消息推送不受影响（始终走 REST）。
 
 ### Bot 指令（以本人身份评论 GitHub）
 
-启用 Gateway 后，bot 会在连接时为每个服务器注册原生的**斜杠命令**与**消息右键菜单命令**。评论以**你本人**绑定的 GitHub 账号（OAuth）发出，权限交由 GitHub 判定——若 GitHub 拒绝（例如去修改他人评论），bot 会提示你无权限。所有回复均为 ephemeral（仅你可见）。
+bot 通过定时任务（每 5 分钟）同步注册原生的**斜杠命令**与**消息右键菜单命令**：按服务器注册以获得即时可用性，并全局注册（24h 去重，约 1 小时传播）。评论以**你本人**绑定的 GitHub 账号（OAuth）发出，权限交由 GitHub 判定——若 GitHub 拒绝（例如去修改他人评论），bot 会提示你无权限。所有回复均为 ephemeral（仅你可见）。
 
 **1. 绑定账号**（一次即可）：
 
@@ -215,7 +212,7 @@ Discord Gateway 连接仅用于让 bot 显示为**在线**——发送消息**�
 
 | 项目         | 说明                                                             |
 | ------------ | ---------------------------------------------------------------- |
-| 启用 Gateway | `DISCORD_GATEWAY_ENABLED=true`（交互通过 Gateway 送达）          |
+| Public Key      | 已配置 `DISCORD_PUBLIC_KEY` 且已设置 Interactions Endpoint URL            |
 | 邀请 scope   | 邀请时带上 `applications.commands`（见上方邀请链接）             |
 | OAuth        | 已配置 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 与 `BASE_URL` |
 | 用户绑定     | 每个用户先执行 `/gh login`                                       |
@@ -230,6 +227,7 @@ npx wrangler secret put GITHUB_PRIVATE_KEY
 npx wrangler secret put GITHUB_CLIENT_ID
 npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler secret put DISCORD_TOKEN
+npx wrangler secret put DISCORD_PUBLIC_KEY
 npx wrangler secret put DISCORD_CHANNEL_ID
 
 # 创建 KV 命名空间

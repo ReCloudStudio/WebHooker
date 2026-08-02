@@ -14,14 +14,14 @@ npm run dev                  # 启动本地开发服务器
 
 ```text
 src/
-├── index.ts              # CF Workers 入口 (fetch + scheduled)，导出 DiscordGateway DO
+├── index.ts              # CF Workers 入口 (fetch + scheduled)，scheduled = 命令同步
 ├── types.ts              # Env、Config、Route、Filter、WebhookEvent、FormattedMessage
 ├── config.ts             # 从 KV 加载路由（未设置时返回 []），从 env 构建 Config
-├── server.ts             # Hono 应用: /health、/webhook，挂载 /auth、/admin + /
+├── server.ts             # Hono 应用: /health、/webhook、/discord/interactions，挂载 /auth、/admin + /
 ├── webhook.ts            # HMAC 验证 (Web Crypto)、parseEvent、extractBranch、matchRoute
-├── discord.ts            # 通过 Discord REST 分发（启用 Gateway 时走 DO RPC）、initGateway (scheduled)
+├── discord.ts            # 通过 Discord REST 分发 (sendMessage)
 ├── discord-rest.ts       # Discord REST sendMessage，带重试和限流处理
-├── discord-gateway.ts    # Durable Object: Discord Gateway WS、心跳、频道缓存、发送
+├── discord-interactions.ts # Ed25519 验签 + 交互处理 (/gh、按钮、modal) + 命令注册
 ├── formatter.ts          # 23 种事件格式化器 + 通用回退
 ├── github-oauth.ts       # OAuth URL、回调 Token 交换、getUserOctokit
 ├── oauth-routes.ts       # GET /auth/github、回调、DELETE /token/:userId (KV 状态)

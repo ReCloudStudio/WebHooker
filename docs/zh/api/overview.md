@@ -14,6 +14,7 @@ https://your-worker.workers.dev
 | -------- | ------------------------------ | ------------ | ------------------------ |
 | `GET`    | `/health`                      | 无           | 健康检查                 |
 | `POST`   | `/webhook`                     | HMAC 签名    | GitHub webhook 接入      |
+| `POST`   | `/discord/interactions`        | Ed25519 签名 | Discord 交互（斜杠命令、按钮、modal） |
 | `GET`    | `/auth/github`                 | 无           | 启动 GitHub OAuth 流程   |
 | `GET`    | `/auth/github/callback`        | 无           | OAuth 回调               |
 | `DELETE` | `/auth/token/:userId`          | 无           | 撤销用户 Token           |

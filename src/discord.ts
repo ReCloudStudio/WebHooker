@@ -7,28 +7,6 @@ import { sendMessage } from "./discord-rest";
 import { recordSend } from "./send-log";
 import { loadGroups, groupAcceptsOwners } from "./groups";
 
-export function isGatewayEnabled(env: Env): boolean {
-  return env.DISCORD_GATEWAY_ENABLED === "true";
-}
-
-async function getGatewayProxy(env: Env): Promise<DurableObjectStub> {
-  const id = env.DISCORD_GATEWAY.idFromName("discord-gateway");
-  return env.DISCORD_GATEWAY.get(id);
-}
-
-export async function initGateway(env: Env): Promise<void> {
-  if (!isGatewayEnabled(env)) return;
-  if (!env.DISCORD_TOKEN) return;
-  const stub = await getGatewayProxy(env);
-  await stub.fetch(
-    new Request("https://do.internal", {
-      method: "POST",
-      body: JSON.stringify({ action: "start", token: env.DISCORD_TOKEN }),
-    }),
-  );
-  log.info("Discord Gateway DO started");
-}
-
 export async function dispatchEvent(config: Config, event: WebhookEvent, env: Env): Promise<void> {
   const langs = [...new Set(config.routes.map((r) => r.lang ?? "en"))];
   const trMap = new Map<string, Translations>();
@@ -105,21 +83,6 @@ async function sendToChannel(
   threadId?: string,
 ): Promise<void> {
   const token = env.DISCORD_TOKEN ?? "";
-  if (!isGatewayEnabled(env)) {
-    const result = await sendMessage(token, channelId, message, threadId);
-    if (!result.ok) throw new Error(result.error ?? "Send failed");
-    return;
-  }
-
-  const stub = await getGatewayProxy(env);
-  const res = await stub.fetch(
-    new Request("https://do.internal", {
-      method: "POST",
-      body: JSON.stringify({ action: "send", channelId, message, threadId }),
-    }),
-  );
-  const result = (await res.json()) as { ok: boolean; error?: string };
-  if (!result.ok) {
-    throw new Error(result.error ?? "Send failed");
-  }
+  const result = await sendMessage(token, channelId, message, threadId);
+  if (!result.ok) throw new Error(result.error ?? "Send failed");
 }

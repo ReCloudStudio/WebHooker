@@ -30,6 +30,7 @@ npx wrangler secret put GITHUB_PRIVATE_KEY   # PKCS#8 PEM（BEGIN PRIVATE KEY）
 npx wrangler secret put GITHUB_CLIENT_ID
 npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler secret put DISCORD_TOKEN
+npx wrangler secret put DISCORD_PUBLIC_KEY   # Discord 应用的公钥（开发者门户获取），交互功能必需
 npx wrangler secret put ADMIN_USER_IDS       # 逗号分隔的 GitHub ID/登录名，允许进入 Web UI
 ```
 
@@ -48,7 +49,7 @@ openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
 然后将 `gh_pk_pkcs8.pem` 作为 `GITHUB_PRIVATE_KEY` 上传。
 :::
 
-Discord Gateway 是可选的。在 `wrangler.jsonc` 的 `vars` 中设置 `DISCORD_GATEWAY_ENABLED`（默认为 `"false"`）。参见下方 [Gateway（可选）](#gateway可选)。
+Discord 交互通过 HTTPS Interactions Endpoint 送达，需要设置 `DISCORD_PUBLIC_KEY` 并把 **Interactions Endpoint URL** 指向 `https://your-domain/discord/interactions`。参见下方 [Interactions Endpoint](#interactions-endpoint)。
 
 ### 3. 部署
 
@@ -106,14 +107,17 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
 
 5. 在 Web UI（`/admin`）中**按路由**配置目标频道——无需全局频道 ID。
 
-### Gateway（可选）
+### Interactions Endpoint
 
-消息通过 Discord **REST API** 发送，因此仅凭 `DISCORD_TOKEN` 即可推送。Gateway 连接仅用于：(a) 让 Bot 显示为**在线**，(b) 启用 Discord 内的斜杠 / 右键菜单命令。
+消息通过 Discord **REST API** 发送，因此仅凭 `DISCORD_TOKEN` 即可推送。交互（斜杠命令、按钮、modal）则通过 HTTPS Interactions Endpoint 送达：
 
-- `DISCORD_GATEWAY_ENABLED=false`（默认）：仅 REST，不建立 Gateway 连接。
-- `DISCORD_GATEWAY_ENABLED=true`：由一个 Durable Object 持有 Gateway 连接，并按服务器注册 `/gh` 斜杠命令以及 `GitHub: 添加/编辑/删除评论` 消息命令。
+1. 在 Discord 开发者门户 → General Information 复制应用的 **Public Key**，填入 `DISCORD_PUBLIC_KEY`。
+2. 将 **Interactions Endpoint URL** 设为 `https://your-domain/discord/interactions`。
+3. 所有交互请求都使用 Ed25519 签名验证（`X-Signature-Ed25519` 覆盖 `X-Signature-Timestamp + body`）。
 
-启用后，用户运行 `/gh login` 绑定自己的 GitHub 账号，即可以本人身份评论 issue/PR。完整命令说明见 [README](https://github.com/ReCloudStudio/WebHooker#bot-commands-comment-on-github-as-yourself)。
+`/gh` 斜杠命令与 `GitHub: 添加/编辑/删除评论` 消息命令由定时任务（每 5 分钟）同步注册：按服务器即时可用，同时全局注册（24h 去重，约 1 小时传播）。Bot 从不连接 Discord Gateway，因此显示为**离线**——消息推送不受影响（始终走 REST）。
+
+用户运行 `/gh login` 绑定自己的 GitHub 账号，即可以本人身份评论 issue/PR。完整命令说明见 [README](https://github.com/ReCloudStudio/WebHooker#bot-commands-comment-on-github-as-yourself)。
 
 ## 自定义域名（可选）
 
@@ -132,4 +136,4 @@ docker build -t webhooker .
 docker run -p 8787:8787 --env-file .env webhooker
 ```
 
-注意：Docker 模式下不包含 Durable Objects 和 KV。完整功能请使用 Cloudflare 部署。
+注意：Docker 模式下不包含 KV 等 Cloudflare 存储。完整功能请使用 Cloudflare 部署。

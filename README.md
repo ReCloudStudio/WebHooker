@@ -11,7 +11,7 @@ GitHub webhook → Discord dispatcher. Receives webhook events via Cloudflare Wo
 - Route to channels or threads
 - GitHub App OAuth for user actions (comment, merge, react)
 - **Web UI config console** (`/admin`) — manage routes with GitHub OAuth + admin whitelist
-- Durable Object for persistent Discord Gateway connection + channel cache
+- **Discord Interactions Endpoint** (Ed25519-verified) for `/gh` slash commands, message context-menu commands, PR merge/close buttons, and comment modals
 - Cloudflare KV for token/state/config storage
 - Graceful degradation (webhook-only mode if Discord unavailable)
 
@@ -19,14 +19,15 @@ GitHub webhook → Discord dispatcher. Receives webhook events via Cloudflare Wo
 
 ```text
 GitHub Webhook → Cloudflare Worker (Hono)
-                 ├── POST /webhook → verify → filter → format → DO (Discord Gateway) → Discord
+                 ├── POST /webhook → verify → filter → format → Discord (REST)
+                 ├── POST /discord/interactions → verify (Ed25519) → handle command/button/modal
                  ├── GET  /auth/github → OAuth flow
                  ├── POST /api/* → user actions (Bearer token auth)
                  └── GET  /health → status check
 ```
 
-- **Cloudflare Worker** — HTTP ingress, signature verification, routing
-- **Durable Object (DiscordGateway)** — Persistent WebSocket to Discord Gateway, channel cache, message dispatch with retry
+- **Cloudflare Worker** — HTTP ingress, signature verification, routing, Discord REST dispatch
+- **Interactions Endpoint** — HTTPS callback (no Discord Gateway connection, no Durable Object); the bot stays offline and commands are registered via the API
 - **KV** — Token storage (`token:{userId}`), OAuth state (`state:{hex}`), route config (`config:routes`)
 
 ## Quick Start
@@ -49,9 +50,10 @@ npx wrangler dev     # Start local dev server
 | `GITHUB_CLIENT_ID`        | OAuth client ID                                                                               |
 | `GITHUB_CLIENT_SECRET`    | OAuth client secret                                                                           |
 | `DISCORD_TOKEN`           | Bot token                                                                                     |
+| `DISCORD_PUBLIC_KEY`      | Discord application public key (from the Developer Portal) — required for interactions        |
+| `DISCORD_APPLICATION_ID`  | Discord application id (optional; auto-resolved via `GET /oauth2/applications/@me` if omitted) |
 | `BASE_URL`                | Public URL for OAuth callbacks                                                                |
 | `ADMIN_USER_IDS`          | Comma-separated GitHub user IDs (or logins) allowed to access `/admin`                        |
-| `DISCORD_GATEWAY_ENABLED` | `true` to enable the Discord Gateway (bot online status); messaging works without it via REST |
 
 ### Routes
 
@@ -173,20 +175,15 @@ Invite URL (replace `CLIENT_ID` with your bot's client ID). The `applications.co
 https://discord.com/oauth2/authorize?client_id=YOUR_BOT_CLIENT_ID&permissions=274877910016&scope=bot+applications.commands
 ```
 
-### Intents
+### Interactions Endpoint
 
-The Gateway connection uses the **GUILDS** intent only (`1 << 0`). No privileged intents (e.g. Message Content) are required.
+Copy the application **Public Key** (Developer Portal → General Information) to `DISCORD_PUBLIC_KEY` and set the **Interactions Endpoint URL** to `https://your-domain/discord/interactions`. All interactions (slash commands, buttons, modals) are verified with Ed25519 signatures.
 
-### Gateway (optional)
-
-The Discord Gateway connection only keeps the bot showing as **online** — it is **not** required for sending messages. Messages are sent via the Discord REST API, so push works with just `DISCORD_TOKEN`.
-
-- `DISCORD_GATEWAY_ENABLED=false` (default): messages are sent directly via REST; the Gateway is not connected.
-- `DISCORD_GATEWAY_ENABLED=true`: the Durable Object connects to the Gateway to keep the bot online; messages are still sent via REST.
+The bot never connects to the Discord Gateway, so it shows as **offline** — messaging is unaffected (always REST).
 
 ### Bot Commands (comment on GitHub as yourself)
 
-When the Gateway is enabled, the bot registers native **slash** and **message context-menu** commands per guild on connect. Comments are posted using **your own** linked GitHub account (OAuth), and permission is delegated to GitHub — if GitHub rejects the action (e.g. editing someone else's comment) the bot tells you so. All replies are ephemeral (only you see them).
+The bot registers native **slash** and **message context-menu** commands, synced by the scheduled trigger (every 5 minutes): per-guild for instant availability, and globally (24h dedup, ~1h propagation). Comments are posted using **your own** linked GitHub account (OAuth), and permission is delegated to GitHub — if GitHub rejects the action (e.g. editing someone else's comment) the bot tells you so. All replies are ephemeral (only you see them).
 
 **1. Link your account** (once):
 
@@ -214,12 +211,12 @@ When the Gateway is enabled, the bot registers native **slash** and **message co
 
 **Requirements:**
 
-| Item            | How                                                                   |
-| --------------- | --------------------------------------------------------------------- |
-| Gateway enabled | `DISCORD_GATEWAY_ENABLED=true` (interactions arrive over the Gateway) |
-| Invite scope    | Bot invited with `applications.commands` (see invite URL above)       |
-| OAuth           | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` and `BASE_URL` configured |
-| User linked     | Each user runs `/gh login` first                                      |
+| Item             | How                                                               |
+| ---------------- | ----------------------------------------------------------------- |
+| Public key       | `DISCORD_PUBLIC_KEY` set + Interactions Endpoint URL configured   |
+| Invite scope     | Bot invited with `applications.commands` (see invite URL above)   |
+| OAuth            | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` and `BASE_URL` configured |
+| User linked      | Each user runs `/gh login` first                                  |
 
 ## Deployment
 
@@ -231,6 +228,7 @@ npx wrangler secret put GITHUB_PRIVATE_KEY
 npx wrangler secret put GITHUB_CLIENT_ID
 npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler secret put DISCORD_TOKEN
+npx wrangler secret put DISCORD_PUBLIC_KEY
 npx wrangler secret put DISCORD_CHANNEL_ID
 
 # Create KV namespace

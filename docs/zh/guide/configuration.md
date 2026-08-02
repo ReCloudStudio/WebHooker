@@ -17,11 +17,12 @@ WebHooker 需要多个密钥才能运行。本地开发时存储在 `.dev.vars` 
 
 ### 可选密钥
 
-| 变量                      | 说明                                                                       | 默认值                  |
-| ------------------------- | -------------------------------------------------------------------------- | ----------------------- |
-| `BASE_URL`                | OAuth 回调的公开 URL                                                       | `http://localhost:8787` |
-| `ADMIN_USER_IDS`          | 允许访问 WebUI 的 GitHub 用户 ID（或登录名），逗号分隔                     | 未设置时 WebUI 关闭     |
-| `DISCORD_GATEWAY_ENABLED` | 设为 `true` 连接 Discord Gateway（bot 在线状态）；不启用也能通过 REST 推送 | `false`                 |
+| 变量                     | 说明                                                   | 默认值                  |
+| ------------------------ | ------------------------------------------------------ | ----------------------- |
+| `BASE_URL`               | OAuth 回调的公开 URL                                   | `http://localhost:8787` |
+| `ADMIN_USER_IDS`         | 允许访问 WebUI 的 GitHub 用户 ID（或登录名），逗号分隔 | 未设置时 WebUI 关闭     |
+| `DISCORD_PUBLIC_KEY`     | Discord 应用的公钥（开发者门户获取），交互功能必需     | 未设置时交互返回 401    |
+| `DISCORD_APPLICATION_ID` | Discord 应用 ID；省略时自动获取                        | 自动获取                |
 
 ## Web 控制台
 
@@ -181,3 +182,6 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 | `state:{hex}`            | `{ redirectTo, expiresAt, discordUserId? }`         | 600 秒             |
 | `delivery:{id}`          | Webhook 投递 id（去重标记）                         | 300 秒             |
 | `logs:send:{ts}-{hex}`   | 发送记录                                            | 1 小时             |
+| `cmd:guild:{id}`         | 已注册命令的服务器 id（去重标记）                   | 永久               |
+| `cmd:registered:global`  | 全局命令已注册标记（24h 去重）                      | 1 天               |
+| `config:discord-app-id`  | Discord 应用 id 缓存                                 | 永久               |

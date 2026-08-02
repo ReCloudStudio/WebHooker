@@ -19,9 +19,10 @@ WebHooker requires several secrets to function. For local development, store the
 
 | Variable                  | Description                                                                                           | Default                 |
 | ------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------- |
+| `DISCORD_PUBLIC_KEY`    | Discord application public key (Developer Portal) — required for interactions | Unset → interactions return `401` |
+| `DISCORD_APPLICATION_ID` | Discord application id; auto-resolved when omitted | Auto-resolved          |
 | `BASE_URL`                | Public URL for OAuth callbacks                                                                        | `http://localhost:8787` |
 | `ADMIN_USER_IDS`          | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                              | Disabled                |
-| `DISCORD_GATEWAY_ENABLED` | Set to `true` to connect the Discord Gateway (bot online status); messaging works without it via REST | `false`                 |
 
 ## Web UI
 
@@ -180,4 +181,7 @@ Filters accept either a single string or an array of strings:
 | `discord-link:{userId}`  | GitHub user id linked to a Discord user             | Permanent          |
 | `state:{hex}`            | `{ redirectTo, expiresAt, discordUserId? }`         | 600 seconds        |
 | `delivery:{id}`          | Webhook delivery id (dedup marker)                  | 300 seconds        |
+| `cmd:guild:{id}`         | Guild id whose commands were registered (dedup)     | Permanent          |
+| `cmd:registered:global`  | Global command registration marker (dedup)          | 1 day              |
+| `config:discord-app-id`  | Cached Discord application id                       | Permanent          |
 | `logs:send:{ts}-{hex}`   | Send record                                         | 1 hour             |

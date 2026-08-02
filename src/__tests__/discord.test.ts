@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { sendMessage } from "../discord-rest";
-import { dispatchEvent, isGatewayEnabled } from "../discord";
+import { dispatchEvent } from "../discord";
 import type { Env, Route } from "../types";
 
 function mockFetch(handler: (url: string, init?: RequestInit) => Response): void {
@@ -12,7 +12,6 @@ function createEnv(overrides: Partial<Env> = {}): Env {
   return {
     GITHUB_WEBHOOK_SECRET: "secret",
     KV: {} as KVNamespace,
-    DISCORD_GATEWAY: {} as DurableObjectNamespace,
     ...overrides,
   };
 }
@@ -65,14 +64,6 @@ describe("discord-rest sendMessage", () => {
     const result = await sendMessage("t", "111", {});
     expect(result.ok).toBe(false);
     expect(result.error).toContain("Missing Permissions");
-  });
-});
-
-describe("isGatewayEnabled", () => {
-  it("is enabled only when set to true", () => {
-    expect(isGatewayEnabled(createEnv({ DISCORD_GATEWAY_ENABLED: "true" }))).toBe(true);
-    expect(isGatewayEnabled(createEnv({ DISCORD_GATEWAY_ENABLED: "false" }))).toBe(false);
-    expect(isGatewayEnabled(createEnv())).toBe(false);
   });
 });
 

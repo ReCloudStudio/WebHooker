@@ -30,6 +30,7 @@ npx wrangler secret put GITHUB_PRIVATE_KEY   # PKCS#8 PEM (BEGIN PRIVATE KEY)
 npx wrangler secret put GITHUB_CLIENT_ID
 npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler secret put DISCORD_TOKEN
+npx wrangler secret put DISCORD_PUBLIC_KEY   # Discord app public key (Developer Portal) — required for interactions
 npx wrangler secret put ADMIN_USER_IDS       # comma-separated GitHub IDs/logins allowed into the Web UI
 ```
 
@@ -48,7 +49,7 @@ openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
 Then upload `gh_pk_pkcs8.pem` as `GITHUB_PRIVATE_KEY`.
 :::
 
-The Discord Gateway is optional. Set `DISCORD_GATEWAY_ENABLED` in `wrangler.jsonc` `vars` (`"false"` by default). See [Gateway (optional)](#gateway-optional) below.
+Discord interactions arrive via the HTTPS Interactions Endpoint, so set `DISCORD_PUBLIC_KEY` and point the **Interactions Endpoint URL** at `https://your-domain/discord/interactions`. See [Interactions Endpoint](#interactions-endpoint) below.
 
 ### 3. Deploy
 
@@ -106,14 +107,17 @@ Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
 
 5. Configure target channels **per route** in the Web UI (`/admin`) — no global channel ID is required.
 
-### Gateway (optional)
+### Interactions Endpoint
 
-Messages are sent via the Discord **REST API**, so pushing works with just `DISCORD_TOKEN`. The Gateway connection is only needed to (a) show the bot as **online** and (b) enable the in-Discord slash / context-menu commands.
+Messages are sent via the Discord **REST API**, so pushing works with just `DISCORD_TOKEN`. Interactions (slash commands, buttons, modals) arrive through the HTTPS Interactions Endpoint:
 
-- `DISCORD_GATEWAY_ENABLED=false` (default): REST-only, no Gateway connection.
-- `DISCORD_GATEWAY_ENABLED=true`: a Durable Object holds the Gateway connection and registers the `/gh` slash command plus the `GitHub: 添加/编辑/删除评论` message commands per guild.
+1. Copy the application **Public Key** (Developer Portal → General Information) to `DISCORD_PUBLIC_KEY`.
+2. Set the **Interactions Endpoint URL** to `https://your-domain/discord/interactions`.
+3. Every interaction request is verified with Ed25519 signatures (`X-Signature-Ed25519` over `X-Signature-Timestamp + body`).
 
-When enabled, users run `/gh login` to link their GitHub account and can then comment on issues/PRs as themselves. See the [README](https://github.com/ReCloudStudio/WebHooker#bot-commands-comment-on-github-as-yourself) for the full command reference.
+The `/gh` slash command and the `GitHub: 添加/编辑/删除评论` message commands are synced by the scheduled trigger (every 5 minutes): per-guild for instant availability, plus a global registration (24h dedup, ~1h propagation). The bot never connects to the Discord Gateway, so it shows as **offline** — messaging is unaffected (always REST).
+
+Users run `/gh login` to link their GitHub account and can then comment on issues/PRs as themselves. See the [README](https://github.com/ReCloudStudio/WebHooker#bot-commands-comment-on-github-as-yourself) for the full command reference.
 
 ## Custom Domain (Optional)
 
@@ -132,4 +136,4 @@ docker build -t webhooker .
 docker run -p 8787:8787 --env-file .env webhooker
 ```
 
-Note: Docker mode runs without Durable Objects and KV. Use Cloudflare deployment for full functionality.
+Note: Docker mode runs without KV and other Cloudflare storage. Use Cloudflare deployment for full functionality.

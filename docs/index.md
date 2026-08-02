@@ -19,11 +19,11 @@ features:
   - title: Flexible Filtering
     details: Filter by event type, repo, actor, action, branch (including PRs), and keyword (with regex support). Exclude patterns with a flag.
   - title: Cloudflare Workers
-    details: Runs on Cloudflare's edge network. Sends via the Discord REST API, with an optional Durable Object Gateway connection for online status and slash commands.
+    details: Runs on Cloudflare's edge network. Sends via the Discord REST API, with an Ed25519-verified Interactions Endpoint for `/gh` slash commands and buttons.
   - title: Web UI & Slash Commands
     details: "Manage routes and view send logs from a built-in admin console. Link your GitHub account and comment on issues/PRs as yourself via /gh commands."
   - title: Signature Verification
-    details: HMAC-SHA256 webhook signature verification using the Web Crypto API with timing-safe comparison.
+    details: HMAC-SHA256 webhook signature verification and Ed25519 interaction signature verification using the Web Crypto API with timing-safe comparison.
   - title: Graceful Degradation
     details: Runs in webhook-only mode if Discord token is unavailable. Health endpoint for monitoring.
 ---

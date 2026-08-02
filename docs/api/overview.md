@@ -14,6 +14,7 @@ https://your-worker.workers.dev
 | -------- | ------------------------------ | -------------- | ------------------------ |
 | `GET`    | `/health`                      | None           | Health check             |
 | `POST`   | `/webhook`                     | HMAC signature | GitHub webhook ingestion |
+| `POST`   | `/discord/interactions`        | Ed25519 signature | Discord interactions (slash commands, buttons, modals) |
 | `GET`    | `/auth/github`                 | None           | Start GitHub OAuth flow  |
 | `GET`    | `/auth/github/callback`        | None           | OAuth callback           |
 | `DELETE` | `/auth/token/:userId`          | None           | Revoke user token        |
