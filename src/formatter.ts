@@ -497,6 +497,7 @@ function formatWorkflowRun(
     created_at?: string;
     updated_at?: string;
     elapsed_seconds?: number;
+    jobs?: Array<{ name?: string; conclusion?: string }>;
   };
 
   const conclusion = workflow.conclusion ?? "pending";
@@ -515,6 +516,17 @@ function formatWorkflowRun(
     value: `${emoji} ${conclusion}`,
     inline: true,
   });
+
+  if (workflow.jobs?.length) {
+    const jobLines = workflow.jobs.map(
+      (j) => `${WORKFLOW_CONCLUSION_EMOJI[j.conclusion ?? ""] ?? "⏳"} ${j.name ?? ""}`,
+    );
+    fields.push({
+      name: t("fields.job"),
+      value: jobLines.join("\n"),
+      inline: false,
+    });
+  }
 
   if (workflow.head_branch) {
     fields.push({

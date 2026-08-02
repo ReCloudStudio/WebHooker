@@ -47,6 +47,7 @@ export const en = {
     milestone: "Milestone",
     status: "Status",
     run: "Run",
+    job: "Job",
     duration: "Duration",
     type: "Type",
     name: "Name",

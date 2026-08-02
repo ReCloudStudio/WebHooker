@@ -47,6 +47,7 @@ export const zh = {
     milestone: "里程碑",
     status: "状态",
     run: "运行",
+    job: "作业",
     duration: "耗时",
     type: "类型",
     name: "名称",
