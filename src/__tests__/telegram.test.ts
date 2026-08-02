@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from "bun:test";
-import { sendMessage } from "../drivers/telegram/rest";
+import { sendMessage, sendPhoto } from "../drivers/telegram/rest";
 import { renderNeutralMessage } from "../drivers/telegram/render";
+import { TelegramDriver } from "../drivers/telegram";
 import type { NeutralMessage } from "../types";
 
 function mockFetch(handler: (url: string, init?: RequestInit) => Response): void {
@@ -37,6 +38,25 @@ describe("telegram renderNeutralMessage", () => {
     });
     expect(out).not.toContain("<b>acme");
     expect(out).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+  });
+
+  it("converts Discord markdown to Telegram HTML", () => {
+    const out = renderNeutralMessage({
+      title: "acme/widget#7: Add feature",
+      description: "**1** commit pushed to `main`\n[View comparison](https://github.com/acme/widget/compare/a...b)",
+      fields: [{ name: "Status", value: "**ok** and `done`" }],
+    });
+    expect(out).toContain("<b>1</b> commit pushed to <code>main</code>");
+    expect(out).toContain('<a href="https://github.com/acme/widget/compare/a...b">View comparison</a>');
+    expect(out).toContain("<b>Status</b>: <b>ok</b> and <code>done</code>");
+  });
+
+  it("formats ISO timestamps into a readable UTC string", () => {
+    const out = renderNeutralMessage({
+      title: "acme/widget: t",
+      timestamp: "2026-08-02T21:26:04.042Z",
+    });
+    expect(out).toContain("<i>2026-08-02 21:26 UTC</i>");
   });
 });
 
@@ -91,5 +111,72 @@ describe("telegram-rest sendMessage", () => {
     const result = await sendMessage("", "-100123", "hello");
     expect(result.ok).toBe(false);
     expect(result.errorCode).toBe("NO_TOKEN");
+  });
+});
+
+describe("telegram-rest sendPhoto", () => {
+  it("posts to the bot API with photo, caption and thread id", async () => {
+    let capturedUrl = "";
+    let capturedInit: RequestInit | undefined;
+    mockFetch((url, init) => {
+      capturedUrl = url;
+      capturedInit = init;
+      return new Response(JSON.stringify({ ok: true, result: { message_id: 7 } }), {
+        status: 200,
+      });
+    });
+
+    const result = await sendPhoto("t", "-100123", "https://avatars/1.png", "caption here", "999");
+
+    expect(result.ok).toBe(true);
+    expect(result.messageId).toBe("7");
+    expect(capturedUrl).toBe("https://api.telegram.org/bott/sendPhoto");
+    const body = JSON.parse(String(capturedInit!.body)) as Record<string, unknown>;
+    expect(body.chat_id).toBe("-100123");
+    expect(body.photo).toBe("https://avatars/1.png");
+    expect(body.caption).toBe("caption here");
+    expect(body.message_thread_id).toBe(999);
+  });
+});
+
+describe("TelegramDriver", () => {
+  it("sends a small avatar photo (s=64) when the author has an icon", async () => {
+    let capturedInit: RequestInit | undefined;
+    mockFetch((url, init) => {
+      capturedInit = init;
+      return new Response(JSON.stringify({ ok: true, result: { message_id: 9 } }), { status: 200 });
+    });
+
+    const driver = new TelegramDriver();
+    const result = await driver.send(
+      {
+        title: "acme/widget: Add feature",
+        author: { name: "alice", iconUrl: "https://avatars.githubusercontent.com/u/1?v=4" },
+      },
+      { platform: "telegram", chatId: "-100123" },
+      { TELEGRAM_TOKEN: "t", KV: {} as never, DB: {} as never, GITHUB_WEBHOOK_SECRET: "s" },
+    );
+
+    expect(result.ok).toBe(true);
+    const body = JSON.parse(String(capturedInit!.body)) as Record<string, unknown>;
+    expect(body.photo).toBe("https://avatars.githubusercontent.com/u/1?v=4&s=64");
+  });
+
+  it("sends a plain message when the author has no icon", async () => {
+    let capturedUrl = "";
+    mockFetch((url) => {
+      capturedUrl = url;
+      return new Response(JSON.stringify({ ok: true, result: { message_id: 10 } }), { status: 200 });
+    });
+
+    const driver = new TelegramDriver();
+    const result = await driver.send(
+      { title: "acme/widget: Add feature" },
+      { platform: "telegram", chatId: "-100123" },
+      { TELEGRAM_TOKEN: "t", KV: {} as never, DB: {} as never, GITHUB_WEBHOOK_SECRET: "s" },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(capturedUrl).toContain("/sendMessage");
   });
 });

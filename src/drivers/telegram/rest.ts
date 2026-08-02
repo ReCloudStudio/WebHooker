@@ -9,27 +9,13 @@ interface TelegramResponse {
   result?: { message_id?: number };
 }
 
-export async function sendMessage(
+async function post(
   token: string,
+  method: string,
+  body: Record<string, unknown>,
   chatId: string,
-  text: string,
-  topicId?: string,
 ): Promise<SendResult> {
-  if (!token) {
-    return { ok: false, error: "TELEGRAM_TOKEN not configured", errorCode: "NO_TOKEN" };
-  }
-
-  const body: Record<string, unknown> = {
-    chat_id: chatId,
-    text,
-    parse_mode: "HTML",
-    disable_web_page_preview: true,
-  };
-  if (topicId) {
-    body.message_thread_id = Number(topicId);
-  }
-
-  const url = `${TELEGRAM_API}/bot${token}/sendMessage`;
+  const url = `${TELEGRAM_API}/bot${token}/${method}`;
   let lastStatus = 0;
   let lastError = "";
 
@@ -94,4 +80,49 @@ export async function sendMessage(
     status: lastStatus,
     attempts: 3,
   };
+}
+
+export async function sendMessage(
+  token: string,
+  chatId: string,
+  text: string,
+  topicId?: string,
+): Promise<SendResult> {
+  if (!token) {
+    return { ok: false, error: "TELEGRAM_TOKEN not configured", errorCode: "NO_TOKEN" };
+  }
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+  };
+  if (topicId) {
+    body.message_thread_id = Number(topicId);
+  }
+  return post(token, "sendMessage", body, chatId);
+}
+
+export async function sendPhoto(
+  token: string,
+  chatId: string,
+  photoUrl: string,
+  caption?: string,
+  topicId?: string,
+): Promise<SendResult> {
+  if (!token) {
+    return { ok: false, error: "TELEGRAM_TOKEN not configured", errorCode: "NO_TOKEN" };
+  }
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    photo: photoUrl,
+    parse_mode: "HTML",
+  };
+  if (caption) {
+    body.caption = caption;
+  }
+  if (topicId) {
+    body.message_thread_id = Number(topicId);
+  }
+  return post(token, "sendPhoto", body, chatId);
 }
