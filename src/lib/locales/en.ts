@@ -48,6 +48,8 @@ export const en = {
     status: "Status",
     run: "Run",
     job: "Job",
+    workflow: "Workflow",
+    context: "Context",
     duration: "Duration",
     type: "Type",
     name: "Name",

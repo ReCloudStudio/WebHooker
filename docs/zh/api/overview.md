@@ -16,6 +16,7 @@ https://your-worker.workers.dev
 | `POST`   | `/webhook`                     | HMAC 签名    | GitHub webhook 接入                   |
 | `POST`   | `/discord/interactions`        | Ed25519 签名 | Discord 交互（斜杠命令、按钮、modal） |
 | `POST`   | `/telegram/webhook`            | Secret token | Telegram 更新（bot `/gh` 命令）       |
+| `GET`    | `/api/richheader`              | 无           | 用于 Telegram 头像链接预览卡片的 Open Graph 页面 |
 | `GET`    | `/auth/github`                 | 无           | 启动 GitHub OAuth 流程                |
 | `GET`    | `/auth/github/callback`        | 无           | OAuth 回调                            |
 | `DELETE` | `/auth/token/:userId`          | 无           | 撤销用户 Token                        |

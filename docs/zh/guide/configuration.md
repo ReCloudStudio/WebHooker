@@ -25,6 +25,7 @@ WebHooker 需要多个密钥才能运行。本地开发时存储在 `.dev.vars` 
 | `DISCORD_PUBLIC_KEY`      | Discord 应用的公钥（开发者门户获取），交互功能必需                   | 未设置时交互返回 401    |
 | `DISCORD_APPLICATION_ID`  | Discord 应用 ID；省略时自动获取                                      | 自动获取                |
 | `TELEGRAM_WEBHOOK_SECRET` | `POST /telegram/webhook` 验签密钥（X-Telegram-Bot-Api-Secret-Token） | 未设置时不校验          |
+| `TELEGRAM_RICH_HEADER_HOST` | 外部 rich-header 服务的基础 URL；未设置时使用内置的 `GET /api/richheader` 生成 Telegram 头像卡片 | 内置 `/api/richheader`  |
 
 ## Web 控制台
 
