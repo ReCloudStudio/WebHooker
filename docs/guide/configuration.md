@@ -140,20 +140,23 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 
 ## Filter Types
 
+See the [Filter Tutorial](./filters) for a hands-on guide with worked examples.
+
 | Type      | Matches              | Example                          |
 | --------- | -------------------- | -------------------------------- |
 | `event`   | GitHub event name    | `push`, `pull_request`, `issues` |
 | `repo`    | Repository full name | `org/repo`                       |
 | `actor`   | Sender login         | `username`, `[bot]`              |
 | `action`  | Event action         | `opened`, `closed`, `published`  |
-| `branch`  | Branch name          | `main`, `feature/*`              |
+| `branch`  | Branch name          | `main`, `develop`                |
 | `keyword` | Text in payload body | `deploy`, `/fix\s+\d+/` (regex)  |
 
 ### Filter Behavior
 
 - All filters in a route must match for the route to trigger (AND logic)
 - Set `"exclude": true` on any filter to invert it (NOT logic)
-- `keyword` filter supports regex patterns — falls back to substring match if regex is invalid
+- Non-keyword filters are **exact, case-insensitive matches** — no wildcards (`repo: "org/*"` does not match anything)
+- `keyword` filter supports regex patterns — falls back to substring match if regex is invalid or longer than 200 characters
 - `branch` filter works for push, pull_request, pull_request_review, pull_request_review_comment, create/delete, workflow_run, and code_scanning_alert events
 
 ### Match Values

@@ -57,6 +57,8 @@ Any event type without a dedicated formatter falls through to the generic format
 
 ## Filter Compatibility
 
+See the [Filter Tutorial](../guide/filters) for a hands-on guide with worked examples.
+
 | Filter    | Works With                                                                                                              |
 | --------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `event`   | All events                                                                                                              |

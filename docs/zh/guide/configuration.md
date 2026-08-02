@@ -140,20 +140,23 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 ## 过滤器类型
 
+实操指南见[过滤器教程](./filters)，包含完整示例。
+
 | 类型      | 匹配对象         | 示例                             |
 | --------- | ---------------- | -------------------------------- |
 | `event`   | GitHub 事件名称  | `push`, `pull_request`, `issues` |
 | `repo`    | 仓库全名         | `org/repo`                       |
 | `actor`   | 发送者登录名     | `username`, `[bot]`              |
 | `action`  | 事件操作         | `opened`, `closed`, `published`  |
-| `branch`  | 分支名称         | `main`, `feature/*`              |
+| `branch`  | 分支名称         | `main`, `develop`                |
 | `keyword` | 载荷正文中的文本 | `deploy`, `/fix\s+\d+/` (正则)   |
 
 ### 过滤器行为
 
 - 路由中的所有过滤器必须都匹配才触发路由（AND 逻辑）
 - 在任何过滤器上设置 `"exclude": true` 可反转匹配逻辑（NOT 逻辑）
-- `keyword` 过滤器支持正则表达式——如果正则有误，回退到子串匹配
+- 非 keyword 过滤器为**精确、不区分大小写**的匹配——不支持通配符（`repo: "org/*"` 不会匹配任何内容）
+- `keyword` 过滤器支持正则表达式——正则有误或超过 200 个字符时回退到子串匹配
 - `branch` 过滤器适用于 push、pull_request、pull_request_review、pull_request_review_comment、create/delete、workflow_run 和 code_scanning_alert 事件
 
 ### 匹配值
