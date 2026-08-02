@@ -53,39 +53,40 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
   const matched = config.routes.filter((route) => matchRoute(route, event) && accepted(route));
   const anyRegularMatched = matched.some((route) => !route.fallback);
 
-  for (const route of matched) {
-    // A fallback route only fires when no regular route matched the event.
-    if (route.fallback && anyRegularMatched) continue;
+  const tasks = matched
+    .filter((route) => !(route.fallback && anyRegularMatched))
+    .map(async (route) => {
+      const target = route.target.threadId
+        ? `${route.target.channelId}/${route.target.threadId}`
+        : route.target.channelId;
 
-    const target = route.target.threadId
-      ? `${route.target.channelId}/${route.target.threadId}`
-      : route.target.channelId;
+      try {
+        const tr = trMap.get(route.lang ?? "en")!;
+        const message = formatEvent(route, event, tr);
+        await sendToChannel(route.target.channelId, message, env, route.target.threadId);
+        await recordSend(env.KV, {
+          ts: Date.now(),
+          routeId: route.id,
+          event: event.event,
+          repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
+          target,
+          ok: true,
+        });
+      } catch (err) {
+        await recordSend(env.KV, {
+          ts: Date.now(),
+          routeId: route.id,
+          event: event.event,
+          repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
+          target,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        log.error({ routeId: route.id, err }, "Route failed");
+      }
+    });
 
-    try {
-      const tr = trMap.get(route.lang ?? "en")!;
-      const message = formatEvent(route, event, tr);
-      await sendToChannel(route.target.channelId, message, env, route.target.threadId);
-      await recordSend(env.KV, {
-        ts: Date.now(),
-        routeId: route.id,
-        event: event.event,
-        repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
-        target,
-        ok: true,
-      });
-    } catch (err) {
-      await recordSend(env.KV, {
-        ts: Date.now(),
-        routeId: route.id,
-        event: event.event,
-        repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
-        target,
-        ok: false,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      log.error({ routeId: route.id, err }, "Route failed");
-    }
-  }
+  await Promise.allSettled(tasks);
 }
 
 async function sendToChannel(

@@ -33,6 +33,12 @@ export async function sendMessage(
 
       if (!res.ok) {
         const err = await res.text();
+        if (res.status >= 500) {
+          log.error({ status: res.status, err, attempt, channelId }, "Discord API 5xx");
+          if (attempt === 2) return { ok: false, error: err };
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
         log.error({ status: res.status, err, channelId }, "Discord API error");
         return { ok: false, error: err };
       }

@@ -1,6 +1,30 @@
 import type { WebhookEvent, Route, Filter } from "./types";
 
 const keyCache = new Map<string, CryptoKey>();
+const regexCache = new Map<string, RegExp>();
+const keywordBodyCache = new WeakMap<WebhookEvent, string>();
+const MAX_PATTERN_LENGTH = 200;
+
+function compileKeywordRegex(pattern: string): RegExp | null {
+  if (pattern.length > MAX_PATTERN_LENGTH) return null;
+  const cached = regexCache.get(pattern);
+  if (cached) return cached;
+  try {
+    const re = new RegExp(pattern, "i");
+    regexCache.set(pattern, re);
+    return re;
+  } catch {
+    return null;
+  }
+}
+
+function getKeywordBody(event: WebhookEvent): string {
+  const cached = keywordBodyCache.get(event);
+  if (cached !== undefined) return cached;
+  const body = JSON.stringify(event.payload).toLowerCase();
+  keywordBodyCache.set(event, body);
+  return body;
+}
 
 async function getHmacKey(secret: string): Promise<CryptoKey> {
   const cached = keyCache.get(secret);
@@ -109,15 +133,14 @@ function matchFilter(filter: Filter, event: WebhookEvent, keywordBody?: string):
       value = extractBranch(event);
       break;
     case "keyword": {
-      const body = keywordBody ?? JSON.stringify(event.payload).toLowerCase();
+      const body = keywordBody ?? getKeywordBody(event);
       const patterns = Array.isArray(filter.match) ? filter.match : [filter.match];
-      return patterns.some((p) => {
-        try {
-          return new RegExp(p, "i").test(body);
-        } catch {
-          return body.includes(p.toLowerCase());
-        }
+      const matches = patterns.some((p) => {
+        const re = compileKeywordRegex(p);
+        if (!re) return body.includes(p.toLowerCase());
+        return re.test(body);
       });
+      return filter.exclude ? !matches : matches;
     }
     default:
       return false;
@@ -145,6 +168,6 @@ export function eventOwners(event: WebhookEvent): string[] {
 export function matchRoute(route: Route, event: WebhookEvent): boolean {
   if (!route.enabled) return false;
   const hasKeyword = route.filters.some((f) => f.type === "keyword");
-  const keywordBody = hasKeyword ? JSON.stringify(event.payload).toLowerCase() : undefined;
+  const keywordBody = hasKeyword ? getKeywordBody(event) : undefined;
   return route.filters.every((f) => matchFilter(f, event, keywordBody));
 }

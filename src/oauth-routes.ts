@@ -23,11 +23,19 @@ function generateRandomHex(length: number): string {
     .join("");
 }
 
+function safeRedirectPath(value: string | undefined): string {
+  if (!value) return "/";
+  if (!value.startsWith("/")) return "/";
+  if (value.startsWith("//")) return "/";
+  if (/^\/\\/.test(value)) return "/";
+  return value;
+}
+
 export function createOAuthRoutes(): Hono<{ Bindings: Env }> {
   const app = new Hono<{ Bindings: Env }>();
 
   app.get("/github", async (c) => {
-    const redirectTo = c.req.query("redirect") ?? "/";
+    const redirectTo = safeRedirectPath(c.req.query("redirect"));
     const state = generateRandomHex(16);
 
     const pending: PendingState = {

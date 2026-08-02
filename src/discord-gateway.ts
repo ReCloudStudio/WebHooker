@@ -205,12 +205,18 @@ export class DiscordGateway {
   }
 
   private handleMessage(data: string): void {
-    const msg = JSON.parse(data) as {
-      op: number;
-      d: unknown;
-      s: number | null;
-      t: string | null;
-    };
+    let msg: { op: number; d: unknown; s: number | null; t: string | null };
+    try {
+      msg = JSON.parse(data) as {
+        op: number;
+        d: unknown;
+        s: number | null;
+        t: string | null;
+      };
+    } catch {
+      log.warn("Gateway received malformed frame");
+      return;
+    }
 
     if (msg.s !== null) this.lastSequence = msg.s;
 
