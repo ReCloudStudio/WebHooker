@@ -10,7 +10,10 @@ function esc(s: string): string {
 
 function mdToHtml(s: string): string {
   let out = esc(s);
-  out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => `<a href="${esc(url)}">${label}</a>`);
+  out = out.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    (_m, label, url) => `<a href="${esc(url)}">${label}</a>`,
+  );
   out = out.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
   out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
   out = out.replace(/(^|[^*])\*([^*]+)\*/g, "$1<i>$2</i>");

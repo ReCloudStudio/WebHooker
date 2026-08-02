@@ -43,11 +43,14 @@ describe("telegram renderNeutralMessage", () => {
   it("converts Discord markdown to Telegram HTML", () => {
     const out = renderNeutralMessage({
       title: "acme/widget#7: Add feature",
-      description: "**1** commit pushed to `main`\n[View comparison](https://github.com/acme/widget/compare/a...b)",
+      description:
+        "**1** commit pushed to `main`\n[View comparison](https://github.com/acme/widget/compare/a...b)",
       fields: [{ name: "Status", value: "**ok** and `done`" }],
     });
     expect(out).toContain("<b>1</b> commit pushed to <code>main</code>");
-    expect(out).toContain('<a href="https://github.com/acme/widget/compare/a...b">View comparison</a>');
+    expect(out).toContain(
+      '<a href="https://github.com/acme/widget/compare/a...b">View comparison</a>',
+    );
     expect(out).toContain("<b>Status</b>: <b>ok</b> and <code>done</code>");
   });
 
@@ -166,7 +169,9 @@ describe("TelegramDriver", () => {
     let capturedUrl = "";
     mockFetch((url) => {
       capturedUrl = url;
-      return new Response(JSON.stringify({ ok: true, result: { message_id: 10 } }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true, result: { message_id: 10 } }), {
+        status: 200,
+      });
     });
 
     const driver = new TelegramDriver();
