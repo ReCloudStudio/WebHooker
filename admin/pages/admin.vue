@@ -5,74 +5,57 @@
         <div class="brand-mark">WH</div>
         <div>
           <h1>WebHooker</h1>
-          <span class="tagline">CONFIG CONSOLE</span>
+          <span class="tagline">{{ t("app.tagline") }}</span>
         </div>
       </div>
       <div class="head-actions">
-        <button v-if="!needLogin && view === 'routes'" class="btn btn-accent" @click="openNew">
-          + New Route
+        <button class="btn btn-ghost btn-sm" @click="toggle">{{ t("app.langToggle") }}</button>
+        <button v-if="!needLogin && selectedGroup" class="btn btn-accent" @click="openNew">
+          {{ t("app.newRoute") }}
         </button>
         <button
-          v-if="!needLogin && view === 'groups' && isSuper"
+          v-if="!needLogin && !selectedGroup && view === 'groups' && isSuper"
           class="btn btn-accent"
           @click="openNewGroup"
         >
-          + New Group
+          {{ t("app.newGroup") }}
         </button>
-        <a v-if="!needLogin" class="btn btn-ghost" href="/admin/logout">Sign out</a>
+        <a v-if="!needLogin" class="btn btn-ghost" href="/admin/logout">{{ t("app.signOut") }}</a>
       </div>
     </header>
 
     <main>
       <div v-if="needLogin" class="login">
         <div class="login-card">
-          <h2>Config Console</h2>
-          <p v-if="forbidden">
-            Access denied — this GitHub account is not an admin or group admin.
-          </p>
-          <p v-else>Sign in with GitHub to manage routes.</p>
-          <a class="btn btn-accent btn-lg" href="/admin/login">Sign in with GitHub</a>
+          <h2>{{ t("login.title") }}</h2>
+          <p v-if="forbidden">{{ t("login.forbidden") }}</p>
+          <p v-else>{{ t("login.prompt") }}</p>
+          <a class="btn btn-accent btn-lg" href="/admin/login">{{ t("login.button") }}</a>
         </div>
       </div>
 
       <template v-else>
-        <nav class="tabs">
-          <button class="tab" :class="{ active: view === 'routes' }" @click="switchView('routes')">
-            Routes
-          </button>
-          <button
-            v-if="isSuper"
-            class="tab"
-            :class="{ active: view === 'groups' }"
-            @click="switchView('groups')"
-          >
-            Groups
-          </button>
-          <button class="tab" :class="{ active: view === 'logs' }" @click="switchView('logs')">
-            Send Logs
-          </button>
-        </nav>
-
-        <template v-if="view === 'routes'">
+        <!-- Group detail view -->
+        <template v-if="selectedGroup">
           <section class="toolbar">
-            <div>
-              <span class="kpi-label">ROUTES</span>
-              <span class="kpi">{{ routes.length }}</span>
+            <div class="crumbs">
+              <button class="btn btn-ghost btn-sm" @click="exitGroup">{{ t("group.back") }}</button>
+              <span class="kpi-label">{{ t("group.routesIn", { name: selectedGroup.name }) }}</span>
+              <span class="kpi">{{ groupRoutes.length }}</span>
             </div>
             <div class="status">
-              <span class="dot" :class="loading ? '' : 'ok'"></span>
-              <span>{{ loading ? "loading" : "connected" }}</span>
+              <span class="dot" :class="groupRoutesLoading ? '' : 'ok'"></span>
+              <span>{{ groupRoutesLoading ? t("status.loading") : t("status.connected") }}</span>
             </div>
           </section>
 
-          <p v-if="error" class="err">{{ error }}</p>
+          <p v-if="groupRoutesError" class="err">{{ groupRoutesError }}</p>
 
           <section class="routes">
             <RouteCard
-              v-for="(r, i) in routes"
+              v-for="(r, i) in groupRoutes"
               :key="r.id"
               :route="r"
-              :group-name="groupName(r.groupId)"
               :style="{ animationDelay: i * 45 + 'ms' }"
               @toggle="onToggle"
               @edit="openEdit"
@@ -80,65 +63,94 @@
             />
           </section>
 
-          <section v-if="!loading && !routes.length" class="empty">
-            <p>No routes configured yet.</p>
-            <button class="btn btn-accent" @click="openNew">Create your first route</button>
+          <section v-if="!groupRoutesLoading && !groupRoutes.length" class="empty">
+            <p>{{ t("routes.emptyGroup") }}</p>
+            <button class="btn btn-accent" @click="openNew">{{ t("routes.createFirst") }}</button>
           </section>
         </template>
 
-        <template v-else-if="view === 'groups'">
-          <section class="toolbar">
-            <div>
-              <span class="kpi-label">GROUPS</span>
-              <span class="kpi">{{ groups.length }}</span>
-            </div>
-            <div class="status">
-              <span class="dot" :class="groupsLoading ? '' : 'ok'"></span>
-              <span>{{ groupsLoading ? "loading" : "connected" }}</span>
-            </div>
-          </section>
-
-          <p v-if="groupsError" class="err">{{ groupsError }}</p>
-
-          <section class="routes">
-            <article v-for="g in groups" :key="g.id" class="card">
-              <div class="card-head">
-                <div class="card-title">
-                  <span class="route-name">{{ g.name || "(untitled)" }}</span>
-                  <span class="route-id">{{ g.id }}</span>
-                </div>
-                <div class="card-actions">
-                  <button class="icon-btn" title="Edit" @click="openEditGroup(g)">✎</button>
-                  <button class="icon-btn danger" title="Delete" @click="onDeleteGroup(g)">✕</button>
-                </div>
-              </div>
-              <div class="target">
-                <span
-                  ><b>ADMINS</b
-                  ><code>{{ g.adminIds.length ? g.adminIds.join(", ") : "—" }}</code></span
-                >
-                <span
-                  ><b>OWNERS</b
-                  ><code>{{ g.owners && g.owners.length ? g.owners.join(", ") : "any" }}</code></span
-                >
-              </div>
-            </article>
-          </section>
-
-          <section v-if="!groupsLoading && !groups.length" class="empty">
-            <p>No groups yet. Groups scope routes by org/user and delegate access.</p>
-            <button class="btn btn-accent" @click="openNewGroup">Create your first group</button>
-          </section>
-        </template>
-
+        <!-- Top-level views -->
         <template v-else>
-          <section class="toolbar">
-            <div class="status">
-              <span class="dot" :class="logsLoading ? '' : 'ok'"></span>
-              <span>{{ logsLoading ? "loading" : "connected" }}</span>
-            </div>
-          </section>
-          <SendLogs :logs="logs" :loading="logsLoading" @refresh="loadLogs" />
+          <nav class="tabs">
+            <button
+              class="tab"
+              :class="{ active: view === 'groups' }"
+              @click="switchView('groups')"
+            >
+              {{ t("tab.groups") }}
+            </button>
+            <button class="tab" :class="{ active: view === 'logs' }" @click="switchView('logs')">
+              {{ t("tab.logs") }}
+            </button>
+          </nav>
+
+          <template v-if="view === 'groups'">
+            <section class="toolbar">
+              <div>
+                <span class="kpi-label">{{ t("kpi.groups") }}</span>
+                <span class="kpi">{{ groups.length }}</span>
+              </div>
+              <div class="status">
+                <span class="dot" :class="groupsLoading ? '' : 'ok'"></span>
+                <span>{{ groupsLoading ? t("status.loading") : t("status.connected") }}</span>
+              </div>
+            </section>
+
+            <p v-if="groupsError" class="err">{{ groupsError }}</p>
+
+            <section class="routes">
+              <article
+                v-for="(g, i) in groups"
+                :key="g.id"
+                class="card group-card"
+                :style="{ animationDelay: i * 45 + 'ms' }"
+                @click="enterGroup(g)"
+              >
+                <div class="card-head">
+                  <div class="card-title">
+                    <span class="route-name">{{ g.name || t("route.untitled") }}</span>
+                    <span class="route-id">{{ g.id }}</span>
+                  </div>
+                  <div v-if="isSuper" class="card-actions" @click.stop>
+                    <button class="icon-btn" :title="t('groupEditor.editTitle')" @click="openEditGroup(g)">
+                      ✎
+                    </button>
+                    <button class="icon-btn danger" @click="onDeleteGroup(g)">✕</button>
+                  </div>
+                </div>
+                <div class="target">
+                  <span
+                    ><b>{{ t("groups.admins") }}</b
+                    ><code>{{ g.adminIds.length ? g.adminIds.join(", ") : "—" }}</code></span
+                  >
+                  <span
+                    ><b>{{ t("groups.owners") }}</b
+                    ><code>{{
+                      g.owners && g.owners.length ? g.owners.join(", ") : t("groups.any")
+                    }}</code></span
+                  >
+                </div>
+                <div class="group-open">{{ t("groups.open") }}</div>
+              </article>
+            </section>
+
+            <section v-if="!groupsLoading && !groups.length" class="empty">
+              <p>{{ t("groups.empty") }}</p>
+              <button v-if="isSuper" class="btn btn-accent" @click="openNewGroup">
+                {{ t("groups.createFirst") }}
+              </button>
+            </section>
+          </template>
+
+          <template v-else>
+            <section class="toolbar">
+              <div class="status">
+                <span class="dot" :class="logsLoading ? '' : 'ok'"></span>
+                <span>{{ logsLoading ? t("status.loading") : t("status.connected") }}</span>
+              </div>
+            </section>
+            <SendLogs :logs="logs" :loading="logsLoading" @refresh="loadLogs" />
+          </template>
         </template>
       </template>
     </main>
@@ -147,7 +159,6 @@
       :open="editorOpen"
       :route="editing"
       :saving="saving"
-      :groups="groups"
       @close="editorOpen = false"
       @save="onSave"
     />
@@ -165,23 +176,32 @@
 <script setup lang="ts">
 import type { Group, Route } from "~/types";
 
-const { routes, loading, needLogin, error, load, save } = useRoutesApi();
+const { t, toggle } = useI18n();
 const { push } = useToasts();
 const { logs, loading: logsLoading, load: loadLogs } = useSendLogs();
 const {
   groups,
   isSuper,
   loading: groupsLoading,
+  needLogin,
   error: groupsError,
   load: loadGroups,
   save: saveGroups,
 } = useGroupsApi();
+const {
+  routes: groupRoutes,
+  loading: groupRoutesLoading,
+  error: groupRoutesError,
+  load: loadGroupRoutes,
+  save: saveGroupRoutes,
+} = useGroupRoutesApi();
 
 const editorOpen = ref(false);
 const editing = ref<Route | null>(null);
 const saving = ref(false);
 const forbidden = ref(false);
-const view = ref<"routes" | "groups" | "logs">("routes");
+const view = ref<"groups" | "logs">("groups");
+const selectedGroup = ref<Group | null>(null);
 
 const groupEditorOpen = ref(false);
 const editingGroup = ref<Group | null>(null);
@@ -192,24 +212,24 @@ onMounted(() => {
     const params = new URLSearchParams(window.location.search);
     forbidden.value = params.get("error") === "forbidden";
   }
-  load();
-  loadLogs();
   loadGroups();
+  loadLogs();
 });
 
-function groupName(id?: string): string | undefined {
-  if (!id) return undefined;
-  return groups.value.find((g) => g.id === id)?.name ?? id;
-}
-
-function switchView(next: "routes" | "groups" | "logs"): void {
+function switchView(next: "groups" | "logs"): void {
   view.value = next;
-  if (next === "routes") {
-    load();
-    loadGroups();
-  }
   if (next === "groups") loadGroups();
   if (next === "logs") loadLogs();
+}
+
+function enterGroup(group: Group): void {
+  selectedGroup.value = group;
+  loadGroupRoutes(group.id);
+}
+
+function exitGroup(): void {
+  selectedGroup.value = null;
+  loadGroups();
 }
 
 function openNew(): void {
@@ -223,44 +243,56 @@ function openEdit(route: Route): void {
 }
 
 async function onSave(route: Route): Promise<void> {
+  const group = selectedGroup.value;
+  if (!group) return;
   saving.value = true;
   try {
     let next: Route[];
     if (editing.value) {
-      next = routes.value.map((r) => (r.id === editing.value!.id ? route : r));
+      next = groupRoutes.value.map((r) => (r.id === editing.value!.id ? route : r));
     } else {
-      if (routes.value.some((r) => r.id === route.id)) {
-        push("Route ID already exists", "bad");
+      if (groupRoutes.value.some((r) => r.id === route.id)) {
+        push(t("toast.routeIdExists"), "bad");
         return;
       }
-      next = [...routes.value, route];
+      next = [...groupRoutes.value, route];
     }
-    await save(next);
+    await saveGroupRoutes(group.id, next);
     editorOpen.value = false;
-    push("Routes saved");
+    push(t("toast.routesSaved"));
   } catch (err) {
-    push(`Save failed: ${err instanceof Error ? err.message : err}`, "bad");
+    push(t("toast.saveFailed", { msg: err instanceof Error ? err.message : String(err) }), "bad");
   } finally {
     saving.value = false;
   }
 }
 
 async function onToggle(route: Route): Promise<void> {
+  const group = selectedGroup.value;
+  if (!group) return;
   try {
-    await save(routes.value.map((r) => (r.id === route.id ? route : r)));
+    await saveGroupRoutes(
+      group.id,
+      groupRoutes.value.map((r) => (r.id === route.id ? route : r)),
+    );
   } catch (err) {
-    push(`Save failed: ${err instanceof Error ? err.message : err}`, "bad");
-    load();
+    push(t("toast.saveFailed", { msg: err instanceof Error ? err.message : String(err) }), "bad");
+    loadGroupRoutes(group.id);
   }
 }
 
 async function onDelete(route: Route): Promise<void> {
-  if (!window.confirm(`Delete route "${route.name || route.id}"?`)) return;
+  const group = selectedGroup.value;
+  if (!group) return;
+  if (!window.confirm(t("confirm.deleteRoute", { name: route.name || route.id }))) return;
   try {
-    await save(routes.value.filter((r) => r.id !== route.id));
-    push("Route deleted");
+    await saveGroupRoutes(
+      group.id,
+      groupRoutes.value.filter((r) => r.id !== route.id),
+    );
+    push(t("toast.routeDeleted"));
   } catch (err) {
-    push(`Delete failed: ${err instanceof Error ? err.message : err}`, "bad");
+    push(t("toast.deleteFailed", { msg: err instanceof Error ? err.message : String(err) }), "bad");
   }
 }
 
@@ -282,30 +314,30 @@ async function onSaveGroup(group: Group): Promise<void> {
       next = groups.value.map((g) => (g.id === editingGroup.value!.id ? group : g));
     } else {
       if (groups.value.some((g) => g.id === group.id)) {
-        push("Group ID already exists", "bad");
+        push(t("toast.groupIdExists"), "bad");
         return;
       }
       next = [...groups.value, group];
     }
     await saveGroups(next);
     groupEditorOpen.value = false;
-    push("Groups saved");
+    push(t("toast.groupSaved"));
   } catch (err) {
-    push(`Save failed: ${err instanceof Error ? err.message : err}`, "bad");
+    push(t("toast.saveFailed", { msg: err instanceof Error ? err.message : String(err) }), "bad");
   } finally {
     savingGroup.value = false;
   }
 }
 
 async function onDeleteGroup(group: Group): Promise<void> {
-  const used = routes.value.filter((r) => r.groupId === group.id).length;
-  const warn = used ? ` ${used} route(s) reference it and will lose their group.` : "";
-  if (!window.confirm(`Delete group "${group.name || group.id}"?${warn}`)) return;
+  const used = groupRoutes.value.filter((r) => r.groupId === group.id).length;
+  const warn = used ? t("confirm.deleteGroupWarn", { n: used }) : "";
+  if (!window.confirm(t("confirm.deleteGroup", { name: group.name || group.id }) + warn)) return;
   try {
     await saveGroups(groups.value.filter((g) => g.id !== group.id));
-    push("Group deleted");
+    push(t("toast.groupDeleted"));
   } catch (err) {
-    push(`Delete failed: ${err instanceof Error ? err.message : err}`, "bad");
+    push(t("toast.deleteFailed", { msg: err instanceof Error ? err.message : String(err) }), "bad");
   }
 }
 </script>

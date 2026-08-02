@@ -259,5 +259,76 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     return c.json({ ok: true, count: nextAll.length });
   });
 
+  // Routes scoped to a single group. The group is the container: the console
+  // enters a group and then lists / edits only that group's routes.
+  function groupAccess(
+    s: { scope: AccessScope; groups: Group[] },
+    groupId: string,
+  ): { ok: true; group: Group } | { ok: false; status: 403 | 404 } {
+    const group = s.groups.find((g) => g.id === groupId);
+    if (!group) return { ok: false, status: 404 };
+    if (!s.scope.isSuper && !s.scope.groupIds.has(groupId)) return { ok: false, status: 403 };
+    return { ok: true, group };
+  }
+
+  app.get("/api/groups/:groupId/routes", async (c) => {
+    const s = await loadScope(c);
+    if (!s) return c.json({ error: "Unauthorized" }, 401);
+    const groupId = c.req.param("groupId");
+    const access = groupAccess(s, groupId);
+    if (!access.ok) {
+      return c.json({ error: access.status === 404 ? "Group not found" : "Forbidden" }, access.status);
+    }
+    const all = await loadRoutes(c.env.KV);
+    return c.json({ group: access.group, routes: all.filter((r) => r.groupId === groupId) });
+  });
+
+  app.put("/api/groups/:groupId/routes", async (c) => {
+    const s = await loadScope(c);
+    if (!s) return c.json({ error: "Unauthorized" }, 401);
+    const groupId = c.req.param("groupId");
+    const access = groupAccess(s, groupId);
+    if (!access.ok) {
+      return c.json({ error: access.status === 404 ? "Group not found" : "Forbidden" }, access.status);
+    }
+
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+
+    // Force every submitted route into this group so the client never has to
+    // carry a groupId; the path parameter is the single source of truth.
+    const submitted = (body as { routes?: unknown })?.routes;
+    const scoped = Array.isArray(submitted)
+      ? submitted.map((r) => ({ ...(r as Record<string, unknown>), groupId }))
+      : submitted;
+    const result = validateRoutes(scoped);
+    if (!result.ok) return c.json({ error: result.error }, 400);
+
+    const existing = await loadRoutes(c.env.KV);
+    // Replace only this group's routes; every other group is preserved untouched.
+    const others = existing.filter((r) => r.groupId !== groupId);
+    const nextAll = [...others, ...result.routes];
+
+    // Guard against ids colliding with routes in other groups.
+    const ids = new Set<string>();
+    for (const r of nextAll) {
+      if (ids.has(r.id)) return c.json({ error: `duplicate route id "${r.id}"` }, 400);
+      ids.add(r.id);
+    }
+
+    try {
+      await saveRoutes(c.env.KV, nextAll);
+    } catch (err) {
+      log.error({ err }, "Failed to save routes");
+      return c.json({ error: "Failed to save routes" }, 500);
+    }
+    log.info({ groupId, count: result.routes.length }, "Group routes updated via admin UI");
+    return c.json({ ok: true, count: result.routes.length });
+  });
+
   return app;
 }
