@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { sendMessage } from "../discord-rest";
-import { isGatewayEnabled } from "../discord";
-import type { Env } from "../types";
+import { dispatchEvent, isGatewayEnabled } from "../discord";
+import type { Env, Route } from "../types";
 
 function mockFetch(
   handler: (url: string, init?: RequestInit) => Response,
@@ -75,5 +75,97 @@ describe("isGatewayEnabled", () => {
     expect(isGatewayEnabled(createEnv({ DISCORD_GATEWAY_ENABLED: "true" }))).toBe(true);
     expect(isGatewayEnabled(createEnv({ DISCORD_GATEWAY_ENABLED: "false" }))).toBe(false);
     expect(isGatewayEnabled(createEnv())).toBe(false);
+  });
+});
+
+describe("dispatchEvent fallback routing", () => {
+  function createMockKV(): KVNamespace {
+    const store = new Map<string, string>();
+    return {
+      get: async (key: string, type?: string) => {
+        const v = store.get(key);
+        if (v == null) return null;
+        if (type === "json") return JSON.parse(v);
+        return v;
+      },
+      put: async (key: string, value: string) => {
+        store.set(key, value);
+      },
+      delete: async (key: string) => {
+        store.delete(key);
+      },
+      list: async () => ({
+        keys: [...store.keys()].map((k) => ({ name: k })),
+        list_complete: true,
+        cacheStatus: null,
+      }),
+    } as unknown as KVNamespace;
+  }
+
+  const baseConfig = {
+    baseUrl: "https://example.com",
+    github: {
+      webhookSecret: "s",
+      appId: 1,
+      privateKey: "",
+      clientId: "",
+      clientSecret: "",
+    },
+    discord: { token: "t" },
+    routes: [] as Route[],
+  };
+
+  it("fires a filter-less fallback route only when no regular route matched", async () => {
+    const sent: string[] = [];
+    mockFetch((url) => {
+      sent.push(url);
+      return new Response("{}", { status: 200 });
+    });
+    const env = createEnv({ KV: createMockKV() });
+    const routes: Route[] = [
+      {
+        id: "regular-push",
+        name: "Regular Push",
+        enabled: true,
+        filters: [{ type: "event", match: "push" }],
+        target: { channelId: "111" },
+      },
+      {
+        id: "catch-all",
+        name: "Catch all",
+        enabled: true,
+        filters: [],
+        fallback: true,
+        target: { channelId: "222" },
+      },
+    ];
+
+    await dispatchEvent({ ...baseConfig, routes }, { event: "push", payload: {} }, env);
+    expect(sent.filter((u) => u.includes("/111/"))).toHaveLength(1);
+    expect(sent.filter((u) => u.includes("/222/"))).toHaveLength(0);
+
+    sent.length = 0;
+    await dispatchEvent(
+      { ...baseConfig, routes },
+      {
+        event: "issues",
+        payload: {
+          action: "opened",
+          issue: {
+            number: 1,
+            title: "Test issue",
+            body: "body",
+            state: "open",
+            html_url: "https://example.com/i/1",
+            user: { login: "octocat" },
+          },
+          repository: { full_name: "owner/repo" },
+          sender: { login: "octocat" },
+        },
+      },
+      env,
+    );
+    expect(sent.filter((u) => u.includes("/111/"))).toHaveLength(0);
+    expect(sent.filter((u) => u.includes("/222/"))).toHaveLength(1);
   });
 });

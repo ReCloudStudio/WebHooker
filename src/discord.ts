@@ -42,19 +42,26 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
   const groupById = new Map(groups.map((g) => [g.id, g]));
   const owners = eventOwners(event);
 
-  // Only routes that pass both their filters and their group's owner
-  // restriction count as "matched", so a fallback route still fires when a
-  // regular route was suppressed by its group.
+  // A regular route counts as "matched" only when it passes both its filters
+  // and its group's owner restriction. Fallback routes ignore their own filters
+  // and fire whenever no regular route matched, so they still catch events that
+  // a regular route's group suppressed.
   const accepted = (route: Route): boolean => {
     if (!route.groupId) return true;
     const group = groupById.get(route.groupId);
     return !group || groupAcceptsOwners(group, owners);
   };
-  const matched = config.routes.filter((route) => matchRoute(route, event) && accepted(route));
-  const anyRegularMatched = matched.some((route) => !route.fallback);
+  const matched = config.routes.filter(
+    (route) => !route.fallback && matchRoute(route, event) && accepted(route),
+  );
+  const anyRegularMatched = matched.length > 0;
 
-  const tasks = matched
-    .filter((route) => !(route.fallback && anyRegularMatched))
+  const tasks = config.routes
+    .filter((route) => {
+      if (!accepted(route)) return false;
+      if (route.fallback) return !anyRegularMatched;
+      return matchRoute(route, event);
+    })
     .map(async (route) => {
       const target = route.target.threadId
         ? `${route.target.channelId}/${route.target.threadId}`

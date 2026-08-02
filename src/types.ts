@@ -46,7 +46,7 @@ export interface Route {
   /**
    * Fallback route: only fires when no other (non-fallback) route matched the
    * event. Multiple fallback routes may exist; they are all skipped whenever at
-   * least one regular route matches.
+   * least one regular route matches. Its own filters are ignored.
    */
   fallback?: boolean;
 }

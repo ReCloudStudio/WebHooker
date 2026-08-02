@@ -133,10 +133,22 @@ watch(
     form.threadId = r?.target.threadId ?? "";
     form.filters = (r && r.filters.length
       ? r.filters
-      : [{ type: "event", match: "", exclude: false }]
+      : form.fallback
+        ? []
+        : [{ type: "event", match: "", exclude: false }]
     ).map((f) => ({ ...f, matchText: fmtMatch(f.match) })) as FilterForm[];
     filterError.value = "";
     formError.value = "";
+  },
+);
+
+watch(
+  () => form.fallback,
+  (v) => {
+    if (v && form.filters.every((f) => f.matchText.trim() === "")) {
+      form.filters = [];
+      filterError.value = "";
+    }
   },
 );
 
@@ -156,7 +168,7 @@ function collect(): Route | null {
     filters.push({ type: f.type, match, exclude: f.exclude });
   }
   filterError.value = "";
-  if (!filters.length) {
+  if (!form.fallback && !filters.length) {
     filterError.value = t("routeEditor.errAddFilter");
     return null;
   }
