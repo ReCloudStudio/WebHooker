@@ -1,4 +1,4 @@
-import { log } from "./log";
+import { log } from "../../lib/log";
 import {
   getOAuthURL,
   commentAsUser,
@@ -7,9 +7,10 @@ import {
   deleteCommentAsUser,
   mergePullRequestAsUser,
   closePullRequestAsUser,
-} from "./github-oauth";
-import { getDiscordLink, removeDiscordLink } from "./token-store";
-import type { Env } from "./types";
+} from "../../github/oauth";
+import { getDiscordLink, removeDiscordLink } from "../../github/store";
+import type { Env } from "../../types";
+import { MSG_CMD_ADD, MSG_CMD_EDIT, MSG_CMD_DEL } from "./commands";
 
 const DISCORD_API = "https://discord.com/api/v10";
 
@@ -17,13 +18,7 @@ const DISCORD_API = "https://discord.com/api/v10";
 const INTERACTION_TYPE = { PING: 1, COMMAND: 2, BUTTON: 3, MODAL_SUBMIT: 5 } as const;
 const CALLBACK_TYPE = { PONG: 1, MESSAGE: 4, DEFERRED_MESSAGE: 5, MODAL: 9 } as const;
 const COMMAND_TYPE = { CHAT_INPUT: 1, MESSAGE: 3 } as const;
-const OPTION_TYPE = { SUB_COMMAND: 1, SUB_COMMAND_GROUP: 2, STRING: 3 } as const;
 const EPHEMERAL = 64;
-
-// Right-click (message context-menu) command names → operation.
-const MSG_CMD_ADD = "GitHub: 添加评论";
-const MSG_CMD_EDIT = "GitHub: 编辑评论";
-const MSG_CMD_DEL = "GitHub: 删除评论";
 
 // Modal custom_id encodings (delimiter '|' never appears in owner/repo).
 const MODAL_ADD = "ghc|add|"; // ghc|add|owner|repo|issueNumber
@@ -32,71 +27,6 @@ const MODAL_EDIT = "ghc|edit|"; // ghc|edit|owner|repo|commentId
 // PR notification button custom_id encodings.
 const BTN_MERGE = "ghpr|merge|"; // ghpr|merge|owner|repo|pullNumber
 const BTN_CLOSE = "ghpr|close|"; // ghpr|close|owner|repo|pullNumber
-
-const APP_COMMANDS = [
-  {
-    name: "gh",
-    type: COMMAND_TYPE.CHAT_INPUT,
-    description: "GitHub 集成",
-    options: [
-      {
-        type: OPTION_TYPE.SUB_COMMAND,
-        name: "login",
-        description: "绑定你的 GitHub 账号以用本人身份评论",
-      },
-      { type: OPTION_TYPE.SUB_COMMAND, name: "logout", description: "解绑你的 GitHub 账号" },
-      {
-        type: OPTION_TYPE.SUB_COMMAND_GROUP,
-        name: "comment",
-        description: "对 issue/PR 评论进行增删改",
-        options: [
-          {
-            type: OPTION_TYPE.SUB_COMMAND,
-            name: "add",
-            description: "在 issue/PR 下新增评论",
-            options: [
-              {
-                type: OPTION_TYPE.STRING,
-                name: "link",
-                description: "issue/PR 链接",
-                required: true,
-              },
-            ],
-          },
-          {
-            type: OPTION_TYPE.SUB_COMMAND,
-            name: "edit",
-            description: "编辑一条评论",
-            options: [
-              {
-                type: OPTION_TYPE.STRING,
-                name: "link",
-                description: "评论链接（含 #issuecomment-）",
-                required: true,
-              },
-            ],
-          },
-          {
-            type: OPTION_TYPE.SUB_COMMAND,
-            name: "del",
-            description: "删除一条评论",
-            options: [
-              {
-                type: OPTION_TYPE.STRING,
-                name: "link",
-                description: "评论链接（含 #issuecomment-）",
-                required: true,
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  { name: MSG_CMD_ADD, type: COMMAND_TYPE.MESSAGE },
-  { name: MSG_CMD_EDIT, type: COMMAND_TYPE.MESSAGE },
-  { name: MSG_CMD_DEL, type: COMMAND_TYPE.MESSAGE },
-];
 
 // Comment link (has the comment id); check this BEFORE the plain issue regex.
 const GITHUB_COMMENT_RE =
@@ -601,109 +531,4 @@ async function modalSubmit(
       return respond(env, id, token, errText(err));
     }
   }
-}
-
-/**
- * Resolve the Discord application id: env var → KV cache → Discord API
- * (then cached in KV for later runs).
- */
-export async function getApplicationId(env: Env): Promise<string | null> {
-  if (env.DISCORD_APPLICATION_ID) return env.DISCORD_APPLICATION_ID;
-  try {
-    const cached = await env.KV.get("config:discord-app-id");
-    if (cached) return cached;
-  } catch {
-    // fall through to the API
-  }
-  const token = env.DISCORD_TOKEN ?? "";
-  if (!token) return null;
-  const res = await fetch(`${DISCORD_API}/oauth2/applications/@me`, {
-    headers: { Authorization: `Bot ${token}` },
-  });
-  if (!res.ok) {
-    log.warn({ status: res.status }, "Failed to fetch Discord application id");
-    return null;
-  }
-  const app = (await res.json()) as { id?: string };
-  if (app.id) {
-    try {
-      await env.KV.put("config:discord-app-id", app.id);
-    } catch {
-      // cache is best-effort
-    }
-    return app.id;
-  }
-  return null;
-}
-
-/** Register commands globally (~1h propagation); dedup for a day. */
-export async function registerGlobalCommands(env: Env): Promise<void> {
-  const token = env.DISCORD_TOKEN ?? "";
-  if (!token) return;
-  try {
-    if (await env.KV.get("cmd:registered:global")) return;
-  } catch {
-    // fall through and register
-  }
-  const appId = await getApplicationId(env);
-  if (!appId) return;
-  const res = await fetch(`${DISCORD_API}/applications/${appId}/commands`, {
-    method: "PUT",
-    headers: { Authorization: `Bot ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(APP_COMMANDS),
-  });
-  if (res.ok) {
-    try {
-      await env.KV.put("cmd:registered:global", "1", { expirationTtl: 86400 });
-    } catch {
-      // best-effort
-    }
-    log.info("Registered global application commands");
-  } else {
-    const err = await res.text();
-    log.warn({ status: res.status, err }, "Global command registration failed");
-  }
-}
-
-/** Register commands per guild for instant availability (new guilds only). */
-export async function syncGuildCommands(env: Env): Promise<void> {
-  const token = env.DISCORD_TOKEN ?? "";
-  if (!token) return;
-  const appId = await getApplicationId(env);
-  if (!appId) return;
-  const res = await fetch(`${DISCORD_API}/users/@me/guilds`, {
-    headers: { Authorization: `Bot ${token}` },
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    log.warn({ status: res.status, err }, "Failed to list guilds");
-    return;
-  }
-  const guilds = (await res.json()) as Array<{ id: string }>;
-  for (const guild of guilds) {
-    try {
-      if (await env.KV.get(`cmd:guild:${guild.id}`)) continue;
-      const r = await fetch(`${DISCORD_API}/applications/${appId}/guilds/${guild.id}/commands`, {
-        method: "PUT",
-        headers: { Authorization: `Bot ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(APP_COMMANDS),
-      });
-      if (r.ok) {
-        await env.KV.put(`cmd:guild:${guild.id}`, "1");
-        log.info({ guildId: guild.id }, "Registered guild application commands");
-      } else {
-        const err = await r.text();
-        log.warn({ guildId: guild.id, status: r.status, err }, "Command registration failed");
-      }
-    } catch (err) {
-      log.warn({ guildId: guild.id, err: String(err) }, "Command registration failed");
-    }
-  }
-}
-
-/** Entry point for the scheduled (cron) command sync. */
-export async function syncCommands(env: Env): Promise<void> {
-  if (!env.DISCORD_TOKEN) return;
-  await registerGlobalCommands(env);
-  await syncGuildCommands(env);
 }

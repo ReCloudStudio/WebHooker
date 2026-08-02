@@ -1,5 +1,5 @@
 import { Octokit } from "octokit";
-import { saveToken, getToken } from "./token-store";
+import { saveToken, getToken } from "./store";
 
 export function getOAuthURL(clientId: string, state: string): string {
   return `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo&state=${state}`;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { formatEvent } from "../formatter";
+import { formatEvent } from "../formatters";
 import type { Route, WebhookEvent } from "../types";
 
 const route: Route = {
@@ -31,7 +31,7 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(msg.embeds![0].title).toBe("acme/widget: Pushed 1 commit");
+    expect(msg.title).toBe("acme/widget: Pushed 1 commit");
   });
 
   it("pull_request title is repo#number: title", () => {
@@ -56,7 +56,7 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(msg.embeds![0].title).toBe("acme/widget#7: Add feature");
+    expect(msg.title).toBe("acme/widget#7: Add feature");
   });
 
   it("issue_comment title has no 'Comment on' prefix", () => {
@@ -77,8 +77,8 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(msg.embeds![0].title).toBe("acme/widget#3: Bug report");
-    expect(msg.embeds![0].title).not.toContain("Comment on");
+    expect(msg.title).toBe("acme/widget#3: Bug report");
+    expect(msg.title).not.toContain("Comment on");
   });
 
   it("workflow_run title is repo: name — conclusion", () => {
@@ -98,8 +98,8 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(msg.embeds![0].title).toBe("acme/widget: CI — success");
-    expect(msg.embeds![0].fields![1].value).toBe("✅ build");
+    expect(msg.title).toBe("acme/widget: CI — success");
+    expect(msg.fields![1].value).toBe("✅ build");
   });
 
   it("workflow_run distinguishes queued and running from pending", () => {
@@ -119,8 +119,8 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(queued.embeds![0].title).toBe("acme/widget: CI — queued");
-    expect(queued.embeds![0].fields![0].value).toBe("⏳ queued");
+    expect(queued.title).toBe("acme/widget: CI — queued");
+    expect(queued.fields![0].value).toBe("⏳ queued");
 
     const running = formatEvent(
       route,
@@ -131,8 +131,8 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(running.embeds![0].title).toBe("acme/widget: CI — running");
-    expect(running.embeds![0].fields![0].value).toBe("🔄 running");
+    expect(running.title).toBe("acme/widget: CI — running");
+    expect(running.fields![0].value).toBe("🔄 running");
   });
 
   it("check_run uses status for queued and running", () => {
@@ -146,8 +146,8 @@ describe("message title spec", () => {
       route,
       event("check_run", { check_run: checkRun, repository: repo, sender }),
     );
-    expect(msg.embeds![0].title).toBe("acme/widget: Lint — running");
-    expect(msg.embeds![0].fields![0].value).toBe("🔄 running");
+    expect(msg.title).toBe("acme/widget: Lint — running");
+    expect(msg.fields![0].value).toBe("🔄 running");
   });
 
   it("unknown events fall back to repo: event: action", () => {
@@ -155,7 +155,7 @@ describe("message title spec", () => {
       route,
       event("custom_event", { action: "ran", repository: repo, sender }),
     );
-    expect(msg.embeds![0].title).toBe("acme/widget: custom_event: ran");
+    expect(msg.title).toBe("acme/widget: custom_event: ran");
   });
 });
 
@@ -169,8 +169,8 @@ describe("group emoji toggle", () => {
         sender,
       }),
     );
-    expect(msg.embeds![0].title).toBe("acme/widget: 📦 Repository Created");
-    expect(msg.embeds![0].description).toContain("🔗");
+    expect(msg.title).toBe("acme/widget: 📦 Repository Created");
+    expect(msg.description).toContain("🔗");
   });
 
   it("strips emoji when showEmoji is false", () => {
@@ -184,9 +184,9 @@ describe("group emoji toggle", () => {
       undefined,
       false,
     );
-    expect(msg.embeds![0].title).toBe("acme/widget: Repository Created");
-    expect(msg.embeds![0].title).not.toContain("📦");
-    expect(msg.embeds![0].description).not.toContain("🔗");
+    expect(msg.title).toBe("acme/widget: Repository Created");
+    expect(msg.title).not.toContain("📦");
+    expect(msg.description).not.toContain("🔗");
   });
 
   it("strips emoji from push description when disabled", () => {
@@ -204,8 +204,8 @@ describe("group emoji toggle", () => {
       undefined,
       false,
     );
-    expect(msg.embeds![0].description).not.toContain("⚠️");
-    expect(msg.embeds![0].description).not.toContain("🆕");
+    expect(msg.description).not.toContain("⚠️");
+    expect(msg.description).not.toContain("🆕");
   });
 
   it("strips emoji from workflow_run status when disabled", () => {
@@ -227,7 +227,7 @@ describe("group emoji toggle", () => {
       undefined,
       false,
     );
-    expect(msg.embeds![0].fields![0].value).toBe("failure");
-    expect(msg.embeds![0].fields![1].value).toBe("build");
+    expect(msg.fields![0].value).toBe("failure");
+    expect(msg.fields![1].value).toBe("build");
   });
 });

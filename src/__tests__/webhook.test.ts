@@ -1,6 +1,8 @@
 import { describe, it, expect } from "bun:test";
 import { createHmac } from "crypto";
-import { verifySignature, parseEvent, matchRoute } from "../webhook";
+import { verifySignature } from "../events/verify";
+import { parseEvent } from "../events/parse";
+import { matchRoute } from "../events/match";
 import type { Route, WebhookEvent } from "../types";
 
 function sign(body: string, secret: string): string {

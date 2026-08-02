@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { saveToken, getToken, removeToken, findUserIdByToken } from "../token-store";
+import { saveToken, getToken, removeToken, findUserIdByToken } from "../github/store";
 
 function createMockKV(): KVNamespace {
   const store = new Map<string, { value: string; expiration?: number }>();

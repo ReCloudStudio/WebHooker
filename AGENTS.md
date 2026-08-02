@@ -22,22 +22,49 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 ```text
 src/
 ├── index.ts              # CF Workers entry (fetch + scheduled), scheduled = command sync
-├── types.ts              # Env, Config, Route, Filter, WebhookEvent, FormattedMessage
+├── types.ts              # Env, Config, Route, Filter, WebhookEvent, NeutralMessage
 ├── config.ts             # loadRoutes/saveRoutes (KV config:routes, cache w/ 60s TTL), loadConfig from env
 ├── server.ts             # Hono app: /health, /webhook, /discord/interactions, mounts /auth, /admin + /
-├── webhook.ts            # HMAC verify (Web Crypto), parseEvent, extractBranch, matchRoute
-├── discord.ts            # Dispatch to Discord via REST (sendMessage)
-├── discord-rest.ts       # Discord REST sendMessage with retry + rate-limit handling
-├── discord-interactions.ts # Ed25519 verify + interaction handlers (/gh, buttons, modals) + command registration
-├── formatter.ts          # 24 event formatters + generic fallback (~1570 lines)
-├── github-oauth.ts       # OAuth URL, callback token exchange, getUserOctokit
-├── oauth-routes.ts       # GET /auth/github, callback (sets admin session if redirect=/admin), DELETE /token/:userId
-├── action-routes.ts      # POST /api/comment|merge|react (Bearer token auth via KV lookup)
-├── admin-routes.ts       # /admin UI + GET/PUT /admin/api/routes (session + ADMIN_USER_IDS auth, validation)
-├── admin-session.ts      # Session CRUD (KV session:{id}), isAdminUser, cookie helpers
-├── admin-ui.ts           # ADMIN_HTML: single-file config console (vanilla HTML/CSS/JS)
-├── token-store.ts        # KV-based token CRUD with findUserIdByToken reverse lookup
-└── log.ts                # JSON console logger (info/warn/error/fatal)
+├── core/
+│   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → driver.send (recordSend + group filter)
+├── events/               # GitHub webhook pipeline (was webhook.ts)
+│   ├── verify.ts         # HMAC signature verify (Web Crypto, timing-safe)
+│   ├── parse.ts          # parseEvent (headers + body → WebhookEvent)
+│   └── match.ts          # matchRoute, eventOwners, extractBranch, keyword regex filtering
+├── formatters/           # Platform-neutral message formatters (was formatter.ts)
+│   ├── index.ts          # formatEvent: 24-event switch → NeutralMessage + re-exports
+│   ├── colors.ts         # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
+│   ├── helpers.ts        # emojiPrefix, T, buildMessage
+│   └── *.ts              # push, pull-request, issues, comments, workflow, release, create,
+│                         # repo, check, review, commit-comment, deployment, member, label,
+│                         # milestone, discussion, repository, security, generic
+├── drivers/              # Platform drivers (pluggable push targets)
+│   ├── types.ts          # PlatformDriver interface + SendResult
+│   ├── index.ts          # getDriver() registry (discord default + telegram stub)
+│   ├── discord/
+│   │   ├── index.ts      # DiscordDriver: send → renderNeutralMessage + rest.sendMessage
+│   │   ├── render.ts     # renderNeutralMessage: NeutralMessage → Discord FormattedMessage
+│   │   ├── rest.ts       # Discord REST sendMessage with retry + rate-limit handling
+│   │   ├── interactions.ts # Ed25519 verify + interaction handlers (/gh, buttons, modals)
+│   │   └── commands.ts   # APP_COMMANDS + registerGlobalCommands/syncGuildCommands/syncCommands
+│   └── telegram/
+│       └── index.ts      # TelegramDriver stub (not implemented yet)
+├── github/
+│   ├── oauth.ts          # OAuth URL, callback token exchange, getUserOctokit, comment/merge/close actions
+│   └── store.ts          # KV-based token CRUD + discord-link mapping (was token-store.ts)
+├── web/                  # HTTP UI/API routes
+│   ├── oauth-routes.ts   # GET /auth/github, callback (admin session / discord-link), DELETE /token/:userId
+│   ├── action-routes.ts  # POST /api/comment|merge|react (Bearer token auth via KV lookup)
+│   ├── admin-routes.ts   # /admin UI + GET/PUT /admin/api/routes (session + ADMIN_USER_IDS auth, validation)
+│   ├── session.ts        # Session CRUD (KV session:{id}), isAdminUser, cookie helpers
+│   ├── groups.ts         # Group CRUD (config:groups), resolveScope, hasAnyAccess
+│   ├── home-routes.ts    # home page
+│   └── legal-routes.ts   # legal / privacy / terms pages
+└── lib/                  # shared infra
+    ├── i18n.ts           # loadTranslations, t() with param interpolation
+    ├── send-log.ts       # SendRecord, recordSend, getSendLog
+    ├── log.ts            # JSON console logger (info/warn/error/fatal)
+    └── locales/          # en.ts, zh.ts translation dictionaries
 ```
 
 ## Responsibilities
@@ -57,8 +84,8 @@ src/
   `payload.repository.full_name`; fall back to `t("common.repository")` when missing.
 - Do NOT use `"Comment on org/repo"` / `"Review on org/repo"` prefixes. Comments, reviews
   and inline comments use the same `{repo}{#number}: {title}` title as their parent object.
-- All event-specific emoji live in `src/formatter.ts` (via the `em()` helper), never in the
-  locale files. Emoji is controlled per group through the `Group.emoji` toggle (default true);
+- All event-specific emoji live in `src/formatters/` (via the `emojiPrefix` helper), never in
+  the locale files. Emoji is controlled per group through the `Group.emoji` toggle (default true);
   `showEmoji=false` must strip every emoji from titles, descriptions, fields and links.
 - Milestone progress bars (🟢🟡🟠⬜) are data visualization and are exempt from the emoji toggle.
 - Locale templates use a `{emoji}` placeholder immediately followed by the text (no space);

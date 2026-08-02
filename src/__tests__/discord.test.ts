@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { sendMessage } from "../discord-rest";
-import { dispatchEvent } from "../discord";
+import { sendMessage } from "../drivers/discord/rest";
+import { dispatchEvent } from "../core/dispatch";
 import type { Env, Route } from "../types";
 
 function mockFetch(handler: (url: string, init?: RequestInit) => Response): void {

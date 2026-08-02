@@ -1,11 +1,11 @@
-import type { Config, FormattedMessage, WebhookEvent, Env, Route } from "./types";
-import { formatEvent } from "./formatter";
-import { matchRoute, eventOwners } from "./webhook";
-import { log } from "./log";
-import { loadTranslations, type Translations } from "./i18n";
-import { sendMessage } from "./discord-rest";
-import { recordSend } from "./send-log";
-import { loadGroups, groupAcceptsOwners } from "./groups";
+import type { Config, WebhookEvent, Env, Route } from "../types";
+import { formatEvent } from "../formatters";
+import { matchRoute, eventOwners } from "../events/match";
+import { log } from "../lib/log";
+import { loadTranslations, type Translations } from "../lib/i18n";
+import { recordSend } from "../lib/send-log";
+import { loadGroups, groupAcceptsOwners } from "../web/groups";
+import { getDriver } from "../drivers";
 
 export async function dispatchEvent(config: Config, event: WebhookEvent, env: Env): Promise<void> {
   const langs = [...new Set(config.routes.map((r) => r.lang ?? "en"))];
@@ -20,10 +20,6 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
   const groupById = new Map(groups.map((g) => [g.id, g]));
   const owners = eventOwners(event);
 
-  // A regular route counts as "matched" only when it passes both its filters
-  // and its group's owner restriction. Fallback routes ignore their own filters
-  // and fire whenever no regular route matched, so they still catch events that
-  // a regular route's group suppressed.
   const accepted = (route: Route): boolean => {
     if (!route.groupId) return true;
     const group = groupById.get(route.groupId);
@@ -50,7 +46,8 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
         const group = route.groupId ? groupById.get(route.groupId) : undefined;
         const showEmoji = group?.emoji !== false;
         const message = formatEvent(route, event, tr, showEmoji);
-        await sendToChannel(route.target.channelId, message, env, route.target.threadId);
+        const result = await getDriver(route.target).send(message, route.target, env);
+        if (!result.ok) throw new Error(result.error ?? "Send failed");
         await recordSend(env.KV, {
           ts: Date.now(),
           routeId: route.id,
@@ -74,15 +71,4 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
     });
 
   await Promise.allSettled(tasks);
-}
-
-async function sendToChannel(
-  channelId: string,
-  message: FormattedMessage,
-  env: Env,
-  threadId?: string,
-): Promise<void> {
-  const token = env.DISCORD_TOKEN ?? "";
-  const result = await sendMessage(token, channelId, message, threadId);
-  if (!result.ok) throw new Error(result.error ?? "Send failed");
 }

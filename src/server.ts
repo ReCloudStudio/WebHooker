@@ -1,15 +1,16 @@
 import { Hono } from "hono";
 import type { Env } from "./types";
-import { verifySignature, parseEvent } from "./webhook";
-import { dispatchEvent } from "./discord";
-import { handleInteractionRequest } from "./discord-interactions";
-import { createOAuthRoutes } from "./oauth-routes";
-import { createActionRoutes } from "./action-routes";
-import { createAdminRoutes } from "./admin-routes";
-import { createLegalRoutes } from "./legal-routes";
-import { createHomeRoutes } from "./home-routes";
+import { verifySignature } from "./events/verify";
+import { parseEvent } from "./events/parse";
+import { dispatchEvent } from "./core/dispatch";
+import { handleInteractionRequest } from "./drivers/discord/interactions";
+import { createOAuthRoutes } from "./web/oauth-routes";
+import { createActionRoutes } from "./web/action-routes";
+import { createAdminRoutes } from "./web/admin-routes";
+import { createLegalRoutes } from "./web/legal-routes";
+import { createHomeRoutes } from "./web/home-routes";
 import { loadConfig } from "./config";
-import { log } from "./log";
+import { log } from "./lib/log";
 
 const MAX_BODY_SIZE = 1024 * 1024;
 

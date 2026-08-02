@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { getOAuthURL, handleOAuthCallback } from "./github-oauth";
-import { removeToken, saveDiscordLink } from "./token-store";
-import { createAdminSession, adminCookie } from "./admin-session";
+import { getOAuthURL, handleOAuthCallback } from "../github/oauth";
+import { removeToken, saveDiscordLink } from "../github/store";
+import { createAdminSession, adminCookie } from "./session";
 import { loadGroups, resolveScope, hasAnyAccess } from "./groups";
-import type { Env } from "./types";
+import type { Env } from "../types";
 
 interface PendingState {
   redirectTo: string;

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { Env } from "./types";
+import type { Env } from "../types";
 
 type Lang = "zh" | "en";
 

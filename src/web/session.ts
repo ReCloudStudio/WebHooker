@@ -1,4 +1,4 @@
-import type { Env } from "./types";
+import type { Env } from "../types";
 
 const SESSION_COOKIE = "wh_admin_session";
 const SESSION_TTL = 7 * 24 * 3600;

@@ -6,7 +6,7 @@ import {
   destroyAdminSession,
   adminCookie,
   clearAdminCookie,
-} from "../admin-session";
+} from "../web/session";
 import { loadRoutes, saveRoutes, loadConfig } from "../config";
 import type { Env, Route } from "../types";
 

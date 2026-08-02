@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { recordSend, getSendLog } from "../send-log";
+import { recordSend, getSendLog } from "../lib/send-log";
 
 function createMockKV(): KVNamespace {
   const store = new Map<string, { value: string; expiration?: number }>();

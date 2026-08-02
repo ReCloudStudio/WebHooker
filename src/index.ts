@@ -1,7 +1,7 @@
 import { createServer } from "./server";
-import { syncCommands } from "./discord-interactions";
+import { syncCommands } from "./drivers/discord/commands";
 import type { Env } from "./types";
-import { log } from "./log";
+import { log } from "./lib/log";
 
 const app = createServer();
 

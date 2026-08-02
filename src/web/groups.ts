@@ -1,6 +1,6 @@
-import type { Env, Group } from "./types";
-import { isAdminUser } from "./admin-session";
-import { log } from "./log";
+import type { Env, Group } from "../types";
+import { isAdminUser } from "./session";
+import { log } from "../lib/log";
 
 const GROUPS_KEY = "config:groups";
 

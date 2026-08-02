@@ -84,6 +84,38 @@ export interface WebhookEvent {
   signature?: string;
 }
 
+export interface NeutralAuthor {
+  name: string;
+  iconUrl?: string;
+  url?: string;
+}
+
+export interface NeutralField {
+  name: string;
+  value: string;
+  inline?: boolean;
+}
+
+export type NeutralActionStyle = "primary" | "danger" | "secondary";
+
+export interface NeutralAction {
+  id: string;
+  label: string;
+  style: NeutralActionStyle;
+}
+
+export interface NeutralMessage {
+  author?: NeutralAuthor;
+  title: string;
+  url?: string;
+  color?: number;
+  description?: string;
+  fields?: NeutralField[];
+  footer?: string;
+  timestamp?: string;
+  actions?: NeutralAction[];
+}
+
 export interface FormattedMessage {
   embeds?: Array<{
     title?: string;

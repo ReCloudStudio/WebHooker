@@ -1,15 +1,15 @@
 import { Hono } from "hono";
-import type { Env, Route, Group } from "./types";
-import { loadRoutes, saveRoutes } from "./config";
+import type { Env, Route, Group } from "../types";
+import { loadRoutes, saveRoutes } from "../config";
 import {
   getAdminSession,
   destroyAdminSession,
   clearAdminCookie,
   type AdminSession,
-} from "./admin-session";
+} from "./session";
 import { loadGroups, saveGroups, resolveScope, hasAnyAccess, type AccessScope } from "./groups";
-import { getSendLog } from "./send-log";
-import { log } from "./log";
+import { getSendLog } from "../lib/send-log";
+import { log } from "../lib/log";
 
 const VALID_FILTER_TYPES = new Set(["event", "repo", "actor", "action", "branch", "keyword"]);
 const ID_RE = /^[a-z0-9][a-z0-9-]*$/;

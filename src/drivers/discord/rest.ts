@@ -1,4 +1,4 @@
-import { log } from "./log";
+import { log } from "../../lib/log";
 
 const DISCORD_API = "https://discord.com/api/v10";
 

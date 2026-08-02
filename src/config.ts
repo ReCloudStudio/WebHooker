@@ -1,5 +1,5 @@
 import type { Env, Config, Route } from "./types";
-import { log } from "./log";
+import { log } from "./lib/log";
 
 const CONFIG_CACHE_TTL = 60_000;
 const ROUTES_KEY = "config:routes";

@@ -1,8 +1,8 @@
 import { Hono } from "hono";
-import { getUserOctokit } from "./github-oauth";
-import { findUserIdByToken } from "./token-store";
-import type { Env } from "./types";
-import { log } from "./log";
+import { getUserOctokit } from "../github/oauth";
+import { findUserIdByToken } from "../github/store";
+import type { Env } from "../types";
+import { log } from "../lib/log";
 
 function extractBearerToken(c: {
   req: { header: (name: string) => string | undefined };
