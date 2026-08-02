@@ -14,6 +14,21 @@ export interface Route {
     threadId?: string;
   };
   lang?: string;
+  groupId?: string;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  adminIds: string[];
+  owners?: string[];
+}
+
+export interface Me {
+  login: string;
+  userId: string;
+  isSuper: boolean;
+  groups: Group[];
 }
 
 export const FILTER_TYPES = ["event", "repo", "actor", "action", "branch", "keyword"] as const;

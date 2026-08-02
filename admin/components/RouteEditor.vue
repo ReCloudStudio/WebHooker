@@ -14,6 +14,14 @@
             <label>Name</label>
             <input v-model="form.name" type="text" placeholder="My Route" required />
           </div>
+          <div class="field">
+            <label>Group</label>
+            <select v-model="form.groupId" :disabled="!groups.length">
+              <option value="" disabled>{{ groups.length ? "Select a group" : "No groups yet" }}</option>
+              <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
+            </select>
+            <div v-if="!groups.length" class="hint">Create a group first (Groups tab).</div>
+          </div>
           <div class="row2">
             <div class="field">
               <label>ID</label>
@@ -68,14 +76,14 @@
 
 <script setup lang="ts">
 import { reactive, watch } from "vue";
-import type { Filter, Route } from "~/types";
+import type { Filter, Route, Group } from "~/types";
 import { FILTER_TYPES, FILTER_LABELS, fmtMatch } from "~/types";
 
 interface FilterForm extends Filter {
   matchText: string;
 }
 
-const props = defineProps<{ open: boolean; route: Route | null; saving: boolean }>();
+const props = defineProps<{ open: boolean; route: Route | null; saving: boolean; groups: Group[] }>();
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "save", route: Route): void;
@@ -92,6 +100,7 @@ const form = reactive({
   enabled: true,
   channelId: "",
   threadId: "",
+  groupId: "",
   filters: [] as FilterForm[],
 });
 
@@ -124,6 +133,7 @@ watch(
     form.enabled = r?.enabled ?? true;
     form.channelId = r?.target.channelId ?? "";
     form.threadId = r?.target.threadId ?? "";
+    form.groupId = r?.groupId ?? (props.groups.length === 1 ? props.groups[0]!.id : "");
     form.filters = (r && r.filters.length
       ? r.filters
       : [{ type: "event", match: "", exclude: false }]
@@ -158,6 +168,7 @@ function collect(): Route | null {
     name: form.name.trim(),
     enabled: form.enabled,
     lang: form.lang.trim() || undefined,
+    groupId: form.groupId || undefined,
     filters,
     target: {
       channelId: form.channelId.trim(),
@@ -180,6 +191,10 @@ function save(): void {
   }
   if (!route.target.channelId) {
     formError.value = "Channel ID is required";
+    return;
+  }
+  if (!route.groupId) {
+    formError.value = "Please select a group";
     return;
   }
   emit("save", route);

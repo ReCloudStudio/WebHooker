@@ -339,6 +339,12 @@ main {
   color: var(--accent-text);
 }
 
+.badge.group {
+  background: var(--ok-dim);
+  color: var(--ok);
+  border: 1px solid transparent;
+}
+
 .card-actions {
   display: flex;
   gap: 6px;

@@ -9,6 +9,7 @@
         <span class="route-name">{{ route.name || "(untitled)" }}</span>
         <span class="route-id">{{ route.id }}</span>
         <span v-if="route.lang" class="badge lang">{{ route.lang }}</span>
+        <span v-if="groupName" class="badge group">{{ groupName }}</span>
       </div>
       <div class="card-actions">
         <button class="icon-btn" title="Edit" @click="$emit('edit', route)">✎</button>
@@ -33,7 +34,7 @@
 import type { Route } from "~/types";
 import { FILTER_LABELS, fmtMatch } from "~/types";
 
-const props = defineProps<{ route: Route }>();
+const props = defineProps<{ route: Route; groupName?: string }>();
 const emit = defineEmits<{
   (e: "toggle", route: Route): void;
   (e: "edit", route: Route): void;
