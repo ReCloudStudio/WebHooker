@@ -2,7 +2,7 @@
   <article class="card" :class="{ disabled: !route.enabled }">
     <div class="card-head">
       <div class="card-title">
-        <label class="switch" @click.prevent>
+        <label class="switch">
           <input type="checkbox" :checked="route.enabled" @change="onToggle" />
           <span class="track"></span>
         </label>
