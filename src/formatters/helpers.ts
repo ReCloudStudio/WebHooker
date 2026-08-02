@@ -15,7 +15,7 @@ export function makeT(tr?: Translations): T {
 export function buildMessage(
   partial: Omit<Partial<NeutralMessage>, "title"> & { title: string },
   t: T,
-  repo?: string
+  repo?: string,
 ): NeutralMessage {
   return {
     ...partial,
