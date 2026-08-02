@@ -1,0 +1,246 @@
+export type Locale = "en" | "zh";
+
+const STORAGE_KEY = "wh-locale";
+
+type Dict = Record<string, string>;
+
+const en: Dict = {
+  "app.tagline": "CONFIG CONSOLE",
+  "app.newRoute": "+ New Route",
+  "app.newGroup": "+ New Group",
+  "app.signOut": "Sign out",
+  "app.langToggle": "中文",
+  "login.title": "Config Console",
+  "login.forbidden": "Access denied — this GitHub account is not an admin or group admin.",
+  "login.prompt": "Sign in with GitHub to manage routes.",
+  "login.button": "Sign in with GitHub",
+  "tab.groups": "Groups",
+  "tab.logs": "Send Logs",
+  "status.loading": "loading",
+  "status.connected": "connected",
+  "kpi.groups": "GROUPS",
+  "kpi.routes": "ROUTES",
+  "groups.empty": "No groups yet. Groups scope routes by org/user and delegate access.",
+  "groups.createFirst": "Create your first group",
+  "groups.admins": "ADMINS",
+  "groups.owners": "OWNERS",
+  "groups.any": "any",
+  "groups.open": "Open →",
+  "group.back": "← Groups",
+  "group.routesIn": "Routes in {name}",
+  "routes.emptyGroup": "No routes in this group yet.",
+  "routes.createFirst": "Create your first route",
+  "route.untitled": "(untitled)",
+  "route.noFilters": "no filters",
+  "route.channel": "CHANNEL",
+  "route.thread": "THREAD",
+  "filter.event": "Event",
+  "filter.repo": "Repo",
+  "filter.actor": "Actor",
+  "filter.action": "Action",
+  "filter.branch": "Branch",
+  "filter.keyword": "Keyword",
+  "routeEditor.editTitle": "Edit route",
+  "routeEditor.newTitle": "New route",
+  "routeEditor.close": "Close",
+  "routeEditor.name": "Name",
+  "routeEditor.namePlaceholder": "My Route",
+  "routeEditor.id": "ID",
+  "routeEditor.idHint": "Unique, use a-z / 0-9 / dashes",
+  "routeEditor.language": "Language",
+  "routeEditor.langPlaceholder": "en",
+  "routeEditor.langHint": "en or zh; custom via KV i18n:<lang>",
+  "routeEditor.enabled": "Route enabled",
+  "routeEditor.filters": "Filters",
+  "routeEditor.filtersNote": "(all must match · AND)",
+  "routeEditor.matchPlaceholder": "match value",
+  "routeEditor.not": "NOT",
+  "routeEditor.addFilter": "+ Add filter",
+  "routeEditor.channel": "Channel ID",
+  "routeEditor.channelPlaceholder": "Discord channel ID",
+  "routeEditor.thread": "Thread ID",
+  "routeEditor.threadNote": "(optional)",
+  "routeEditor.threadPlaceholder": "Optional thread ID",
+  "routeEditor.cancel": "Cancel",
+  "routeEditor.save": "Save route",
+  "routeEditor.errFilterMatch": "Filter {n} needs a match value",
+  "routeEditor.errAddFilter": "Add at least one filter",
+  "routeEditor.errIdFormat": "ID must be a-z / 0-9 / dashes",
+  "routeEditor.errName": "Name is required",
+  "routeEditor.errChannel": "Channel ID is required",
+  "groupEditor.editTitle": "Edit group",
+  "groupEditor.newTitle": "New group",
+  "groupEditor.close": "Close",
+  "groupEditor.name": "Name",
+  "groupEditor.namePlaceholder": "My Team",
+  "groupEditor.id": "ID",
+  "groupEditor.idPlaceholder": "my-team",
+  "groupEditor.idHint": "Unique, use a-z / 0-9 / dashes",
+  "groupEditor.admins": "Group admins",
+  "groupEditor.adminsNote": "(GitHub login or user id, comma-separated)",
+  "groupEditor.adminsPlaceholder": "octocat, 12345",
+  "groupEditor.adminsHint": "These users can view logs and edit this group's routes.",
+  "groupEditor.owners": "Owner scope",
+  "groupEditor.ownersNote": "(GitHub org / user logins, comma-separated)",
+  "groupEditor.ownersPlaceholder": "my-org, some-user",
+  "groupEditor.ownersHint":
+    "Only webhook events from these orgs/users enter this group's routes. Leave empty for no restriction.",
+  "groupEditor.cancel": "Cancel",
+  "groupEditor.save": "Save group",
+  "groupEditor.errIdFormat": "ID must be a-z / 0-9 / dashes",
+  "groupEditor.errName": "Name is required",
+  "logs.lastSends": "LAST {n} SENDS",
+  "logs.refresh": "⟳ Refresh",
+  "logs.empty": "No send records yet — trigger a webhook to see results.",
+  "logs.repo": "REPO",
+  "logs.target": "TARGET",
+  "toast.routesSaved": "Routes saved",
+  "toast.routeDeleted": "Route deleted",
+  "toast.groupSaved": "Groups saved",
+  "toast.groupDeleted": "Group deleted",
+  "toast.routeIdExists": "Route ID already exists",
+  "toast.groupIdExists": "Group ID already exists",
+  "toast.saveFailed": "Save failed: {msg}",
+  "toast.deleteFailed": "Delete failed: {msg}",
+  "confirm.deleteRoute": 'Delete route "{name}"?',
+  "confirm.deleteGroup": 'Delete group "{name}"?',
+  "confirm.deleteGroupWarn": " {n} route(s) reference it and will lose their group.",
+};
+
+const zh: Dict = {
+  "app.tagline": "配置控制台",
+  "app.newRoute": "+ 新建路由",
+  "app.newGroup": "+ 新建分组",
+  "app.signOut": "退出登录",
+  "app.langToggle": "EN",
+  "login.title": "配置控制台",
+  "login.forbidden": "访问被拒绝 —— 该 GitHub 账号不是超级管理员或分组管理员。",
+  "login.prompt": "使用 GitHub 登录以管理路由。",
+  "login.button": "使用 GitHub 登录",
+  "tab.groups": "分组",
+  "tab.logs": "发送日志",
+  "status.loading": "加载中",
+  "status.connected": "已连接",
+  "kpi.groups": "分组",
+  "kpi.routes": "路由",
+  "groups.empty": "还没有分组。分组按组织/用户限定路由并委派访问权限。",
+  "groups.createFirst": "创建第一个分组",
+  "groups.admins": "管理员",
+  "groups.owners": "来源",
+  "groups.any": "任意",
+  "groups.open": "进入 →",
+  "group.back": "← 返回分组",
+  "group.routesIn": "{name} 的路由",
+  "routes.emptyGroup": "该分组还没有路由。",
+  "routes.createFirst": "创建第一个路由",
+  "route.untitled": "（未命名）",
+  "route.noFilters": "无过滤器",
+  "route.channel": "频道",
+  "route.thread": "子区",
+  "filter.event": "事件",
+  "filter.repo": "仓库",
+  "filter.actor": "操作者",
+  "filter.action": "动作",
+  "filter.branch": "分支",
+  "filter.keyword": "关键词",
+  "routeEditor.editTitle": "编辑路由",
+  "routeEditor.newTitle": "新建路由",
+  "routeEditor.close": "关闭",
+  "routeEditor.name": "名称",
+  "routeEditor.namePlaceholder": "我的路由",
+  "routeEditor.id": "ID",
+  "routeEditor.idHint": "唯一，使用 a-z / 0-9 / 短横线",
+  "routeEditor.language": "语言",
+  "routeEditor.langPlaceholder": "zh",
+  "routeEditor.langHint": "en 或 zh；可通过 KV i18n:<lang> 自定义",
+  "routeEditor.enabled": "启用路由",
+  "routeEditor.filters": "过滤器",
+  "routeEditor.filtersNote": "（全部匹配 · AND）",
+  "routeEditor.matchPlaceholder": "匹配值",
+  "routeEditor.not": "取反",
+  "routeEditor.addFilter": "+ 添加过滤器",
+  "routeEditor.channel": "频道 ID",
+  "routeEditor.channelPlaceholder": "Discord 频道 ID",
+  "routeEditor.thread": "子区 ID",
+  "routeEditor.threadNote": "（可选）",
+  "routeEditor.threadPlaceholder": "可选的子区 ID",
+  "routeEditor.cancel": "取消",
+  "routeEditor.save": "保存路由",
+  "routeEditor.errFilterMatch": "第 {n} 个过滤器需要匹配值",
+  "routeEditor.errAddFilter": "至少添加一个过滤器",
+  "routeEditor.errIdFormat": "ID 只能是 a-z / 0-9 / 短横线",
+  "routeEditor.errName": "名称为必填项",
+  "routeEditor.errChannel": "频道 ID 为必填项",
+  "groupEditor.editTitle": "编辑分组",
+  "groupEditor.newTitle": "新建分组",
+  "groupEditor.close": "关闭",
+  "groupEditor.name": "名称",
+  "groupEditor.namePlaceholder": "我的团队",
+  "groupEditor.id": "ID",
+  "groupEditor.idPlaceholder": "my-team",
+  "groupEditor.idHint": "唯一，使用 a-z / 0-9 / 短横线",
+  "groupEditor.admins": "分组管理员",
+  "groupEditor.adminsNote": "（GitHub 登录名或用户 ID，逗号分隔）",
+  "groupEditor.adminsPlaceholder": "octocat, 12345",
+  "groupEditor.adminsHint": "这些用户可以查看日志并编辑本分组的路由。",
+  "groupEditor.owners": "来源限定",
+  "groupEditor.ownersNote": "（GitHub 组织 / 用户登录名，逗号分隔）",
+  "groupEditor.ownersPlaceholder": "my-org, some-user",
+  "groupEditor.ownersHint": "只有来自这些组织/用户的 webhook 事件才会进入本分组的路由。留空表示不限制。",
+  "groupEditor.cancel": "取消",
+  "groupEditor.save": "保存分组",
+  "groupEditor.errIdFormat": "ID 只能是 a-z / 0-9 / 短横线",
+  "groupEditor.errName": "名称为必填项",
+  "logs.lastSends": "最近 {n} 条发送",
+  "logs.refresh": "⟳ 刷新",
+  "logs.empty": "还没有发送记录 —— 触发一次 webhook 即可查看结果。",
+  "logs.repo": "仓库",
+  "logs.target": "目标",
+  "toast.routesSaved": "路由已保存",
+  "toast.routeDeleted": "路由已删除",
+  "toast.groupSaved": "分组已保存",
+  "toast.groupDeleted": "分组已删除",
+  "toast.routeIdExists": "路由 ID 已存在",
+  "toast.groupIdExists": "分组 ID 已存在",
+  "toast.saveFailed": "保存失败：{msg}",
+  "toast.deleteFailed": "删除失败：{msg}",
+  "confirm.deleteRoute": "确定删除路由“{name}”吗？",
+  "confirm.deleteGroup": "确定删除分组“{name}”吗？",
+  "confirm.deleteGroupWarn": " 有 {n} 条路由引用它，将失去所属分组。",
+};
+
+const messages: Record<Locale, Dict> = { en, zh };
+
+function detectLocale(): Locale {
+  if (typeof window === "undefined") return "zh";
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  if (stored === "en" || stored === "zh") return stored;
+  const nav = (window.navigator.language || "").toLowerCase();
+  return nav.startsWith("zh") ? "zh" : "en";
+}
+
+export function useI18n() {
+  const locale = useState<Locale>("wh-locale", detectLocale);
+
+  function setLocale(next: Locale): void {
+    locale.value = next;
+    if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, next);
+  }
+
+  function toggle(): void {
+    setLocale(locale.value === "zh" ? "en" : "zh");
+  }
+
+  function t(key: string, params?: Record<string, string | number>): string {
+    const dict = messages[locale.value] ?? en;
+    let str = dict[key] ?? en[key] ?? key;
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        str = str.replace(`{${k}}`, String(v));
+      }
+    }
+    return str;
+  }
+
+  return { locale, setLocale, toggle, t };
+}
