@@ -18,14 +18,14 @@ WebHooker requires several secrets to function. For local development, store the
 
 ### Optional Secrets
 
-| Variable                  | Description                                                                              | Default                           |
-| ------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------- |
-| `DISCORD_PUBLIC_KEY`      | Discord application public key (Developer Portal) — required for interactions            | Unset → interactions return `401` |
-| `DISCORD_APPLICATION_ID`  | Discord application id; auto-resolved when omitted                                       | Auto-resolved                     |
-| `TELEGRAM_WEBHOOK_SECRET` | Secret token for `POST /telegram/webhook` verification (X-Telegram-Bot-Api-Secret-Token) | Disabled (no verification)        |
+| Variable                    | Description                                                                                                                 | Default                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `DISCORD_PUBLIC_KEY`        | Discord application public key (Developer Portal) — required for interactions                                               | Unset → interactions return `401` |
+| `DISCORD_APPLICATION_ID`    | Discord application id; auto-resolved when omitted                                                                          | Auto-resolved                     |
+| `TELEGRAM_WEBHOOK_SECRET`   | Secret token for `POST /telegram/webhook` verification (X-Telegram-Bot-Api-Secret-Token)                                    | Disabled (no verification)        |
 | `TELEGRAM_RICH_HEADER_HOST` | Base URL of an external rich-header service; when unset, the built-in `GET /api/richheader` serves the Telegram avatar card | Built-in `/api/richheader`        |
-| `BASE_URL`                | Public URL for OAuth callbacks                                                           | `http://localhost:8787`           |
-| `ADMIN_USER_IDS`          | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                 | Disabled                          |
+| `BASE_URL`                  | Public URL for OAuth callbacks                                                                                              | `http://localhost:8787`           |
+| `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                                                    | Disabled                          |
 
 ## Web UI
 

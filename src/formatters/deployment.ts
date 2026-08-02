@@ -63,7 +63,11 @@ export function formatDeployment(
   return buildMessage(
     {
       author,
-      title: t("events.deployment.title", { repo: repo ?? t("common.repository"), env, state: "created" }),
+      title: t("events.deployment.title", {
+        repo: repo ?? t("common.repository"),
+        env,
+        state: "created",
+      }),
       url: deployment.html_url ?? deployment.statuses_url,
       color: GITHUB_COLORS.deployment_pending,
       fields,

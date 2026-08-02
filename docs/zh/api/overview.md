@@ -10,29 +10,29 @@ https://your-worker.workers.dev
 
 ## 端点
 
-| 方法     | 路径                           | 鉴权         | 说明                                  |
-| -------- | ------------------------------ | ------------ | ------------------------------------- |
-| `GET`    | `/health`                      | 无           | 健康检查                              |
-| `POST`   | `/webhook`                     | HMAC 签名    | GitHub webhook 接入                   |
-| `POST`   | `/discord/interactions`        | Ed25519 签名 | Discord 交互（斜杠命令、按钮、modal） |
-| `POST`   | `/telegram/webhook`            | Secret token | Telegram 更新（bot `/gh` 命令）       |
+| 方法     | 路径                           | 鉴权         | 说明                                             |
+| -------- | ------------------------------ | ------------ | ------------------------------------------------ |
+| `GET`    | `/health`                      | 无           | 健康检查                                         |
+| `POST`   | `/webhook`                     | HMAC 签名    | GitHub webhook 接入                              |
+| `POST`   | `/discord/interactions`        | Ed25519 签名 | Discord 交互（斜杠命令、按钮、modal）            |
+| `POST`   | `/telegram/webhook`            | Secret token | Telegram 更新（bot `/gh` 命令）                  |
 | `GET`    | `/api/richheader`              | 无           | 用于 Telegram 头像链接预览卡片的 Open Graph 页面 |
-| `GET`    | `/auth/github`                 | 无           | 启动 GitHub OAuth 流程                |
-| `GET`    | `/auth/github/callback`        | 无           | OAuth 回调                            |
-| `DELETE` | `/auth/token/:userId`          | 无           | 撤销用户 Token                        |
-| `POST`   | `/api/comment`                 | Bearer Token | 创建议题评论                          |
-| `POST`   | `/api/merge`                   | Bearer Token | 合并拉取请求                          |
-| `POST`   | `/api/close`                   | Bearer Token | 关闭拉取请求                          |
-| `POST`   | `/api/react`                   | Bearer Token | 添加议题反应                          |
-| `GET`    | `/admin`                       | 管理员会话   | 配置控制台页面                        |
-| `GET`    | `/admin/api/routes`            | 管理员会话   | 列出路由                              |
-| `PUT`    | `/admin/api/routes`            | 管理员会话   | 替换路由                              |
-| `GET`    | `/admin/api/groups`            | 管理员会话   | 列出分组（按权限过滤）                |
-| `PUT`    | `/admin/api/groups`            | 管理员会话   | 替换分组（仅超级管理员）              |
-| `GET`    | `/admin/api/groups/:id/routes` | 管理员会话   | 列出某分组的路由                      |
-| `PUT`    | `/admin/api/groups/:id/routes` | 管理员会话   | 替换某分组的路由                      |
-| `GET`    | `/admin/api/me`                | 管理员会话   | 当前会话信息                          |
-| `GET`    | `/admin/api/logs`              | 管理员会话   | 发送日志（按权限过滤）                |
+| `GET`    | `/auth/github`                 | 无           | 启动 GitHub OAuth 流程                           |
+| `GET`    | `/auth/github/callback`        | 无           | OAuth 回调                                       |
+| `DELETE` | `/auth/token/:userId`          | 无           | 撤销用户 Token                                   |
+| `POST`   | `/api/comment`                 | Bearer Token | 创建议题评论                                     |
+| `POST`   | `/api/merge`                   | Bearer Token | 合并拉取请求                                     |
+| `POST`   | `/api/close`                   | Bearer Token | 关闭拉取请求                                     |
+| `POST`   | `/api/react`                   | Bearer Token | 添加议题反应                                     |
+| `GET`    | `/admin`                       | 管理员会话   | 配置控制台页面                                   |
+| `GET`    | `/admin/api/routes`            | 管理员会话   | 列出路由                                         |
+| `PUT`    | `/admin/api/routes`            | 管理员会话   | 替换路由                                         |
+| `GET`    | `/admin/api/groups`            | 管理员会话   | 列出分组（按权限过滤）                           |
+| `PUT`    | `/admin/api/groups`            | 管理员会话   | 替换分组（仅超级管理员）                         |
+| `GET`    | `/admin/api/groups/:id/routes` | 管理员会话   | 列出某分组的路由                                 |
+| `PUT`    | `/admin/api/groups/:id/routes` | 管理员会话   | 替换某分组的路由                                 |
+| `GET`    | `/admin/api/me`                | 管理员会话   | 当前会话信息                                     |
+| `GET`    | `/admin/api/logs`              | 管理员会话   | 发送日志（按权限过滤）                           |
 
 ## 管理控制台
 

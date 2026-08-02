@@ -220,10 +220,7 @@ describe("message title spec", () => {
       description: "Deploy request from octocat",
       html_url: "https://github.com/acme/widget/deployments/1",
     };
-    const msg = formatEvent(
-      route,
-      event("deployment", { deployment, repository: repo, sender }),
-    );
+    const msg = formatEvent(route, event("deployment", { deployment, repository: repo, sender }));
     expect(msg.title).toBe("acme/widget: Deployment to `production` — created");
     expect(msg.fields![0].value).toBe("🚀 created");
     expect(msg.fields![1].value).toBe("production");
