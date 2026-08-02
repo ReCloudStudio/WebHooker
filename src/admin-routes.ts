@@ -106,6 +106,13 @@ function validateGroups(
     ) {
       return { ok: false, error: `group "${g.id}".adminIds must be a list of strings` };
     }
+    if (
+      g.owners !== undefined &&
+      (!Array.isArray(g.owners) ||
+        !g.owners.every((o) => typeof o === "string" && o.trim().length > 0))
+    ) {
+      return { ok: false, error: `group "${g.id}".owners must be a list of strings` };
+    }
   }
   return { ok: true, groups: groups as Group[] };
 }

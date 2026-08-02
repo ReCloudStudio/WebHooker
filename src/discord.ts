@@ -1,10 +1,11 @@
 import type { Config, FormattedMessage, WebhookEvent, Env } from "./types";
 import { formatEvent } from "./formatter";
-import { matchRoute } from "./webhook";
+import { matchRoute, eventOwners } from "./webhook";
 import { log } from "./log";
 import { loadTranslations, type Translations } from "./i18n";
 import { sendMessage } from "./discord-rest";
 import { recordSend } from "./send-log";
+import { loadGroups, groupAcceptsOwners } from "./groups";
 
 export function isGatewayEnabled(env: Env): boolean {
   return env.DISCORD_GATEWAY_ENABLED === "true";
@@ -37,8 +38,17 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
     }),
   );
 
+  const groups = await loadGroups(env.KV);
+  const groupById = new Map(groups.map((g) => [g.id, g]));
+  const owners = eventOwners(event);
+
   for (const route of config.routes) {
     if (!matchRoute(route, event)) continue;
+
+    if (route.groupId) {
+      const group = groupById.get(route.groupId);
+      if (group && !groupAcceptsOwners(group, owners)) continue;
+    }
 
     const target = route.target.threadId
       ? `${route.target.channelId}/${route.target.threadId}`

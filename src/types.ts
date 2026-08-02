@@ -53,6 +53,12 @@ export interface Group {
    * Super admins (ADMIN_USER_IDS) always have access regardless of this list.
    */
   adminIds: string[];
+  /**
+   * GitHub organization/user logins (case-insensitive) whose webhook events are
+   * allowed into this group's routes. Empty/omitted = no owner restriction.
+   * Only super admins may edit this field.
+   */
+  owners?: string[];
 }
 
 export interface Filter {

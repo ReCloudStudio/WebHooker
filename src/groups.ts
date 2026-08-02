@@ -29,6 +29,17 @@ export function isGroupAdmin(group: Group, userId: string, login: string): boole
   return identityMatches(group.adminIds ?? [], userId, login);
 }
 
+/**
+ * Whether an event originating from `owners` (org/user logins) is allowed into
+ * this group. A group with no owner restriction accepts everything.
+ */
+export function groupAcceptsOwners(group: Group, owners: string[]): boolean {
+  const restrict = (group.owners ?? []).map((s) => s.trim().toLowerCase()).filter(Boolean);
+  if (restrict.length === 0) return true;
+  const seen = owners.map((s) => s.trim().toLowerCase()).filter(Boolean);
+  return seen.some((o) => restrict.includes(o));
+}
+
 export interface AccessScope {
   isSuper: boolean;
   /** Groups the user may view/edit. When isSuper, this is every group. */
