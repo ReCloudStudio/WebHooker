@@ -124,7 +124,7 @@ export function formatEvent(route: Route, event: WebhookEvent, tr?: Translations
     case "discussion_comment":
       return formatDiscussionComment(payload, repo, author, t);
     case "repository":
-      return formatRepository(payload, repo, author, t);
+      return formatRepository(payload, repo, repoUrl, author, t);
     case "code_scanning_alert":
       return formatCodeScanningAlert(payload, repo, author, t);
     case "dependabot_alert":
@@ -1231,6 +1231,7 @@ function formatDiscussionComment(
 function formatRepository(
   payload: Record<string, unknown>,
   repo: string | undefined,
+  repoUrl: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
 ): FormattedMessage {
@@ -1261,12 +1262,50 @@ function formatRepository(
     });
   }
 
+  // Enrich create / visibility-change notifications with a clickable link and
+  // basic metadata. repoUrl also makes the embed title a hyperlink for all actions.
+  const repoData = payload.repository as {
+    visibility?: string;
+    fork?: boolean;
+    description?: string | null;
+  };
+
+  const isCreateOrVisibility =
+    action === "created" || action === "publicized" || action === "privatized";
+
+  if (isCreateOrVisibility) {
+    if (repoData.visibility) {
+      fields.push({
+        name: t("events.repository.visibility"),
+        value: t("events.repository." + repoData.visibility) ?? repoData.visibility,
+        inline: true,
+      });
+    }
+    if (repoData.fork) {
+      fields.push({
+        name: t("common.repository"),
+        value: t("events.repository.is_fork"),
+        inline: true,
+      });
+    }
+  }
+
+  const descriptionParts: string[] = [];
+  if (isCreateOrVisibility && repoUrl) {
+    descriptionParts.push(`[${t("events.repository.open")}](${repoUrl})`);
+  }
+  if (isCreateOrVisibility && repoData.description) {
+    descriptionParts.push(`> ${repoData.description}`);
+  }
+
   return {
     embeds: [
       {
         author,
         title: t("events.repository.title", { action: al, repo: repo ?? t("common.repository") }),
+        url: repoUrl,
         color: GITHUB_COLORS.repository,
+        description: descriptionParts.length > 0 ? descriptionParts.join("\n") : undefined,
         fields: fields.length > 0 ? fields : undefined,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
         timestamp: new Date().toISOString(),

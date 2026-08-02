@@ -1,4 +1,4 @@
-import type { Config, FormattedMessage, WebhookEvent, Env } from "./types";
+import type { Config, FormattedMessage, WebhookEvent, Env, Route } from "./types";
 import { formatEvent } from "./formatter";
 import { matchRoute, eventOwners } from "./webhook";
 import { log } from "./log";
@@ -42,13 +42,20 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
   const groupById = new Map(groups.map((g) => [g.id, g]));
   const owners = eventOwners(event);
 
-  for (const route of config.routes) {
-    if (!matchRoute(route, event)) continue;
+  // Only routes that pass both their filters and their group's owner
+  // restriction count as "matched", so a fallback route still fires when a
+  // regular route was suppressed by its group.
+  const accepted = (route: Route): boolean => {
+    if (!route.groupId) return true;
+    const group = groupById.get(route.groupId);
+    return !group || groupAcceptsOwners(group, owners);
+  };
+  const matched = config.routes.filter((route) => matchRoute(route, event) && accepted(route));
+  const anyRegularMatched = matched.some((route) => !route.fallback);
 
-    if (route.groupId) {
-      const group = groupById.get(route.groupId);
-      if (group && !groupAcceptsOwners(group, owners)) continue;
-    }
+  for (const route of matched) {
+    // A fallback route only fires when no regular route matched the event.
+    if (route.fallback && anyRegularMatched) continue;
 
     const target = route.target.threadId
       ? `${route.target.channelId}/${route.target.threadId}`

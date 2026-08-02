@@ -27,6 +27,8 @@ export const zh = {
     pinned: "已置顶",
     unpinned: "已取消置顶",
     transferred: "已转移",
+    publicized: "已公开",
+    privatized: "已设为私有",
     locked: "已锁定",
     unlocked: "已解锁",
     renamed: "已重命名",
@@ -159,6 +161,12 @@ export const zh = {
     },
     repository: {
       title: "📦 仓库 {action}: {repo}",
+      open: "🔗 打开仓库",
+      public: "公开",
+      private: "私有",
+      internal: "内部",
+      is_fork: "这是 Fork 仓库",
+      visibility: "可见性",
     },
     code_scanning: {
       title: "🔍 代码扫描: {action}",

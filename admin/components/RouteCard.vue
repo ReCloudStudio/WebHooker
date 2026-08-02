@@ -9,6 +9,7 @@
         <span class="route-name">{{ route.name || t("route.untitled") }}</span>
         <span class="route-id">{{ route.id }}</span>
         <span v-if="route.lang" class="badge lang">{{ route.lang }}</span>
+        <span v-if="route.fallback" class="badge fallback">{{ t("route.fallback") }}</span>
       </div>
       <div class="card-actions">
         <button class="icon-btn" :title="t('routeEditor.editTitle')" @click="$emit('edit', route)">✎</button>

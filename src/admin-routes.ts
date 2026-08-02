@@ -83,6 +83,9 @@ function validateRoutes(
     if (r.lang !== undefined && typeof r.lang !== "string") {
       return { ok: false, error: `route "${r.id}".lang must be a string` };
     }
+    if (r.fallback !== undefined && typeof r.fallback !== "boolean") {
+      return { ok: false, error: `route "${r.id}".fallback must be a boolean` };
+    }
     if (!Array.isArray(r.filters) || r.filters.length === 0) {
       return { ok: false, error: `route "${r.id}" needs at least one filter` };
     }

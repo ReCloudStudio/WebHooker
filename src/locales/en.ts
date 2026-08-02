@@ -27,6 +27,8 @@ export const en = {
     pinned: "Pinned",
     unpinned: "Unpinned",
     transferred: "Transferred",
+    publicized: "made public",
+    privatized: "made private",
     locked: "Locked",
     unlocked: "Unlocked",
     renamed: "Renamed",
@@ -159,6 +161,12 @@ export const en = {
     },
     repository: {
       title: "📦 Repository {action}: {repo}",
+      open: "🔗 Open repository",
+      public: "public",
+      private: "private",
+      internal: "internal",
+      is_fork: "This is a fork",
+      visibility: "Visibility",
     },
     code_scanning: {
       title: "🔍 Code Scanning: {action}",

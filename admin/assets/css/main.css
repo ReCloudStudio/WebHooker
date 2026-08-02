@@ -14,6 +14,8 @@
   --accent-text: #3730a3;
   --ok: #16a34a;
   --ok-dim: #ecfdf3;
+  --warn: #b45309;
+  --warn-dim: #fef3c7;
   --bad: #dc2626;
   --bad-dim: #fef2f2;
   --dot: rgba(15, 23, 42, 0.05);
@@ -44,6 +46,8 @@
     --accent-text: #c7d2fe;
     --ok: #22c55e;
     --ok-dim: #10241a;
+    --warn: #fbbf24;
+    --warn-dim: #2a2410;
     --bad: #f05252;
     --bad-dim: #2a1618;
     --dot: rgba(148, 163, 184, 0.08);
@@ -342,6 +346,12 @@ main {
 .badge.group {
   background: var(--ok-dim);
   color: var(--ok);
+  border: 1px solid transparent;
+}
+
+.badge.fallback {
+  background: var(--warn-dim);
+  color: var(--warn);
   border: 1px solid transparent;
 }
 

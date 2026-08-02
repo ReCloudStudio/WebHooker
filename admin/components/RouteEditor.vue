@@ -30,6 +30,10 @@
             <input v-model="form.enabled" type="checkbox" />
             <span>{{ t("routeEditor.enabled") }}</span>
           </div>
+          <div class="field inline">
+            <input v-model="form.fallback" type="checkbox" />
+            <span>{{ t("routeEditor.fallback") }} <span class="lbl-note">{{ t("routeEditor.fallbackHint") }}</span></span>
+          </div>
           <div class="field">
             <label>{{ t("routeEditor.filters") }} <span class="lbl-note">{{ t("routeEditor.filtersNote") }}</span></label>
             <div v-for="(f, i) in form.filters" :key="i" class="filter-row">
@@ -91,6 +95,7 @@ const form = reactive({
   name: "",
   lang: "",
   enabled: true,
+  fallback: false,
   channelId: "",
   threadId: "",
   filters: [] as FilterForm[],
@@ -123,6 +128,7 @@ watch(
     form.name = r?.name ?? "";
     form.lang = r?.lang ?? "";
     form.enabled = r?.enabled ?? true;
+    form.fallback = r?.fallback ?? false;
     form.channelId = r?.target.channelId ?? "";
     form.threadId = r?.target.threadId ?? "";
     form.filters = (r && r.filters.length
@@ -158,6 +164,7 @@ function collect(): Route | null {
     id: form.id.trim(),
     name: form.name.trim(),
     enabled: form.enabled,
+    fallback: form.fallback || undefined,
     lang: form.lang.trim() || undefined,
     filters,
     target: {
