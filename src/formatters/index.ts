@@ -10,7 +10,7 @@ import { formatWorkflowRun } from "./workflow";
 import { formatRelease } from "./release";
 import { formatCreate, formatDelete } from "./create";
 import { formatStar, formatFork } from "./repo";
-import { formatCheckRun } from "./check";
+import { formatCheckRun, formatCheckSuite } from "./check";
 import { formatCommitComment } from "./commit-comment";
 import { formatDeploymentStatus } from "./deployment";
 import { formatMember } from "./member";
@@ -31,7 +31,7 @@ export { formatWorkflowRun } from "./workflow";
 export { formatRelease } from "./release";
 export { formatCreate, formatDelete } from "./create";
 export { formatStar, formatFork } from "./repo";
-export { formatCheckRun } from "./check";
+export { formatCheckRun, formatCheckSuite } from "./check";
 export { formatCommitComment } from "./commit-comment";
 export { formatDeploymentStatus } from "./deployment";
 export { formatMember } from "./member";
@@ -89,6 +89,8 @@ export function formatEvent(
       return formatFork(payload, repo, repoUrl, author, t, showEmoji);
     case "check_run":
       return formatCheckRun(payload, repo, author, t, showEmoji);
+    case "check_suite":
+      return formatCheckSuite(payload, repo, author, t, showEmoji);
     case "commit_comment":
       return formatCommitComment(payload, repo, author, t, showEmoji);
     case "deployment_status":

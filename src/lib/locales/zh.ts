@@ -56,6 +56,7 @@ export const zh = {
     commit: "提交",
     environment: "环境",
     url: "链接",
+    service: "服务",
     severity: "严重程度",
     rule: "规则",
     package: "包",
@@ -127,6 +128,9 @@ export const zh = {
     },
     check_run: {
       title: "{repo}: {name} — {conclusion}",
+    },
+    check_suite: {
+      title: "{repo}: 检查套件 {conclusion}",
     },
     pr_review: {
       action_review: "{emoji}**{action}** 审查",

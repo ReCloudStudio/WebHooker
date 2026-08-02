@@ -56,6 +56,7 @@ export const en = {
     commit: "Commit",
     environment: "Environment",
     url: "URL",
+    service: "Service",
     severity: "Severity",
     rule: "Rule",
     package: "Package",
@@ -127,6 +128,9 @@ export const en = {
     },
     check_run: {
       title: "{repo}: {name} — {conclusion}",
+    },
+    check_suite: {
+      title: "{repo}: Check suite {conclusion}",
     },
     pr_review: {
       action_review: "{emoji}**{action}** review",

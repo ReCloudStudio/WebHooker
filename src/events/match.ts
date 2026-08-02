@@ -44,6 +44,10 @@ function extractBranch(event: WebhookEvent): string | undefined {
     const wf = event.payload.workflow_run as { head_branch?: string } | undefined;
     return wf?.head_branch;
   }
+  if (event.event === "check_suite") {
+    const suite = event.payload.check_suite as { head_branch?: string } | undefined;
+    return suite?.head_branch;
+  }
   if (event.event === "commit_comment") {
     const comment = event.payload.comment as { position?: number | null } | undefined;
     if (comment?.position != null) {

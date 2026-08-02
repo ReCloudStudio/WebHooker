@@ -150,6 +150,26 @@ describe("message title spec", () => {
     expect(msg.fields![0].value).toBe("🔄 running");
   });
 
+  it("check_suite shows conclusion, service, branch and commit", () => {
+    const suite = {
+      html_url: "https://github.com/acme/widget/runs/2",
+      conclusion: "success",
+      status: "completed",
+      app: { name: "Cloudflare Pages" },
+      head_branch: "main",
+      head_sha: "abc123def456",
+    };
+    const msg = formatEvent(
+      route,
+      event("check_suite", { check_suite: suite, repository: repo, sender }),
+    );
+    expect(msg.title).toBe("acme/widget: Check suite success");
+    expect(msg.fields![0].value).toBe("✅ success");
+    expect(msg.fields![1].value).toBe("Cloudflare Pages");
+    expect(msg.fields![2].value).toBe("main");
+    expect(msg.fields![3].value).toBe("abc123d");
+  });
+
   it("unknown events fall back to repo: event: action", () => {
     const msg = formatEvent(
       route,
