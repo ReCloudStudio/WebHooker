@@ -141,6 +141,9 @@ function validateGroups(
     ) {
       return { ok: false, error: `group "${g.id}".owners must be a list of strings` };
     }
+    if (g.emoji !== undefined && typeof g.emoji !== "boolean") {
+      return { ok: false, error: `group "${g.id}".emoji must be a boolean` };
+    }
   }
   return { ok: true, groups: groups as Group[] };
 }

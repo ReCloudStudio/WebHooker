@@ -83,86 +83,87 @@ export const zh = {
   },
   events: {
     push: {
-      force_push: "⚠️ **强制推送**",
-      branch_created: "🆕 分支已创建",
+      force_push: "**强制推送**",
+      branch_created: "分支已创建",
       commits_pushed: "**{count}** 个提交已推送到 `{ref}`",
       view_comparison: "[查看比较]({url})",
       added: "+{count} 新增",
       removed: "-{count} 删除",
       modified: "~{count} 修改",
-      title: "推送了 {count} 个提交到 {repo}",
+      title: "{repo}: 推送了 {count} 个提交",
     },
     pr: {
-      action_pr: "{emoji} **{action}** 拉取请求",
+      action_pr: "{emoji}**{action}** 拉取请求",
       title: "{repo}#{number}: {title}",
     },
     issues: {
-      action_issue: "{emoji} **{action}** 议题",
+      action_issue: "{emoji}**{action}** 议题",
       title: "{repo}#{number}: {title}",
     },
     issue_comment: {
-      comment_on: "{repo}#{number} 的评论: {title}",
-      action_comment: "💬 **{action}** 评论",
+      title: "{repo}#{number}: {title}",
+      action_comment: "{emoji}**{action}** 评论",
     },
     workflow_run: {
-      title: "{name} — {conclusion}",
+      title: "{repo}: {name} — {conclusion}",
     },
     release: {
-      action_release: "{emoji} **{action}** 发布 `{tag}`",
-      title: "{name} — {repo}",
+      action_release: "{emoji}**{action}** 发布 `{tag}`",
+      title: "{repo}: {name}",
     },
     create: {
-      title: "{emoji} 已创建{type} `{ref}` 于 {repo}",
+      title: "{repo}: {emoji}已创建{type} `{ref}`",
     },
     delete: {
-      title: "{emoji} 已删除{type} `{ref}` 于 {repo}",
+      title: "{repo}: {emoji}已删除{type} `{ref}`",
     },
     star: {
-      starred: "⭐ 已加星标",
-      unstarred: "💫 已取消星标",
+      starred: "已加星标",
+      unstarred: "已取消星标",
+      title: "{repo}: {emoji}{label}",
     },
     fork: {
-      title: "🍴 已将 {repo} 复刻到 {forkee}",
+      title: "{repo}: {emoji}复刻到 {forkee}",
     },
     check_run: {
-      title: "{name} — {conclusion}",
+      title: "{repo}: {name} — {conclusion}",
     },
     pr_review: {
-      action_review: "{emoji} **{action}** 审查",
-      title: "{repo}#{number} 的审查: {title}",
+      action_review: "{emoji}**{action}** 审查",
+      title: "{repo}#{number}: {title}",
     },
     pr_review_comment: {
-      action_inline: "💬 **{action}** 行内评论",
-      title: "{repo}#{number} 的审查评论",
+      action_inline: "{emoji}**{action}** 行内评论",
+      title: "{repo}#{number}: {title}",
       line: " (第 {position} 行)",
     },
     commit_comment: {
-      action_comment: "💬 **{action}**",
-      title: "{repo} 中提交 `{sha}` 的评论",
+      action_comment: "{emoji}**{action}**",
+      title: "{repo}: 提交 `{sha}` 的评论",
     },
     deployment: {
-      title: "部署到 `{env}` — {state}",
+      title: "{repo}: 部署到 `{env}` — {state}",
     },
     member: {
-      title: "{emoji} {action} 协作者: {name}",
+      title: "{repo}: {emoji}{action} 协作者: {name}",
     },
     label: {
-      title: "{emoji} 标签 {action}: {name}",
+      title: "{repo}: {emoji}标签 {action}: {name}",
     },
     milestone: {
-      title: "{emoji} 里程碑 {action}: {title}",
+      title: "{repo}: {emoji}里程碑 {action}: {title}",
     },
     discussion: {
-      title: "{emoji} 讨论 #{number}: {title}",
-      action_discussion: "{action} 讨论{category}",
+      title: "{repo}#{number}: {title}",
+      action_discussion: "{emoji}{action} 讨论{category}",
     },
     discussion_comment: {
-      comment_on: "讨论 #{number} 的评论: {title}",
-      action_comment: "💬 **{action}** 评论",
+      title: "{repo}#{number}: {title}",
+      action_comment: "{emoji}**{action}** 评论",
     },
     repository: {
-      title: "📦 仓库 {action}: {repo}",
-      open: "🔗 打开仓库",
+      title: "{repo}: {emoji}仓库 {action}",
+      open: "打开仓库",
       public: "公开",
       private: "私有",
       internal: "内部",
@@ -170,13 +171,13 @@ export const zh = {
       visibility: "可见性",
     },
     code_scanning: {
-      title: "🔍 代码扫描: {action}",
+      title: "{repo}: 代码扫描 {action}",
     },
     dependabot: {
-      title: "🛡️ Dependabot: {action}",
+      title: "{repo}: Dependabot {action}",
     },
     generic: {
-      title: "{event}{action}",
+      title: "{repo}: {event}{action}",
     },
   },
 };

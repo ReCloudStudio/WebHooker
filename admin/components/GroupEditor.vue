@@ -56,6 +56,10 @@
             />
             <div class="hint">{{ t("groupEditor.ownersHint") }}</div>
           </div>
+          <label class="inline">
+            <input v-model="form.emoji" type="checkbox" />
+            <span>{{ t("groupEditor.emoji") }}</span>
+          </label>
           <div class="err">{{ formError }}</div>
         </form>
         <div class="editor-foot">
@@ -91,6 +95,7 @@ const form = reactive({
   name: "",
   adminIds: "",
   owners: "",
+  emoji: true,
 });
 
 function splitList(text: string): string[] {
@@ -109,6 +114,7 @@ watch(
     form.name = g?.name ?? "";
     form.adminIds = (g?.adminIds ?? []).join(", ");
     form.owners = (g?.owners ?? []).join(", ");
+    form.emoji = g?.emoji ?? true;
     formError.value = "";
   },
 );
@@ -135,6 +141,7 @@ function save(): void {
     name,
     adminIds: splitList(form.adminIds),
     owners: owners.length ? owners : undefined,
+    emoji: form.emoji,
   });
 }
 </script>

@@ -88,6 +88,7 @@ const en: Dict = {
   "groupEditor.ownersPlaceholder": "my-org, some-user",
   "groupEditor.ownersHint":
     "Only webhook events from these orgs/users enter this group's routes. Leave empty for no restriction.",
+  "groupEditor.emoji": "Show emojis in messages",
   "groupEditor.cancel": "Cancel",
   "groupEditor.save": "Save group",
   "groupEditor.errIdFormat": "ID must be a-z / 0-9 / dashes",
@@ -194,6 +195,7 @@ const zh: Dict = {
   "groupEditor.ownersPlaceholder": "my-org, some-user",
   "groupEditor.ownersHint":
     "只有来自这些组织/用户的 webhook 事件才会进入本分组的路由。留空表示不限制。",
+  "groupEditor.emoji": "消息中显示表情符号",
   "groupEditor.cancel": "取消",
   "groupEditor.save": "保存分组",
   "groupEditor.errIdFormat": "ID 只能是 a-z / 0-9 / 短横线",

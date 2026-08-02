@@ -69,7 +69,9 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
 
       try {
         const tr = trMap.get(route.lang ?? "en")!;
-        const message = formatEvent(route, event, tr);
+        const group = route.groupId ? groupById.get(route.groupId) : undefined;
+        const showEmoji = group?.emoji !== false;
+        const message = formatEvent(route, event, tr, showEmoji);
         await sendToChannel(route.target.channelId, message, env, route.target.threadId);
         await recordSend(env.KV, {
           ts: Date.now(),

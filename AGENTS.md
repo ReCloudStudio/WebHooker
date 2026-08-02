@@ -29,7 +29,7 @@ src/
 ├── discord.ts            # Dispatch via REST (or DO RPC when gateway enabled), initGateway (scheduled)
 ├── discord-rest.ts       # Discord REST sendMessage with retry + rate-limit handling
 ├── discord-gateway.ts    # Optional Durable Object: Discord Gateway WS, heartbeat, channel cache, send
-├── formatter.ts          # 23 event formatters + generic fallback (~1380 lines)
+├── formatter.ts          # 24 event formatters + generic fallback (~1570 lines)
 ├── github-oauth.ts       # OAuth URL, callback token exchange, getUserOctokit
 ├── oauth-routes.ts       # GET /auth/github, callback (sets admin session if redirect=/admin), DELETE /token/:userId
 ├── action-routes.ts      # POST /api/comment|merge|react (Bearer token auth via KV lookup)
@@ -48,6 +48,20 @@ src/
 - Route messages to Discord channels/threads via Durable Object RPC
 - Maintain Discord Gateway connection with heartbeat and alarm-based keepalive
 
+## Message Format Spec
+
+- Every embed title must start with the repo, then optional `#number`, then `: subject`:
+  `{repo}{#number}: {subject}` (e.g. `acme/widget#7: Add feature`). Repo comes from
+  `payload.repository.full_name`; fall back to `t("common.repository")` when missing.
+- Do NOT use `"Comment on org/repo"` / `"Review on org/repo"` prefixes. Comments, reviews
+  and inline comments use the same `{repo}{#number}: {title}` title as their parent object.
+- All event-specific emoji live in `src/formatter.ts` (via the `em()` helper), never in the
+  locale files. Emoji is controlled per group through the `Group.emoji` toggle (default true);
+  `showEmoji=false` must strip every emoji from titles, descriptions, fields and links.
+- Milestone progress bars (🟢🟡🟠⬜) are data visualization and are exempt from the emoji toggle.
+- Locale templates use a `{emoji}` placeholder immediately followed by the text (no space);
+  the formatter injects `em(...)` which carries the trailing space.
+
 ## Development
 
 ```bash
@@ -60,7 +74,7 @@ npm run lint          # ESLint
 
 - **Local dev**: `.dev.vars` (wrangler reads this for env bindings)
 - **Production**: `wrangler secret put <NAME>` for each secret
-- **Routes**: KV key `config:routes` (JSON array); 7 defaults on first boot
+- **Routes**: KV key `config:routes` (JSON array, empty until configured)
 - **KV namespace**: Required binding for token/state/config storage
 
 ## Deployment

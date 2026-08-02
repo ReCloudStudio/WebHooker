@@ -65,6 +65,11 @@ export interface Group {
    * Only super admins may edit this field.
    */
   owners?: string[];
+  /**
+   * Whether to include emoji in messages sent through this group's routes.
+   * Defaults to true when omitted.
+   */
+  emoji?: boolean;
 }
 
 export interface Filter {

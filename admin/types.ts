@@ -23,6 +23,7 @@ export interface Group {
   name: string;
   adminIds: string[];
   owners?: string[];
+  emoji?: boolean;
 }
 
 export interface Me {

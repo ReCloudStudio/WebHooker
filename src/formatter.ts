@@ -65,12 +65,17 @@ const WORKFLOW_CONCLUSION_EMOJI: Record<string, string> = {
   stale: "♻️",
 };
 
+function emojiPrefix(emoji: string, show: boolean): string {
+  return show ? `${emoji} ` : "";
+}
+
 type T = (key: string, params?: Record<string, string | number>) => string;
 
 export function formatEvent(
   route: Route,
   event: WebhookEvent,
   tr?: Translations,
+  showEmoji = true,
 ): FormattedMessage {
   const { event: eventType, payload } = event;
   const repo = (payload.repository as { full_name?: string })?.full_name;
@@ -88,53 +93,53 @@ export function formatEvent(
 
   switch (eventType) {
     case "push":
-      return formatPush(payload, repo, author, t);
+      return formatPush(payload, repo, author, t, showEmoji);
     case "pull_request":
-      return formatPullRequest(payload, repo, author, t);
+      return formatPullRequest(payload, repo, author, t, showEmoji);
     case "pull_request_review":
-      return formatPullRequestReview(payload, repo, author, t);
+      return formatPullRequestReview(payload, repo, author, t, showEmoji);
     case "pull_request_review_comment":
-      return formatPullRequestReviewComment(payload, repo, author, t);
+      return formatPullRequestReviewComment(payload, repo, author, t, showEmoji);
     case "issues":
-      return formatIssues(payload, repo, author, t);
+      return formatIssues(payload, repo, author, t, showEmoji);
     case "issue_comment":
-      return formatIssueComment(payload, repo, author, t);
+      return formatIssueComment(payload, repo, author, t, showEmoji);
     case "workflow_run":
-      return formatWorkflowRun(payload, repo, author, t);
+      return formatWorkflowRun(payload, repo, author, t, showEmoji);
     case "release":
-      return formatRelease(payload, repo, author, t);
+      return formatRelease(payload, repo, author, t, showEmoji);
     case "create":
-      return formatCreate(payload, repo, author, t);
+      return formatCreate(payload, repo, author, t, showEmoji);
     case "delete":
-      return formatDelete(payload, repo, author, t);
+      return formatDelete(payload, repo, author, t, showEmoji);
     case "star":
-      return formatStar(payload, repo, repoUrl, author, t);
+      return formatStar(payload, repo, repoUrl, author, t, showEmoji);
     case "fork":
-      return formatFork(payload, repo, repoUrl, author, t);
+      return formatFork(payload, repo, repoUrl, author, t, showEmoji);
     case "check_run":
-      return formatCheckRun(payload, repo, author, t);
+      return formatCheckRun(payload, repo, author, t, showEmoji);
     case "commit_comment":
-      return formatCommitComment(payload, repo, author, t);
+      return formatCommitComment(payload, repo, author, t, showEmoji);
     case "deployment_status":
-      return formatDeploymentStatus(payload, repo, author, t);
+      return formatDeploymentStatus(payload, repo, author, t, showEmoji);
     case "member":
-      return formatMember(payload, repo, author, t);
+      return formatMember(payload, repo, author, t, showEmoji);
     case "label":
-      return formatLabel(payload, repo, author, t);
+      return formatLabel(payload, repo, author, t, showEmoji);
     case "milestone":
-      return formatMilestone(payload, repo, author, t);
+      return formatMilestone(payload, repo, author, t, showEmoji);
     case "discussion":
-      return formatDiscussion(payload, repo, author, t);
+      return formatDiscussion(payload, repo, author, t, showEmoji);
     case "discussion_comment":
-      return formatDiscussionComment(payload, repo, author, t);
+      return formatDiscussionComment(payload, repo, author, t, showEmoji);
     case "repository":
-      return formatRepository(payload, repo, repoUrl, author, t);
+      return formatRepository(payload, repo, repoUrl, author, t, showEmoji);
     case "code_scanning_alert":
-      return formatCodeScanningAlert(payload, repo, author, t);
+      return formatCodeScanningAlert(payload, repo, author, t, showEmoji);
     case "dependabot_alert":
-      return formatDependabotAlert(payload, repo, author, t);
+      return formatDependabotAlert(payload, repo, author, t, showEmoji);
     default:
-      return formatGeneric(eventType, payload, repo, author, t);
+      return formatGeneric(eventType, payload, repo, author, t, showEmoji);
   }
 }
 
@@ -143,6 +148,7 @@ function formatPush(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const ref = (payload.ref as string)?.replace("refs/heads/", "").replace("refs/tags/", "tag: ");
   const commits = (payload.commits ?? []) as Array<{
@@ -157,14 +163,15 @@ function formatPush(
   const compareUrl = payload.compare as string | undefined;
   const forced = payload.forced as boolean | undefined;
   const created = payload.created as boolean | undefined;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const descriptionParts: string[] = [];
 
   if (forced) {
-    descriptionParts.push(t("events.push.force_push"));
+    descriptionParts.push(em("⚠️") + t("events.push.force_push"));
   }
   if (created) {
-    descriptionParts.push(t("events.push.branch_created"));
+    descriptionParts.push(em("🆕") + t("events.push.branch_created"));
   }
 
   descriptionParts.push(
@@ -246,6 +253,7 @@ function formatPullRequest(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "opened";
   const pr = payload.pull_request as {
@@ -282,9 +290,10 @@ function formatPullRequest(
       : action === "opened"
         ? "🟢"
         : "🔵";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const descriptionParts: string[] = [];
-  descriptionParts.push(t("events.pr.action_pr", { emoji: stateEmoji, action: al }));
+  descriptionParts.push(t("events.pr.action_pr", { emoji: em(stateEmoji), action: al }));
 
   if (pr.body) {
     const truncated = pr.body.slice(0, 300);
@@ -363,6 +372,7 @@ function formatIssues(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "opened";
   const issue = payload.issue as {
@@ -387,9 +397,10 @@ function formatIssues(
 
   const al = t("actions." + action) ?? action;
   const stateEmoji = action === "closed" ? "🔴" : action === "opened" ? "🟢" : "🟣";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const descriptionParts: string[] = [];
-  descriptionParts.push(t("events.issues.action_issue", { emoji: stateEmoji, action: al }));
+  descriptionParts.push(t("events.issues.action_issue", { emoji: em(stateEmoji), action: al }));
 
   if (issue.body) {
     const truncated = issue.body.slice(0, 300);
@@ -447,6 +458,7 @@ function formatIssueComment(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const issue = payload.issue as {
@@ -460,6 +472,7 @@ function formatIssueComment(
   };
 
   const al = t("actions." + action) ?? action;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const commentBody = comment.body?.slice(0, 500) ?? "";
   const truncated = comment.body && comment.body.length > 500;
 
@@ -467,14 +480,14 @@ function formatIssueComment(
     embeds: [
       {
         author,
-        title: t("events.issue_comment.comment_on", {
+        title: t("events.issue_comment.title", {
           repo: repo ?? t("common.repository"),
           number: issue.number ?? "?",
           title: issue.title ?? t("common.untitled"),
         }),
         url: comment.html_url ?? issue.html_url,
         color: GITHUB_COLORS.issue_comment,
-        description: `${t("events.issue_comment.action_comment", { action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
+        description: `${t("events.issue_comment.action_comment", { emoji: em("💬"), action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
         timestamp: new Date().toISOString(),
       },
@@ -487,6 +500,7 @@ function formatWorkflowRun(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const workflow = payload.workflow_run as {
     name?: string;
@@ -502,6 +516,7 @@ function formatWorkflowRun(
 
   const conclusion = workflow.conclusion ?? "pending";
   const emoji = WORKFLOW_CONCLUSION_EMOJI[conclusion] ?? "⏳";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const colorKey =
     conclusion === "success"
       ? "workflow_run_success"
@@ -513,13 +528,13 @@ function formatWorkflowRun(
 
   fields.push({
     name: t("fields.status"),
-    value: `${emoji} ${conclusion}`,
+    value: `${em(emoji)}${conclusion}`,
     inline: true,
   });
 
   if (workflow.jobs?.length) {
     const jobLines = workflow.jobs.map(
-      (j) => `${WORKFLOW_CONCLUSION_EMOJI[j.conclusion ?? ""] ?? "⏳"} ${j.name ?? ""}`,
+      (j) => `${em(WORKFLOW_CONCLUSION_EMOJI[j.conclusion ?? ""] ?? "⏳")}${j.name ?? ""}`,
     );
     fields.push({
       name: t("fields.job"),
@@ -558,7 +573,11 @@ function formatWorkflowRun(
     embeds: [
       {
         author,
-        title: t("events.workflow_run.title", { name: workflow.name ?? "Workflow", conclusion }),
+        title: t("events.workflow_run.title", {
+          repo: repo ?? t("common.repository"),
+          name: workflow.name ?? "Workflow",
+          conclusion,
+        }),
         url: workflow.html_url,
         color: GITHUB_COLORS[colorKey],
         fields,
@@ -574,6 +593,7 @@ function formatRelease(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "published";
   const release = payload.release as {
@@ -595,11 +615,12 @@ function formatRelease(
         : "release_published";
   const al = t("actions." + action) ?? action;
   const emoji = action === "deleted" ? "🗑️" : isPrerelease ? "⚠️" : "🚀";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const descriptionParts: string[] = [];
   descriptionParts.push(
     t("events.release.action_release", {
-      emoji,
+      emoji: em(emoji),
       action: al,
       tag: release.tag_name ?? t("common.unknown"),
     }),
@@ -615,8 +636,8 @@ function formatRelease(
       {
         author,
         title: t("events.release.title", {
-          name: release.name ?? release.tag_name ?? "Release",
           repo: repo ?? t("common.repository"),
+          name: release.name ?? release.tag_name ?? "Release",
         }),
         url: release.html_url,
         color: GITHUB_COLORS[colorKey],
@@ -633,11 +654,13 @@ function formatCreate(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const refType = (payload.ref_type as string) ?? "branch";
   const ref = (payload.ref as string) ?? t("common.unknown");
 
   const emoji = refType === "tag" ? "🏷️" : "🌿";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -666,10 +689,10 @@ function formatCreate(
       {
         author,
         title: t("events.create.title", {
-          emoji,
+          repo: repo ?? t("common.repository"),
+          emoji: em(emoji),
           type: refType,
           ref,
-          repo: repo ?? t("common.repository"),
         }),
         color: GITHUB_COLORS.create,
         fields,
@@ -685,21 +708,23 @@ function formatDelete(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const refType = (payload.ref_type as string) ?? "branch";
   const ref = (payload.ref as string) ?? t("common.unknown");
 
   const emoji = refType === "tag" ? "🏷️" : "🌿";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   return {
     embeds: [
       {
         author,
         title: t("events.delete.title", {
-          emoji,
+          repo: repo ?? t("common.repository"),
+          emoji: em(emoji),
           type: refType,
           ref,
-          repo: repo ?? t("common.repository"),
         }),
         color: GITHUB_COLORS.delete,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
@@ -715,15 +740,21 @@ function formatStar(
   repoUrl: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const actionLabel = action === "created" ? t("events.star.starred") : t("events.star.unstarred");
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   return {
     embeds: [
       {
         author,
-        title: `${actionLabel} ${repo ?? t("common.repository")}`,
+        title: t("events.star.title", {
+          repo: repo ?? t("common.repository"),
+          emoji: em(action === "created" ? "⭐" : "💫"),
+          label: actionLabel,
+        }),
         url: repoUrl,
         color: GITHUB_COLORS.star,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
@@ -739,8 +770,10 @@ function formatFork(
   repoUrl: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const forkee = payload.forkee as { full_name?: string; html_url?: string } | undefined;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   return {
     embeds: [
@@ -748,6 +781,7 @@ function formatFork(
         author,
         title: t("events.fork.title", {
           repo: repo ?? t("common.repository"),
+          emoji: em("🍴"),
           forkee: forkee?.full_name ?? t("common.unknown"),
         }),
         url: forkee?.html_url ?? repoUrl,
@@ -764,6 +798,7 @@ function formatCheckRun(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const checkRun = payload.check_run as {
     name?: string;
@@ -775,6 +810,7 @@ function formatCheckRun(
 
   const conclusion = checkRun.conclusion ?? "pending";
   const emoji = WORKFLOW_CONCLUSION_EMOJI[conclusion] ?? "⏳";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const colorKey =
     conclusion === "success"
       ? "check_run_success"
@@ -786,7 +822,7 @@ function formatCheckRun(
 
   fields.push({
     name: t("fields.status"),
-    value: `${emoji} ${conclusion}`,
+    value: `${em(emoji)}${conclusion}`,
     inline: true,
   });
 
@@ -802,7 +838,11 @@ function formatCheckRun(
     embeds: [
       {
         author,
-        title: t("events.check_run.title", { name: checkRun.name ?? "Check Run", conclusion }),
+        title: t("events.check_run.title", {
+          repo: repo ?? t("common.repository"),
+          name: checkRun.name ?? "Check Run",
+          conclusion,
+        }),
         url: checkRun.html_url,
         color: GITHUB_COLORS[colorKey],
         fields,
@@ -818,6 +858,7 @@ function formatPullRequestReview(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "submitted";
   const review = payload.review as {
@@ -841,8 +882,9 @@ function formatPullRequestReview(
 
   const stateEmoji = state === "approved" ? "✅" : state === "changes_requested" ? "🔴" : "💬";
   const al = t("actions." + action) ?? state;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const descriptionParts: string[] = [];
-  descriptionParts.push(t("events.pr_review.action_review", { emoji: stateEmoji, action: al }));
+  descriptionParts.push(t("events.pr_review.action_review", { emoji: em(stateEmoji), action: al }));
 
   if (review.body) {
     const truncated = review.body.slice(0, 500);
@@ -873,6 +915,7 @@ function formatPullRequestReviewComment(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const comment = payload.comment as {
@@ -887,6 +930,7 @@ function formatPullRequestReviewComment(
   };
 
   const al = t("actions." + action) ?? action;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const commentBody = comment.body?.slice(0, 400) ?? "";
   const truncated = comment.body && comment.body.length > 400;
 
@@ -911,10 +955,11 @@ function formatPullRequestReviewComment(
         title: t("events.pr_review_comment.title", {
           repo: repo ?? t("common.repository"),
           number: pr.number ?? "?",
+          title: pr.title ?? t("common.untitled"),
         }),
         url: comment.html_url,
         color: GITHUB_COLORS.pull_request_review_commented,
-        description: `${t("events.pr_review_comment.action_inline", { action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
+        description: `${t("events.pr_review_comment.action_inline", { emoji: em("💬"), action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
         fields: fields.length > 0 ? fields : undefined,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
         timestamp: new Date().toISOString(),
@@ -928,6 +973,7 @@ function formatCommitComment(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const comment = payload.comment as {
@@ -937,6 +983,7 @@ function formatCommitComment(
   };
 
   const al = t("actions." + action) ?? action;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const commentBody = comment.body?.slice(0, 500) ?? "";
   const truncated = comment.body && comment.body.length > 500;
   const shortSha = comment.commit_id?.slice(0, 7) ?? "???????";
@@ -956,12 +1003,12 @@ function formatCommitComment(
       {
         author,
         title: t("events.commit_comment.title", {
-          sha: shortSha,
           repo: repo ?? t("common.repository"),
+          sha: shortSha,
         }),
         url: comment.html_url,
         color: GITHUB_COLORS.commit_comment,
-        description: `${t("events.commit_comment.action_comment", { action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
+        description: `${t("events.commit_comment.action_comment", { emoji: em("💬"), action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
         fields: fields.length > 0 ? fields : undefined,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
         timestamp: new Date().toISOString(),
@@ -975,6 +1022,7 @@ function formatDeploymentStatus(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const status = payload.deployment_status as {
     state?: string;
@@ -996,6 +1044,7 @@ function formatDeploymentStatus(
         ? "deployment_failure"
         : "deployment_pending";
   const emoji = state === "success" ? "✅" : state === "failure" ? "❌" : "⏳";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const env = status.environment ?? deployment.environment ?? t("common.unknown");
   const shortSha = deployment.sha?.slice(0, 7) ?? "???????";
 
@@ -1003,7 +1052,7 @@ function formatDeploymentStatus(
 
   fields.push({
     name: t("fields.status"),
-    value: `${emoji} ${state}`,
+    value: `${em(emoji)}${state}`,
     inline: true,
   });
 
@@ -1049,7 +1098,7 @@ function formatDeploymentStatus(
     embeds: [
       {
         author,
-        title: t("events.deployment.title", { env, state }),
+        title: t("events.deployment.title", { repo: repo ?? t("common.repository"), env, state }),
         color: GITHUB_COLORS[colorKey],
         fields,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
@@ -1064,19 +1113,26 @@ function formatMember(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "added";
   const member = payload.member as { login?: string } | undefined;
 
   const al = t("actions." + action) ?? action;
   const emoji = action === "added" ? "➕" : action === "removed" ? "➖" : "👤";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const memberName = member?.login ?? t("common.unknown");
 
   return {
     embeds: [
       {
         author,
-        title: t("events.member.title", { emoji, action: al, name: memberName }),
+        title: t("events.member.title", {
+          repo: repo ?? t("common.repository"),
+          emoji: em(emoji),
+          action: al,
+          name: memberName,
+        }),
         color: action === "added" ? GITHUB_COLORS.member_added : GITHUB_COLORS.member_removed,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
         timestamp: new Date().toISOString(),
@@ -1090,6 +1146,7 @@ function formatLabel(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const label = payload.label as {
@@ -1100,6 +1157,7 @@ function formatLabel(
 
   const al = t("actions." + action) ?? action;
   const emoji = action === "deleted" ? "🗑️" : action === "edited" ? "✏️" : "🏷️";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -1132,7 +1190,8 @@ function formatLabel(
       {
         author,
         title: t("events.label.title", {
-          emoji,
+          repo: repo ?? t("common.repository"),
+          emoji: em(emoji),
           action: al,
           name: label.name ?? t("common.unknown"),
         }),
@@ -1150,6 +1209,7 @@ function formatMilestone(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const milestone = payload.milestone as {
@@ -1164,6 +1224,7 @@ function formatMilestone(
 
   const al = t("actions." + action) ?? action;
   const stateEmoji = milestone.state === "closed" ? "✅" : "🔵";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -1207,7 +1268,8 @@ function formatMilestone(
       {
         author,
         title: t("events.milestone.title", {
-          emoji: stateEmoji,
+          repo: repo ?? t("common.repository"),
+          emoji: em(stateEmoji),
           action: al,
           title: milestone.title ?? t("common.unknown"),
         }),
@@ -1229,6 +1291,7 @@ function formatDiscussion(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const discussion = payload.discussion as {
@@ -1239,6 +1302,7 @@ function formatDiscussion(
   };
 
   const al = t("actions." + action) ?? action;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const stateEmoji =
     action === "answered"
       ? "✅"
@@ -1257,7 +1321,7 @@ function formatDiscussion(
       {
         author,
         title: t("events.discussion.title", {
-          emoji: stateEmoji,
+          repo: repo ?? t("common.repository"),
           number: discussion.number ?? "?",
           title: discussion.title ?? t("common.untitled"),
         }),
@@ -1267,6 +1331,7 @@ function formatDiscussion(
             ? GITHUB_COLORS.discussion_answered
             : GITHUB_COLORS.discussion_created,
         description: t("events.discussion.action_discussion", {
+          emoji: em(stateEmoji),
           action: al,
           category: category ? ` in **${category}**` : "",
         }),
@@ -1282,6 +1347,7 @@ function formatDiscussionComment(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const comment = payload.comment as {
@@ -1294,6 +1360,7 @@ function formatDiscussionComment(
   };
 
   const al = t("actions." + action) ?? action;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
   const commentBody = comment.body?.slice(0, 500) ?? "";
   const truncated = comment.body && comment.body.length > 500;
 
@@ -1301,13 +1368,14 @@ function formatDiscussionComment(
     embeds: [
       {
         author,
-        title: t("events.discussion_comment.comment_on", {
+        title: t("events.discussion_comment.title", {
+          repo: repo ?? t("common.repository"),
           number: discussion.number ?? "?",
           title: discussion.title ?? t("common.untitled"),
         }),
         url: comment.html_url,
         color: GITHUB_COLORS.discussion_comment,
-        description: `${t("events.discussion_comment.action_comment", { action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
+        description: `${t("events.discussion_comment.action_comment", { emoji: em("💬"), action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
         timestamp: new Date().toISOString(),
       },
@@ -1321,10 +1389,12 @@ function formatRepository(
   repoUrl: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
 
   const al = t("actions." + action) ?? action;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -1380,7 +1450,7 @@ function formatRepository(
 
   const descriptionParts: string[] = [];
   if (isCreateOrVisibility && repoUrl) {
-    descriptionParts.push(`[${t("events.repository.open")}](${repoUrl})`);
+    descriptionParts.push(`[${em("🔗")}${t("events.repository.open")}](${repoUrl})`);
   }
   if (isCreateOrVisibility && repoData.description) {
     descriptionParts.push(`> ${repoData.description}`);
@@ -1390,7 +1460,11 @@ function formatRepository(
     embeds: [
       {
         author,
-        title: t("events.repository.title", { action: al, repo: repo ?? t("common.repository") }),
+        title: t("events.repository.title", {
+          repo: repo ?? t("common.repository"),
+          emoji: em("📦"),
+          action: al,
+        }),
         url: repoUrl,
         color: GITHUB_COLORS.repository,
         description: descriptionParts.length > 0 ? descriptionParts.join("\n") : undefined,
@@ -1407,6 +1481,7 @@ function formatCodeScanningAlert(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const alert = payload.alert as {
@@ -1434,12 +1509,13 @@ function formatCodeScanningAlert(
           ? "🟡"
           : "⚪";
   const al = t("actions." + action) ?? action;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
   fields.push({
     name: t("fields.severity"),
-    value: `${severityEmoji} ${severity}`,
+    value: `${em(severityEmoji)}${severity}`,
     inline: true,
   });
 
@@ -1471,7 +1547,10 @@ function formatCodeScanningAlert(
     embeds: [
       {
         author,
-        title: t("events.code_scanning.title", { action: al }),
+        title: t("events.code_scanning.title", {
+          repo: repo ?? t("common.repository"),
+          action: al,
+        }),
         color: GITHUB_COLORS[colorKey],
         fields,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
@@ -1486,6 +1565,7 @@ function formatDependabotAlert(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  showEmoji: boolean,
 ): FormattedMessage {
   const action = (payload.action as string) ?? "created";
   const alert = payload.alert as {
@@ -1519,12 +1599,13 @@ function formatDependabotAlert(
           ? "🟡"
           : "⚪";
   const al = t("actions." + action) ?? action;
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
   fields.push({
     name: t("fields.severity"),
-    value: `${severityEmoji} ${severity}`,
+    value: `${em(severityEmoji)}${severity}`,
     inline: true,
   });
 
@@ -1558,7 +1639,7 @@ function formatDependabotAlert(
     embeds: [
       {
         author,
-        title: t("events.dependabot.title", { action: al }),
+        title: t("events.dependabot.title", { repo: repo ?? t("common.repository"), action: al }),
         url: alert.html_url,
         color: GITHUB_COLORS[colorKey],
         fields,
@@ -1575,12 +1656,14 @@ function formatGeneric(
   repo: string | undefined,
   author: { name: string; icon_url?: string; url?: string },
   t: T,
+  _showEmoji: boolean,
 ): FormattedMessage {
   return {
     embeds: [
       {
         author,
         title: t("events.generic.title", {
+          repo: repo ?? t("common.repository"),
           event: eventType,
           action: payload.action ? `: ${payload.action}` : "",
         }),

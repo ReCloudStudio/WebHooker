@@ -83,86 +83,87 @@ export const en = {
   },
   events: {
     push: {
-      force_push: "⚠️ **Force push**",
-      branch_created: "🆕 Branch created",
+      force_push: "**Force push**",
+      branch_created: "Branch created",
       commits_pushed: "**{count}** commit{s} pushed to `{ref}`",
       view_comparison: "[View comparison]({url})",
       added: "+{count} added",
       removed: "-{count} removed",
       modified: "~{count} modified",
-      title: "Pushed {count} commit{s} to {repo}",
+      title: "{repo}: Pushed {count} commit{s}",
     },
     pr: {
-      action_pr: "{emoji} **{action}** pull request",
+      action_pr: "{emoji}**{action}** pull request",
       title: "{repo}#{number}: {title}",
     },
     issues: {
-      action_issue: "{emoji} **{action}** issue",
+      action_issue: "{emoji}**{action}** issue",
       title: "{repo}#{number}: {title}",
     },
     issue_comment: {
-      comment_on: "Comment on {repo}#{number}: {title}",
-      action_comment: "💬 **{action}** comment",
+      title: "{repo}#{number}: {title}",
+      action_comment: "{emoji}**{action}** comment",
     },
     workflow_run: {
-      title: "{name} — {conclusion}",
+      title: "{repo}: {name} — {conclusion}",
     },
     release: {
-      action_release: "{emoji} **{action}** release `{tag}`",
-      title: "{name} — {repo}",
+      action_release: "{emoji}**{action}** release `{tag}`",
+      title: "{repo}: {name}",
     },
     create: {
-      title: "{emoji} Created {type} `{ref}` in {repo}",
+      title: "{repo}: {emoji}Created {type} `{ref}`",
     },
     delete: {
-      title: "{emoji} Deleted {type} `{ref}` in {repo}",
+      title: "{repo}: {emoji}Deleted {type} `{ref}`",
     },
     star: {
-      starred: "⭐ starred",
-      unstarred: "💫 unstarred",
+      starred: "Starred",
+      unstarred: "Unstarred",
+      title: "{repo}: {emoji}{label}",
     },
     fork: {
-      title: "🍴 Forked {repo} to {forkee}",
+      title: "{repo}: {emoji}Forked to {forkee}",
     },
     check_run: {
-      title: "{name} — {conclusion}",
+      title: "{repo}: {name} — {conclusion}",
     },
     pr_review: {
-      action_review: "{emoji} **{action}** review",
-      title: "Review on {repo}#{number}: {title}",
+      action_review: "{emoji}**{action}** review",
+      title: "{repo}#{number}: {title}",
     },
     pr_review_comment: {
-      action_inline: "💬 **{action}** inline comment",
-      title: "Review comment on {repo}#{number}",
+      action_inline: "{emoji}**{action}** inline comment",
+      title: "{repo}#{number}: {title}",
       line: " (line {position})",
     },
     commit_comment: {
-      action_comment: "💬 **{action}**",
-      title: "Comment on commit `{sha}` in {repo}",
+      action_comment: "{emoji}**{action}**",
+      title: "{repo}: Comment on commit `{sha}`",
     },
     deployment: {
-      title: "Deployment to `{env}` — {state}",
+      title: "{repo}: Deployment to `{env}` — {state}",
     },
     member: {
-      title: "{emoji} {action} collaborator: {name}",
+      title: "{repo}: {emoji}{action} collaborator: {name}",
     },
     label: {
-      title: "{emoji} Label {action}: {name}",
+      title: "{repo}: {emoji}Label {action}: {name}",
     },
     milestone: {
-      title: "{emoji} Milestone {action}: {title}",
+      title: "{repo}: {emoji}Milestone {action}: {title}",
     },
     discussion: {
-      title: "{emoji} Discussion #{number}: {title}",
-      action_discussion: "{action} discussion{category}",
+      title: "{repo}#{number}: {title}",
+      action_discussion: "{emoji}{action} discussion{category}",
     },
     discussion_comment: {
-      comment_on: "Comment on Discussion #{number}: {title}",
-      action_comment: "💬 **{action}** comment",
+      title: "{repo}#{number}: {title}",
+      action_comment: "{emoji}**{action}** comment",
     },
     repository: {
-      title: "📦 Repository {action}: {repo}",
-      open: "🔗 Open repository",
+      title: "{repo}: {emoji}Repository {action}",
+      open: "Open repository",
       public: "public",
       private: "private",
       internal: "internal",
@@ -170,13 +171,13 @@ export const en = {
       visibility: "Visibility",
     },
     code_scanning: {
-      title: "🔍 Code Scanning: {action}",
+      title: "{repo}: Code Scanning {action}",
     },
     dependabot: {
-      title: "🛡️ Dependabot: {action}",
+      title: "{repo}: Dependabot {action}",
     },
     generic: {
-      title: "{event}{action}",
+      title: "{repo}: {event}{action}",
     },
   },
 };
