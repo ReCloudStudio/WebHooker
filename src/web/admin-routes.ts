@@ -8,7 +8,7 @@ import {
   type AdminSession,
 } from "./session";
 import { loadGroups, saveGroups, resolveScope, hasAnyAccess, type AccessScope } from "./groups";
-import { getSendLog } from "../lib/send-log";
+import { getSendLog, getSendLogById } from "../lib/send-log";
 import { log } from "../lib/log";
 
 const VALID_FILTER_TYPES = new Set(["event", "repo", "actor", "action", "branch", "keyword"]);
@@ -237,6 +237,23 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
       .filter((l) => allowed.has(l.routeId))
       .slice(0, limit);
     return c.json({ logs });
+  });
+
+  app.get("/api/logs/:id", async (c) => {
+    const s = await loadScope(c);
+    if (!s) return c.json({ error: "Unauthorized" }, 401);
+    const id = Number(c.req.param("id"));
+    if (!Number.isInteger(id) || id <= 0) return c.json({ error: "Invalid log id" }, 400);
+    const entry = await getSendLogById(c.env.DB, id);
+    if (!entry) return c.json({ error: "Log entry not found" }, 404);
+    if (!s.scope.isSuper) {
+      const all = await loadRoutes(c.env.KV);
+      const route = all.find((r) => r.id === entry.routeId);
+      if (!route?.groupId || !s.scope.groupIds.has(route.groupId)) {
+        return c.json({ error: "Forbidden" }, 403);
+      }
+    }
+    return c.json({ log: entry });
   });
 
   app.put("/api/routes", async (c) => {

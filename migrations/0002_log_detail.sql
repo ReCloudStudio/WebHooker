@@ -1,0 +1,10 @@
+ALTER TABLE send_logs ADD COLUMN status INTEGER;
+ALTER TABLE send_logs ADD COLUMN message_id TEXT;
+ALTER TABLE send_logs ADD COLUMN delivery_id TEXT;
+ALTER TABLE send_logs ADD COLUMN platform TEXT;
+ALTER TABLE send_logs ADD COLUMN actor TEXT;
+ALTER TABLE send_logs ADD COLUMN action TEXT;
+ALTER TABLE send_logs ADD COLUMN duration_ms INTEGER;
+ALTER TABLE send_logs ADD COLUMN error_code TEXT;
+ALTER TABLE send_logs ADD COLUMN attempts INTEGER;
+ALTER TABLE send_logs ADD COLUMN detail TEXT;

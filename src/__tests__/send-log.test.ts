@@ -3,21 +3,35 @@ import { recordSend, getSendLog } from "../lib/send-log";
 
 function createMockDB(): D1Database {
   const rows: Array<Record<string, unknown>> = [];
+  const insertCols = [
+    "ts",
+    "route_id",
+    "event",
+    "repo",
+    "target",
+    "ok",
+    "error",
+    "status",
+    "message_id",
+    "delivery_id",
+    "platform",
+    "actor",
+    "action",
+    "duration_ms",
+    "error_code",
+    "attempts",
+    "detail",
+  ];
   return {
     prepare: (sql: string) => ({
       bind: (..._args: unknown[]) => ({
         run: async (): Promise<{ success: boolean }> => {
           if (sql.startsWith("INSERT")) {
-            const args = _args as unknown[];
-            rows.push({
-              ts: args[0],
-              route_id: args[1],
-              event: args[2],
-              repo: args[3],
-              target: args[4],
-              ok: args[5],
-              error: args[6],
+            const row: Record<string, unknown> = {};
+            insertCols.forEach((col, i) => {
+              row[col] = _args[i];
             });
+            rows.push(row);
           }
           return { success: true };
         },

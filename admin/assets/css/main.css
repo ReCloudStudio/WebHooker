@@ -911,6 +911,98 @@ main {
   padding: 56px 0;
 }
 
+.log-entry.clickable {
+  cursor: pointer;
+}
+
+.log-status {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 9px;
+  letter-spacing: 0.5px;
+}
+
+.log-status.ok {
+  color: var(--ok);
+  background: var(--ok-dim);
+}
+
+.log-status.bad {
+  color: var(--bad);
+  background: var(--bad-dim);
+}
+
+.log-detail {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  max-width: 720px;
+  width: calc(100vw - 48px);
+  max-height: 82vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.detail-head h3 {
+  font-size: 15px;
+  letter-spacing: 0.3px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 30%) 1fr;
+  gap: 6px 16px;
+  font-size: 13px;
+}
+
+.detail-grid dt {
+  color: var(--faint);
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  padding-top: 6px;
+  font-size: 11px;
+}
+
+.detail-grid dd {
+  margin: 0;
+  padding-top: 6px;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.detail-grid code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface-2);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+.detail-grid dd code {
+  white-space: pre-wrap;
+}
+
 @media (max-width: 720px) {
   .filter-row {
     grid-template-columns: 100px 1fr auto;

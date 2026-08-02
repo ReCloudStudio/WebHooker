@@ -50,6 +50,7 @@ export function fmtMatch(match: string | string[]): string {
 }
 
 export interface SendRecord {
+  id?: number;
   ts: number;
   routeId: string;
   event: string;
@@ -57,4 +58,14 @@ export interface SendRecord {
   target: string;
   ok: boolean;
   error?: string;
+  status?: number;
+  messageId?: string;
+  deliveryId?: string;
+  platform?: string;
+  actor?: string;
+  action?: string;
+  durationMs?: number;
+  errorCode?: string;
+  attempts?: number;
+  detail?: Record<string, unknown>;
 }

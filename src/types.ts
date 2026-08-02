@@ -83,6 +83,7 @@ export interface WebhookEvent {
   event: string;
   payload: Record<string, unknown>;
   signature?: string;
+  deliveryId?: string;
 }
 
 export interface NeutralAuthor {

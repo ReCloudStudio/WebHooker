@@ -41,30 +41,53 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
         ? `${route.target.channelId}/${route.target.threadId}`
         : route.target.channelId;
 
+      const base: {
+        ts: number;
+        routeId: string;
+        event: string;
+        repo: string | undefined;
+        target: string;
+        deliveryId: string | undefined;
+        actor: string | undefined;
+        action: string | undefined;
+      } = {
+        ts: Date.now(),
+        routeId: route.id,
+        event: event.event,
+        repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
+        target,
+        deliveryId: event.deliveryId,
+        actor: (event.payload.sender as { login?: string } | undefined)?.login,
+        action: (event.payload.action as string | undefined),
+      };
+
+      const started = Date.now();
       try {
         const tr = trMap.get(route.lang ?? "en")!;
         const group = route.groupId ? groupById.get(route.groupId) : undefined;
         const showEmoji = group?.emoji !== false;
         const message = formatEvent(route, event, tr, showEmoji);
-        const result = await getDriver(route.target).send(message, route.target, env);
+        const driver = getDriver(route.target);
+        const result = await driver.send(message, route.target, env);
+        const durationMs = Date.now() - started;
         if (!result.ok) throw new Error(result.error ?? "Send failed");
         await recordSend(env.DB, {
-          ts: Date.now(),
-          routeId: route.id,
-          event: event.event,
-          repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
-          target,
+          ...base,
           ok: true,
+          status: result.status,
+          messageId: result.messageId,
+          platform: driver.id,
+          attempts: result.attempts,
+          durationMs,
+          errorCode: result.errorCode,
         });
       } catch (err) {
+        const durationMs = Date.now() - started;
         await recordSend(env.DB, {
-          ts: Date.now(),
-          routeId: route.id,
-          event: event.event,
-          repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
-          target,
+          ...base,
           ok: false,
           error: err instanceof Error ? err.message : String(err),
+          durationMs,
         });
         log.error({ routeId: route.id, err }, "Route failed");
       }
