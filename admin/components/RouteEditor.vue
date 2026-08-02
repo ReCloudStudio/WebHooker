@@ -312,5 +312,4 @@ function save(): void {
   }
   emit("save", route);
 }
-
 </script>

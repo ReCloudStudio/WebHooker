@@ -23,14 +23,16 @@ describe("telegram renderNeutralMessage", () => {
       footer: "acme/widget",
     };
     const out = renderNeutralMessage(message);
-    expect(out).toContain('<b><a href="https://github.com/acme/widget">acme/widget: Add feature</a></b>');
+    expect(out).toContain(
+      '<b><a href="https://github.com/acme/widget">acme/widget: Add feature</a></b>',
+    );
     expect(out).toContain("<b>Status</b>: success");
     expect(out).toContain("<i>acme/widget</i>");
   });
 
   it("escapes HTML special characters", () => {
     const out = renderNeutralMessage({
-      title: "a <b> & \"c\"",
+      title: 'a <b> & "c"',
       fields: [{ name: "body", value: "<script>alert(1)</script>" }],
     });
     expect(out).not.toContain("<b>acme");
@@ -76,8 +78,9 @@ describe("telegram-rest sendMessage", () => {
   });
 
   it("returns error on non-ok response", async () => {
-    mockFetch(() =>
-      new Response(JSON.stringify({ ok: false, description: "chat not found" }), { status: 400 }),
+    mockFetch(
+      () =>
+        new Response(JSON.stringify({ ok: false, description: "chat not found" }), { status: 400 }),
     );
     const result = await sendMessage("t", "-100123", "hello");
     expect(result.ok).toBe(false);

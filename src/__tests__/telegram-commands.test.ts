@@ -38,14 +38,18 @@ function createMockDB(): D1Database {
     prepare: (sql: string) => ({
       bind: (...args: unknown[]) => ({
         run: async (): Promise<{ success: boolean }> => {
-          const m = sql.match(/INSERT OR REPLACE INTO telegram_links \(telegram_user_id, github_user_id\) VALUES \(\?, \?\)/);
+          const m = sql.match(
+            /INSERT OR REPLACE INTO telegram_links \(telegram_user_id, github_user_id\) VALUES \(\?, \?\)/,
+          );
           if (m) links.set(String(args[0]), String(args[1]));
           const del = sql.match(/DELETE FROM telegram_links WHERE telegram_user_id = \?/);
           if (del) links.delete(String(args[0]));
           return { success: true };
         },
         all: async (): Promise<{ results: Array<Record<string, unknown>> }> => {
-          const sel = sql.match(/SELECT github_user_id FROM telegram_links WHERE telegram_user_id = \?/);
+          const sel = sql.match(
+            /SELECT github_user_id FROM telegram_links WHERE telegram_user_id = \?/,
+          );
           if (sel) {
             const val = links.get(String(args[0]));
             return { results: val ? [{ github_user_id: val }] : [] };
@@ -146,7 +150,9 @@ describe("telegram-commands /gh comment", () => {
     mockFetch((url, init) => {
       calls.push({ url, body: String(init!.body) });
       if (String(url).endsWith("/sendMessage")) {
-        return new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), { status: 200 });
+        return new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), {
+          status: 200,
+        });
       }
       return new Response(
         JSON.stringify({ html_url: "https://github.com/acme/widget/issues/7#issuecomment-9" }),
@@ -185,7 +191,9 @@ describe("telegram-updates webhook", () => {
   });
 
   it("accepts requests with the correct secret token", async () => {
-    mockFetch(() => new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), { status: 200 }));
+    mockFetch(
+      () => new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), { status: 200 }),
+    );
     const env = createEnv();
     const res = await handleTelegramWebhookRequest(
       new Request("https://example.com/telegram/webhook", {

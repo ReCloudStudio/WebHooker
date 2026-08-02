@@ -72,7 +72,7 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
           target: targetStr,
           deliveryId: event.deliveryId,
           actor: (event.payload.sender as { login?: string } | undefined)?.login,
-          action: (event.payload.action as string | undefined),
+          action: event.payload.action as string | undefined,
         };
 
         const started = Date.now();

@@ -54,7 +54,12 @@ function extractTarget(msg: TelegramMessage, prOnly = false): Target | null {
   return null;
 }
 
-async function reply(env: Env, chatId: string, topicId: string | undefined, text: string): Promise<void> {
+async function reply(
+  env: Env,
+  chatId: string,
+  topicId: string | undefined,
+  text: string,
+): Promise<void> {
   await sendMessage(env.TELEGRAM_TOKEN ?? "", chatId, text, topicId);
 }
 
@@ -73,7 +78,8 @@ async function cmdLogin(env: Env, msg: TelegramMessage): Promise<void> {
   const topicId = msg.message_thread_id != null ? String(msg.message_thread_id) : undefined;
 
   const clientId = env.GITHUB_CLIENT_ID;
-  if (!clientId) return reply(env, chatId, topicId, "服务器未配置 GitHub OAuth（GITHUB_CLIENT_ID）。");
+  if (!clientId)
+    return reply(env, chatId, topicId, "服务器未配置 GitHub OAuth（GITHUB_CLIENT_ID）。");
 
   const state = crypto.randomUUID().replace(/-/g, "");
   await env.KV.put(
@@ -87,7 +93,12 @@ async function cmdLogin(env: Env, msg: TelegramMessage): Promise<void> {
     { expirationTtl: 600 },
   );
   const url = getOAuthURL(clientId, state);
-  await reply(env, chatId, topicId, `点击链接授权 GitHub，即可用**本人身份**评论（10 分钟内有效）：\n${url}`);
+  await reply(
+    env,
+    chatId,
+    topicId,
+    `点击链接授权 GitHub，即可用**本人身份**评论（10 分钟内有效）：\n${url}`,
+  );
 }
 
 async function cmdLogout(env: Env, msg: TelegramMessage): Promise<void> {
@@ -165,7 +176,12 @@ async function cmdMergeClose(env: Env, msg: TelegramMessage, op: "merge" | "clos
       await closePullRequestAsUser(env.KV, githubUserId, target.owner, target.repo, target.number);
     }
     const label = op === "merge" ? "合并" : "关闭";
-    await reply(env, chatId, topicId, `✅ 已${label} PR ${target.owner}/${target.repo}#${target.number}`);
+    await reply(
+      env,
+      chatId,
+      topicId,
+      `✅ 已${label} PR ${target.owner}/${target.repo}#${target.number}`,
+    );
   } catch (err) {
     await reply(env, chatId, topicId, errText(err));
   }

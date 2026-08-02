@@ -6,25 +6,25 @@ WebHooker 需要多个密钥才能运行。本地开发时存储在 `.dev.vars` 
 
 ### 必需密钥
 
-| 变量                    | 说明                               |
-| ----------------------- | ---------------------------------- |
-| `GITHUB_WEBHOOK_SECRET` | GitHub App 设置中的 Webhook 密钥   |
-| `GITHUB_APP_ID`         | GitHub App 的数字 ID               |
-| `GITHUB_PRIVATE_KEY`    | App 私钥（PEM 格式，用 `\n` 转义） |
-| `GITHUB_CLIENT_ID`      | App 设置中的 OAuth 客户端 ID       |
-| `GITHUB_CLIENT_SECRET`  | App 设置中的 OAuth 客户端密钥      |
-| `DISCORD_TOKEN`         | Discord Bot Token                  |
+| 变量                    | 说明                                                     |
+| ----------------------- | -------------------------------------------------------- |
+| `GITHUB_WEBHOOK_SECRET` | GitHub App 设置中的 Webhook 密钥                         |
+| `GITHUB_APP_ID`         | GitHub App 的数字 ID                                     |
+| `GITHUB_PRIVATE_KEY`    | App 私钥（PEM 格式，用 `\n` 转义）                       |
+| `GITHUB_CLIENT_ID`      | App 设置中的 OAuth 客户端 ID                             |
+| `GITHUB_CLIENT_SECRET`  | App 设置中的 OAuth 客户端密钥                            |
+| `DISCORD_TOKEN`         | Discord Bot Token                                        |
 | `TELEGRAM_TOKEN`        | Telegram Bot Token（BotFather 获取）—— Telegram 路由必需 |
 
 ### 可选密钥
 
-| 变量                     | 说明                                                   | 默认值                  |
-| ------------------------ | ------------------------------------------------------ | ----------------------- |
-| `BASE_URL`               | OAuth 回调的公开 URL                                   | `http://localhost:8787` |
-| `ADMIN_USER_IDS`         | 允许访问 WebUI 的 GitHub 用户 ID（或登录名），逗号分隔 | 未设置时 WebUI 关闭     |
-| `DISCORD_PUBLIC_KEY`     | Discord 应用的公钥（开发者门户获取），交互功能必需     | 未设置时交互返回 401    |
-| `DISCORD_APPLICATION_ID` | Discord 应用 ID；省略时自动获取                        | 自动获取                |
-| `TELEGRAM_WEBHOOK_SECRET`| `POST /telegram/webhook` 验签密钥（X-Telegram-Bot-Api-Secret-Token） | 未设置时不校验        |
+| 变量                      | 说明                                                                 | 默认值                  |
+| ------------------------- | -------------------------------------------------------------------- | ----------------------- |
+| `BASE_URL`                | OAuth 回调的公开 URL                                                 | `http://localhost:8787` |
+| `ADMIN_USER_IDS`          | 允许访问 WebUI 的 GitHub 用户 ID（或登录名），逗号分隔               | 未设置时 WebUI 关闭     |
+| `DISCORD_PUBLIC_KEY`      | Discord 应用的公钥（开发者门户获取），交互功能必需                   | 未设置时交互返回 401    |
+| `DISCORD_APPLICATION_ID`  | Discord 应用 ID；省略时自动获取                                      | 自动获取                |
+| `TELEGRAM_WEBHOOK_SECRET` | `POST /telegram/webhook` 验签密钥（X-Telegram-Bot-Api-Secret-Token） | 未设置时不校验          |
 
 ## Web 控制台
 

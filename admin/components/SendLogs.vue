@@ -22,7 +22,9 @@
           <span class="dot" :class="l.ok ? 'ok' : 'bad'"></span>
           <span class="log-route">{{ l.routeId }}</span>
           <span class="log-event">{{ l.event }}</span>
-          <span v-if="l.status" class="log-status" :class="l.ok ? 'ok' : 'bad'">{{ l.status }}</span>
+          <span v-if="l.status" class="log-status" :class="l.ok ? 'ok' : 'bad'">{{
+            l.status
+          }}</span>
           <span class="log-time">{{ fmtTime(l.ts) }}</span>
         </div>
         <div class="log-meta">

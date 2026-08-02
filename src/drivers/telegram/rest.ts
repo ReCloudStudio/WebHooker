@@ -52,7 +52,10 @@ export async function sendMessage(
 
       if (!res.ok) {
         lastError = data?.description ?? `HTTP ${res.status}`;
-        log.error({ status: res.status, err: lastError, chatId, attempts: attempt + 1 }, "Telegram API error");
+        log.error(
+          { status: res.status, err: lastError, chatId, attempts: attempt + 1 },
+          "Telegram API error",
+        );
         return {
           ok: false,
           error: lastError,
@@ -72,11 +75,23 @@ export async function sendMessage(
       lastError = err instanceof Error ? err.message : String(err);
       log.error({ err, chatId, attempts: attempt + 1 }, "Failed to send Telegram message");
       if (attempt === 2) {
-        return { ok: false, error: lastError, errorCode: "NETWORK", status: lastStatus, attempts: attempt + 1 };
+        return {
+          ok: false,
+          error: lastError,
+          errorCode: "NETWORK",
+          status: lastStatus,
+          attempts: attempt + 1,
+        };
       }
       await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
     }
   }
 
-  return { ok: false, error: lastError || "Failed to send Telegram message", errorCode: "RETRIES", status: lastStatus, attempts: 3 };
+  return {
+    ok: false,
+    error: lastError || "Failed to send Telegram message",
+    errorCode: "RETRIES",
+    status: lastStatus,
+    attempts: 3,
+  };
 }

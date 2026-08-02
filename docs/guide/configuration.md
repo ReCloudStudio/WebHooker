@@ -6,25 +6,25 @@ WebHooker requires several secrets to function. For local development, store the
 
 ### Required Secrets
 
-| Variable                | Description                                     |
-| ----------------------- | ----------------------------------------------- |
-| `GITHUB_WEBHOOK_SECRET` | Webhook secret from your GitHub App settings    |
-| `GITHUB_APP_ID`         | Numeric ID of your GitHub App                   |
-| `GITHUB_PRIVATE_KEY`    | App private key (PEM format, with `\n` escapes) |
-| `GITHUB_CLIENT_ID`      | OAuth client ID from App settings               |
-| `GITHUB_CLIENT_SECRET`  | OAuth client secret from App settings           |
-| `DISCORD_TOKEN`         | Discord bot token                               |
+| Variable                | Description                                                        |
+| ----------------------- | ------------------------------------------------------------------ |
+| `GITHUB_WEBHOOK_SECRET` | Webhook secret from your GitHub App settings                       |
+| `GITHUB_APP_ID`         | Numeric ID of your GitHub App                                      |
+| `GITHUB_PRIVATE_KEY`    | App private key (PEM format, with `\n` escapes)                    |
+| `GITHUB_CLIENT_ID`      | OAuth client ID from App settings                                  |
+| `GITHUB_CLIENT_SECRET`  | OAuth client secret from App settings                              |
+| `DISCORD_TOKEN`         | Discord bot token                                                  |
 | `TELEGRAM_TOKEN`        | Telegram bot token (from BotFather) — required for Telegram routes |
 
 ### Optional Secrets
 
-| Variable                 | Description                                                                   | Default                           |
-| ------------------------ | ----------------------------------------------------------------------------- | --------------------------------- |
-| `DISCORD_PUBLIC_KEY`     | Discord application public key (Developer Portal) — required for interactions | Unset → interactions return `401` |
-| `DISCORD_APPLICATION_ID` | Discord application id; auto-resolved when omitted                            | Auto-resolved                     |
-| `TELEGRAM_WEBHOOK_SECRET`| Secret token for `POST /telegram/webhook` verification (X-Telegram-Bot-Api-Secret-Token) | Disabled (no verification) |
-| `BASE_URL`               | Public URL for OAuth callbacks                                                | `http://localhost:8787`           |
-| `ADMIN_USER_IDS`         | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI      | Disabled                          |
+| Variable                  | Description                                                                              | Default                           |
+| ------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------- |
+| `DISCORD_PUBLIC_KEY`      | Discord application public key (Developer Portal) — required for interactions            | Unset → interactions return `401` |
+| `DISCORD_APPLICATION_ID`  | Discord application id; auto-resolved when omitted                                       | Auto-resolved                     |
+| `TELEGRAM_WEBHOOK_SECRET` | Secret token for `POST /telegram/webhook` verification (X-Telegram-Bot-Api-Secret-Token) | Disabled (no verification)        |
+| `BASE_URL`                | Public URL for OAuth callbacks                                                           | `http://localhost:8787`           |
+| `ADMIN_USER_IDS`          | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                 | Disabled                          |
 
 ## Web UI
 
