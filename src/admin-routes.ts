@@ -27,8 +27,35 @@ function isValidMatch(match: unknown): match is string | string[] {
   return false;
 }
 
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== typeof b || a === null || b === null) return false;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    return a.every((x, i) => deepEqual(x, b[i]));
+  }
+  if (typeof a === "object" && typeof b === "object") {
+    const ao = a as Record<string, unknown>;
+    const bo = b as Record<string, unknown>;
+    const ak = Object.keys(ao);
+    const bk = Object.keys(bo);
+    if (ak.length !== bk.length) return false;
+    return ak.every(
+      (k) => Object.prototype.hasOwnProperty.call(bo, k) && deepEqual(ao[k], bo[k]),
+    );
+  }
+  return false;
+}
+
+/**
+ * Validates the submitted routes. Routes that are byte-for-byte identical to an
+ * entry in `unchanged` (keyed by id) skip the full content check, so a pre-existing
+ * incomplete route can never block edits to a different route. Only new or modified
+ * routes are fully validated. Structural checks (id shape, uniqueness) still run for all.
+ */
 function validateRoutes(
   routes: unknown,
+  unchanged?: Map<string, Route>,
 ): { ok: true; routes: Route[] } | { ok: false; error: string } {
   if (!Array.isArray(routes)) return { ok: false, error: "routes must be an array" };
   if (routes.length > 200) return { ok: false, error: "too many routes" };
@@ -42,6 +69,9 @@ function validateRoutes(
     }
     if (seen.has(r.id)) return { ok: false, error: `duplicate route id "${r.id}"` };
     seen.add(r.id);
+    // Skip full validation for routes that are unchanged from what is stored.
+    const prev = unchanged?.get(r.id);
+    if (prev && deepEqual(r, prev)) continue;
     if (typeof r.name !== "string" || r.name.trim().length === 0) {
       return { ok: false, error: `route "${r.id}" needs a name` };
     }
@@ -217,10 +247,11 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     } catch {
       return c.json({ error: "Invalid JSON body" }, 400);
     }
-    const result = validateRoutes((body as { routes?: unknown })?.routes);
+    const existing = await loadRoutes(c.env.KV);
+    const unchanged = new Map(existing.map((r) => [r.id, r]));
+    const result = validateRoutes((body as { routes?: unknown })?.routes, unchanged);
     if (!result.ok) return c.json({ error: result.error }, 400);
 
-    const existing = await loadRoutes(c.env.KV);
     let nextAll: Route[];
 
     if (s.scope.isSuper) {
@@ -305,10 +336,11 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     const scoped = Array.isArray(submitted)
       ? submitted.map((r) => ({ ...(r as Record<string, unknown>), groupId }))
       : submitted;
-    const result = validateRoutes(scoped);
+    const existing = await loadRoutes(c.env.KV);
+    const unchanged = new Map(existing.map((r) => [r.id, r]));
+    const result = validateRoutes(scoped, unchanged);
     if (!result.ok) return c.json({ error: result.error }, 400);
 
-    const existing = await loadRoutes(c.env.KV);
     // Replace only this group's routes; every other group is preserved untouched.
     const others = existing.filter((r) => r.groupId !== groupId);
     const nextAll = [...others, ...result.routes];
