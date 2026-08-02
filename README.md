@@ -42,18 +42,18 @@ npx wrangler dev     # Start local dev server
 
 ### Secrets (`.dev.vars` for local, Worker Secrets for production)
 
-| Variable                  | Description                                                                                   |
-| ------------------------- | --------------------------------------------------------------------------------------------- |
-| `GITHUB_WEBHOOK_SECRET`   | Webhook secret from GitHub                                                                    |
-| `GITHUB_APP_ID`           | GitHub App ID                                                                                 |
-| `GITHUB_PRIVATE_KEY`      | App private key (PEM)                                                                         |
-| `GITHUB_CLIENT_ID`        | OAuth client ID                                                                               |
-| `GITHUB_CLIENT_SECRET`    | OAuth client secret                                                                           |
-| `DISCORD_TOKEN`           | Bot token                                                                                     |
-| `DISCORD_PUBLIC_KEY`      | Discord application public key (from the Developer Portal) — required for interactions        |
-| `DISCORD_APPLICATION_ID`  | Discord application id (optional; auto-resolved via `GET /oauth2/applications/@me` if omitted) |
-| `BASE_URL`                | Public URL for OAuth callbacks                                                                |
-| `ADMIN_USER_IDS`          | Comma-separated GitHub user IDs (or logins) allowed to access `/admin`                        |
+| Variable                 | Description                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------------- |
+| `GITHUB_WEBHOOK_SECRET`  | Webhook secret from GitHub                                                                     |
+| `GITHUB_APP_ID`          | GitHub App ID                                                                                  |
+| `GITHUB_PRIVATE_KEY`     | App private key (PEM)                                                                          |
+| `GITHUB_CLIENT_ID`       | OAuth client ID                                                                                |
+| `GITHUB_CLIENT_SECRET`   | OAuth client secret                                                                            |
+| `DISCORD_TOKEN`          | Bot token                                                                                      |
+| `DISCORD_PUBLIC_KEY`     | Discord application public key (from the Developer Portal) — required for interactions         |
+| `DISCORD_APPLICATION_ID` | Discord application id (optional; auto-resolved via `GET /oauth2/applications/@me` if omitted) |
+| `BASE_URL`               | Public URL for OAuth callbacks                                                                 |
+| `ADMIN_USER_IDS`         | Comma-separated GitHub user IDs (or logins) allowed to access `/admin`                         |
 
 ### Routes
 
@@ -211,12 +211,12 @@ The bot registers native **slash** and **message context-menu** commands, synced
 
 **Requirements:**
 
-| Item             | How                                                               |
-| ---------------- | ----------------------------------------------------------------- |
-| Public key       | `DISCORD_PUBLIC_KEY` set + Interactions Endpoint URL configured   |
-| Invite scope     | Bot invited with `applications.commands` (see invite URL above)   |
-| OAuth            | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` and `BASE_URL` configured |
-| User linked      | Each user runs `/gh login` first                                  |
+| Item         | How                                                                   |
+| ------------ | --------------------------------------------------------------------- |
+| Public key   | `DISCORD_PUBLIC_KEY` set + Interactions Endpoint URL configured       |
+| Invite scope | Bot invited with `applications.commands` (see invite URL above)       |
+| OAuth        | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` and `BASE_URL` configured |
+| User linked  | Each user runs `/gh login` first                                      |
 
 ## Deployment
 

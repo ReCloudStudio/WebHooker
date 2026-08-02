@@ -165,7 +165,10 @@ export async function handleInteractionRequest(request: Request, env: Env): Prom
   const signature = request.headers.get("X-Signature-Ed25519");
   const timestamp = request.headers.get("X-Signature-Timestamp");
   if (!signature || !timestamp || !env.DISCORD_PUBLIC_KEY) {
-    log.warn({ hasSig: !!signature, hasTs: !!timestamp, hasKey: !!env.DISCORD_PUBLIC_KEY }, "Discord interaction missing signature");
+    log.warn(
+      { hasSig: !!signature, hasTs: !!timestamp, hasKey: !!env.DISCORD_PUBLIC_KEY },
+      "Discord interaction missing signature",
+    );
     return new Response("Invalid signature", { status: 401 });
   }
   if (Math.abs(Math.floor(Date.now() / 1000) - Number(timestamp)) > TIMESTAMP_TOLERANCE_SECONDS) {
@@ -293,7 +296,12 @@ async function respond(env: Env, id: string, token: string, content: string): Pr
   });
 }
 
-async function interactionCallback(env: Env, id: string, token: string, body: unknown): Promise<void> {
+async function interactionCallback(
+  env: Env,
+  id: string,
+  token: string,
+  body: unknown,
+): Promise<void> {
   const res = await fetch(`${DISCORD_API}/interactions/${id}/${token}/callback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -386,8 +394,7 @@ async function handleButton(
 async function cmdLogin(env: Env, id: string, token: string, userId: string | null): Promise<void> {
   if (!userId) return respond(env, id, token, "无法识别你的 Discord 账号。");
   const clientId = env.GITHUB_CLIENT_ID;
-  if (!clientId)
-    return respond(env, id, token, "服务器未配置 GitHub OAuth（GITHUB_CLIENT_ID）。");
+  if (!clientId) return respond(env, id, token, "服务器未配置 GitHub OAuth（GITHUB_CLIENT_ID）。");
 
   const state = crypto.randomUUID().replace(/-/g, "");
   await env.KV.put(
@@ -404,7 +411,12 @@ async function cmdLogin(env: Env, id: string, token: string, userId: string | nu
   );
 }
 
-async function cmdLogout(env: Env, id: string, token: string, userId: string | null): Promise<void> {
+async function cmdLogout(
+  env: Env,
+  id: string,
+  token: string,
+  userId: string | null,
+): Promise<void> {
   if (!userId) return respond(env, id, token, "无法识别你的 Discord 账号。");
   await removeDiscordLink(env.KV, userId);
   await respond(env, id, token, "已解绑你的 GitHub 账号。");
@@ -413,8 +425,7 @@ async function cmdLogout(env: Env, id: string, token: string, userId: string | n
 /** Map a GitHub op error code to a user-facing (Chinese) message. */
 function errText(err: unknown): string {
   const t = err instanceof Error ? err.message : String(err);
-  if (t === "GITHUB_TOKEN_EXPIRED")
-    return "GitHub 授权已过期或无效，请重新使用 `/gh login` 绑定。";
+  if (t === "GITHUB_TOKEN_EXPIRED") return "GitHub 授权已过期或无效，请重新使用 `/gh login` 绑定。";
   if (t === "GITHUB_FORBIDDEN") return "GitHub 拒绝了此操作：你的账号没有权限修改/删除这条评论。";
   if (t === "GITHUB_NOT_FOUND") return "找不到目标（可能评论已被删除或仓库不可访问）。";
   return `操作失败：${t}`;
@@ -480,13 +491,7 @@ async function commentOp(
   // edit: fetch current body to prefill the modal.
   let prefill = "";
   try {
-    const { body } = await getCommentAsUser(
-      env.KV,
-      githubUserId,
-      owner!,
-      repo!,
-      Number(commentId),
-    );
+    const { body } = await getCommentAsUser(env.KV, githubUserId, owner!, repo!, Number(commentId));
     prefill = body;
   } catch (err) {
     return respond(env, id, token, errText(err));
@@ -678,14 +683,11 @@ export async function syncGuildCommands(env: Env): Promise<void> {
   for (const guild of guilds) {
     try {
       if (await env.KV.get(`cmd:guild:${guild.id}`)) continue;
-      const r = await fetch(
-        `${DISCORD_API}/applications/${appId}/guilds/${guild.id}/commands`,
-        {
-          method: "PUT",
-          headers: { Authorization: `Bot ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify(APP_COMMANDS),
-        },
-      );
+      const r = await fetch(`${DISCORD_API}/applications/${appId}/guilds/${guild.id}/commands`, {
+        method: "PUT",
+        headers: { Authorization: `Bot ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(APP_COMMANDS),
+      });
       if (r.ok) {
         await env.KV.put(`cmd:guild:${guild.id}`, "1");
         log.info({ guildId: guild.id }, "Registered guild application commands");

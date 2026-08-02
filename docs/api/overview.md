@@ -10,27 +10,27 @@ https://your-worker.workers.dev
 
 ## Endpoints
 
-| Method   | Path                           | Auth           | Description              |
-| -------- | ------------------------------ | -------------- | ------------------------ |
-| `GET`    | `/health`                      | None           | Health check             |
-| `POST`   | `/webhook`                     | HMAC signature | GitHub webhook ingestion |
+| Method   | Path                           | Auth              | Description                                            |
+| -------- | ------------------------------ | ----------------- | ------------------------------------------------------ |
+| `GET`    | `/health`                      | None              | Health check                                           |
+| `POST`   | `/webhook`                     | HMAC signature    | GitHub webhook ingestion                               |
 | `POST`   | `/discord/interactions`        | Ed25519 signature | Discord interactions (slash commands, buttons, modals) |
-| `GET`    | `/auth/github`                 | None           | Start GitHub OAuth flow  |
-| `GET`    | `/auth/github/callback`        | None           | OAuth callback           |
-| `DELETE` | `/auth/token/:userId`          | None           | Revoke user token        |
-| `POST`   | `/api/comment`                 | Bearer token   | Create issue comment     |
-| `POST`   | `/api/merge`                   | Bearer token   | Merge pull request       |
-| `POST`   | `/api/close`                   | Bearer token   | Close pull request       |
-| `POST`   | `/api/react`                   | Bearer token   | Add reaction to issue    |
-| `GET`    | `/admin`                       | Admin session  | Config console UI        |
-| `GET`    | `/admin/api/routes`            | Admin session  | List routes              |
-| `PUT`    | `/admin/api/routes`            | Admin session  | Replace routes           |
-| `GET`    | `/admin/api/groups`            | Admin session  | List groups (scoped)     |
-| `PUT`    | `/admin/api/groups`            | Admin session  | Replace groups (super)   |
-| `GET`    | `/admin/api/groups/:id/routes` | Admin session  | List a group's routes    |
-| `PUT`    | `/admin/api/groups/:id/routes` | Admin session  | Replace a group's routes |
-| `GET`    | `/admin/api/me`                | Admin session  | Current session info     |
-| `GET`    | `/admin/api/logs`              | Admin session  | Send logs (scoped)       |
+| `GET`    | `/auth/github`                 | None              | Start GitHub OAuth flow                                |
+| `GET`    | `/auth/github/callback`        | None              | OAuth callback                                         |
+| `DELETE` | `/auth/token/:userId`          | None              | Revoke user token                                      |
+| `POST`   | `/api/comment`                 | Bearer token      | Create issue comment                                   |
+| `POST`   | `/api/merge`                   | Bearer token      | Merge pull request                                     |
+| `POST`   | `/api/close`                   | Bearer token      | Close pull request                                     |
+| `POST`   | `/api/react`                   | Bearer token      | Add reaction to issue                                  |
+| `GET`    | `/admin`                       | Admin session     | Config console UI                                      |
+| `GET`    | `/admin/api/routes`            | Admin session     | List routes                                            |
+| `PUT`    | `/admin/api/routes`            | Admin session     | Replace routes                                         |
+| `GET`    | `/admin/api/groups`            | Admin session     | List groups (scoped)                                   |
+| `PUT`    | `/admin/api/groups`            | Admin session     | Replace groups (super)                                 |
+| `GET`    | `/admin/api/groups/:id/routes` | Admin session     | List a group's routes                                  |
+| `PUT`    | `/admin/api/groups/:id/routes` | Admin session     | Replace a group's routes                               |
+| `GET`    | `/admin/api/me`                | Admin session     | Current session info                                   |
+| `GET`    | `/admin/api/logs`              | Admin session     | Send logs (scoped)                                     |
 
 ## Admin Console
 

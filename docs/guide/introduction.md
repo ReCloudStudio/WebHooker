@@ -17,11 +17,11 @@ POST /discord/interactions → verify (Ed25519) → handle /gh slash & context c
 
 ### Components
 
-| Component                           | Role                                                                                                                     |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Cloudflare Worker**               | HTTP ingress, signature verification, delivery dedup, event parsing, route matching, REST send                           |
-| **Interactions Endpoint**            | Verifies Ed25519 signatures and handles `/gh` interactions (slash commands, context-menu commands, buttons, modals) |
-| **KV**                              | Token storage (`token:{userId}`), OAuth state (`state:{hex}`), route config (`config:routes`), send logs, delivery dedup |
+| Component                 | Role                                                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Cloudflare Worker**     | HTTP ingress, signature verification, delivery dedup, event parsing, route matching, REST send                           |
+| **Interactions Endpoint** | Verifies Ed25519 signatures and handles `/gh` interactions (slash commands, context-menu commands, buttons, modals)      |
+| **KV**                    | Token storage (`token:{userId}`), OAuth state (`state:{hex}`), route config (`config:routes`), send logs, delivery dedup |
 
 ### Data Flow
 

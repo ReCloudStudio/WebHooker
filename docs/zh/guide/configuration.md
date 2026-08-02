@@ -184,4 +184,4 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 | `logs:send:{ts}-{hex}`   | 发送记录                                            | 1 小时             |
 | `cmd:guild:{id}`         | 已注册命令的服务器 id（去重标记）                   | 永久               |
 | `cmd:registered:global`  | 全局命令已注册标记（24h 去重）                      | 1 天               |
-| `config:discord-app-id`  | Discord 应用 id 缓存                                 | 永久               |
+| `config:discord-app-id`  | Discord 应用 id 缓存                                | 永久               |

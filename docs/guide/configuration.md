@@ -17,12 +17,12 @@ WebHooker requires several secrets to function. For local development, store the
 
 ### Optional Secrets
 
-| Variable                  | Description                                                                                           | Default                 |
-| ------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------- |
-| `DISCORD_PUBLIC_KEY`    | Discord application public key (Developer Portal) — required for interactions | Unset → interactions return `401` |
-| `DISCORD_APPLICATION_ID` | Discord application id; auto-resolved when omitted | Auto-resolved          |
-| `BASE_URL`                | Public URL for OAuth callbacks                                                                        | `http://localhost:8787` |
-| `ADMIN_USER_IDS`          | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                              | Disabled                |
+| Variable                 | Description                                                                   | Default                           |
+| ------------------------ | ----------------------------------------------------------------------------- | --------------------------------- |
+| `DISCORD_PUBLIC_KEY`     | Discord application public key (Developer Portal) — required for interactions | Unset → interactions return `401` |
+| `DISCORD_APPLICATION_ID` | Discord application id; auto-resolved when omitted                            | Auto-resolved                     |
+| `BASE_URL`               | Public URL for OAuth callbacks                                                | `http://localhost:8787`           |
+| `ADMIN_USER_IDS`         | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI      | Disabled                          |
 
 ## Web UI
 

@@ -42,18 +42,18 @@ npx wrangler dev     # 启动本地开发服务器
 
 ### 密钥（本地用 `.dev.vars`，生产用 Worker Secrets）
 
-| 变量                      | 说明                                                                       |
-| ------------------------- | -------------------------------------------------------------------------- |
-| `GITHUB_WEBHOOK_SECRET`   | GitHub webhook 密钥                                                        |
-| `GITHUB_APP_ID`           | GitHub App ID                                                              |
-| `GITHUB_PRIVATE_KEY`      | App 私钥（PEM）                                                            |
-| `GITHUB_CLIENT_ID`        | OAuth Client ID                                                            |
-| `GITHUB_CLIENT_SECRET`    | OAuth Client Secret                                                        |
-| `DISCORD_TOKEN`           | 机器人 token                                                               |
-| `DISCORD_PUBLIC_KEY`      | Discord 应用的公钥（开发者门户获取）—— 交互功能必需                         |
-| `DISCORD_APPLICATION_ID`  | Discord 应用 ID（可选；省略时通过 `GET /oauth2/applications/@me` 自动获取） |
-| `BASE_URL`                | 公网地址（用于 OAuth 回调）                                                |
-| `ADMIN_USER_IDS`          | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                  |
+| 变量                     | 说明                                                                        |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `GITHUB_WEBHOOK_SECRET`  | GitHub webhook 密钥                                                         |
+| `GITHUB_APP_ID`          | GitHub App ID                                                               |
+| `GITHUB_PRIVATE_KEY`     | App 私钥（PEM）                                                             |
+| `GITHUB_CLIENT_ID`       | OAuth Client ID                                                             |
+| `GITHUB_CLIENT_SECRET`   | OAuth Client Secret                                                         |
+| `DISCORD_TOKEN`          | 机器人 token                                                                |
+| `DISCORD_PUBLIC_KEY`     | Discord 应用的公钥（开发者门户获取）—— 交互功能必需                         |
+| `DISCORD_APPLICATION_ID` | Discord 应用 ID（可选；省略时通过 `GET /oauth2/applications/@me` 自动获取） |
+| `BASE_URL`               | 公网地址（用于 OAuth 回调）                                                 |
+| `ADMIN_USER_IDS`         | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                   |
 
 ### 路由配置
 
@@ -210,12 +210,12 @@ bot 通过定时任务（每 5 分钟）同步注册原生的**斜杠命令**与
 
 **要求：**
 
-| 项目         | 说明                                                             |
-| ------------ | ---------------------------------------------------------------- |
-| Public Key      | 已配置 `DISCORD_PUBLIC_KEY` 且已设置 Interactions Endpoint URL            |
-| 邀请 scope   | 邀请时带上 `applications.commands`（见上方邀请链接）             |
-| OAuth        | 已配置 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 与 `BASE_URL` |
-| 用户绑定     | 每个用户先执行 `/gh login`                                       |
+| 项目       | 说明                                                             |
+| ---------- | ---------------------------------------------------------------- |
+| Public Key | 已配置 `DISCORD_PUBLIC_KEY` 且已设置 Interactions Endpoint URL   |
+| 邀请 scope | 邀请时带上 `applications.commands`（见上方邀请链接）             |
+| OAuth      | 已配置 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 与 `BASE_URL` |
+| 用户绑定   | 每个用户先执行 `/gh login`                                       |
 
 ## 部署
 
