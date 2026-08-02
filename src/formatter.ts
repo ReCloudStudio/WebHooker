@@ -63,6 +63,8 @@ const WORKFLOW_CONCLUSION_EMOJI: Record<string, string> = {
   action_required: "⚠️",
   neutral: "➖",
   stale: "♻️",
+  queued: "⏳",
+  running: "🔄",
 };
 
 function emojiPrefix(emoji: string, show: boolean): string {
@@ -514,13 +516,19 @@ function formatWorkflowRun(
     jobs?: Array<{ name?: string; conclusion?: string }>;
   };
 
-  const conclusion = workflow.conclusion ?? "pending";
-  const emoji = WORKFLOW_CONCLUSION_EMOJI[conclusion] ?? "⏳";
+  const action = payload.action as string | undefined;
+  const status =
+    action === "in_progress"
+      ? "running"
+      : action === "requested"
+        ? "queued"
+        : (workflow.conclusion ?? "pending");
+  const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
   const colorKey =
-    conclusion === "success"
+    status === "success"
       ? "workflow_run_success"
-      : conclusion === "failure"
+      : status === "failure"
         ? "workflow_run_failure"
         : "workflow_run_other";
 
@@ -528,7 +536,7 @@ function formatWorkflowRun(
 
   fields.push({
     name: t("fields.status"),
-    value: `${em(emoji)}${conclusion}`,
+    value: `${em(emoji)}${status}`,
     inline: true,
   });
 
@@ -576,7 +584,7 @@ function formatWorkflowRun(
         title: t("events.workflow_run.title", {
           repo: repo ?? t("common.repository"),
           name: workflow.name ?? "Workflow",
-          conclusion,
+          conclusion: status,
         }),
         url: workflow.html_url,
         color: GITHUB_COLORS[colorKey],
@@ -808,13 +816,18 @@ function formatCheckRun(
     output?: { title?: string; summary?: string };
   };
 
-  const conclusion = checkRun.conclusion ?? "pending";
-  const emoji = WORKFLOW_CONCLUSION_EMOJI[conclusion] ?? "⏳";
+  const status =
+    checkRun.status === "queued"
+      ? "queued"
+      : checkRun.status === "in_progress"
+        ? "running"
+        : (checkRun.conclusion ?? "pending");
+  const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
   const colorKey =
-    conclusion === "success"
+    status === "success"
       ? "check_run_success"
-      : conclusion === "failure"
+      : status === "failure"
         ? "check_run_failure"
         : "check_run_other";
 
@@ -822,7 +835,7 @@ function formatCheckRun(
 
   fields.push({
     name: t("fields.status"),
-    value: `${em(emoji)}${conclusion}`,
+    value: `${em(emoji)}${status}`,
     inline: true,
   });
 
@@ -841,7 +854,7 @@ function formatCheckRun(
         title: t("events.check_run.title", {
           repo: repo ?? t("common.repository"),
           name: checkRun.name ?? "Check Run",
-          conclusion,
+          conclusion: status,
         }),
         url: checkRun.html_url,
         color: GITHUB_COLORS[colorKey],
@@ -1052,7 +1065,7 @@ function formatDeploymentStatus(
 
   fields.push({
     name: t("fields.status"),
-    value: `${em(emoji)}${state}`,
+    value: `${em(emoji)}${status}`,
     inline: true,
   });
 

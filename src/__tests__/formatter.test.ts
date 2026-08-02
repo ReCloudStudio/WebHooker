@@ -102,6 +102,54 @@ describe("message title spec", () => {
     expect(msg.embeds![0].fields![1].value).toBe("✅ build");
   });
 
+  it("workflow_run distinguishes queued and running from pending", () => {
+    const run = {
+      name: "CI",
+      conclusion: null as string | null,
+      html_url: "https://github.com/acme/widget/actions/runs/42",
+      head_branch: "main",
+      run_number: 42,
+    };
+    const queued = formatEvent(
+      route,
+      event("workflow_run", {
+        action: "requested",
+        workflow_run: run,
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(queued.embeds![0].title).toBe("acme/widget: CI — queued");
+    expect(queued.embeds![0].fields![0].value).toBe("⏳ queued");
+
+    const running = formatEvent(
+      route,
+      event("workflow_run", {
+        action: "in_progress",
+        workflow_run: run,
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(running.embeds![0].title).toBe("acme/widget: CI — running");
+    expect(running.embeds![0].fields![0].value).toBe("🔄 running");
+  });
+
+  it("check_run uses status for queued and running", () => {
+    const checkRun = {
+      name: "Lint",
+      html_url: "https://github.com/acme/widget/runs/1",
+      conclusion: null as string | null,
+      status: "in_progress",
+    };
+    const msg = formatEvent(
+      route,
+      event("check_run", { check_run: checkRun, repository: repo, sender }),
+    );
+    expect(msg.embeds![0].title).toBe("acme/widget: Lint — running");
+    expect(msg.embeds![0].fields![0].value).toBe("🔄 running");
+  });
+
   it("unknown events fall back to repo: event: action", () => {
     const msg = formatEvent(
       route,
