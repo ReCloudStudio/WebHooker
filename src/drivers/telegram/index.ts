@@ -19,6 +19,15 @@ export class TelegramDriver implements PlatformDriver {
     const token = env.TELEGRAM_TOKEN ?? "";
     const text = renderNeutralMessage(message);
     const avatar = message.author?.iconUrl;
+    const richHeaderHost = env.TELEGRAM_RICH_HEADER_HOST ?? env.BASE_URL;
+    if (avatar && richHeaderHost) {
+      const params = new URLSearchParams();
+      if (message.author?.name) params.set("title", message.author.name);
+      if (message.title) params.set("content", message.title);
+      params.set("avatar", avatar);
+      const rhUrl = `${richHeaderHost.replace(/\/+$/, "")}/api/richheader?${params.toString()}`;
+      return sendMessage(token, chatId, text, target.topicId, rhUrl);
+    }
     if (avatar) {
       return sendPhoto(token, chatId, smallAvatar(avatar), text, target.topicId);
     }

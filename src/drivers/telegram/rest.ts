@@ -87,6 +87,7 @@ export async function sendMessage(
   chatId: string,
   text: string,
   topicId?: string,
+  linkPreviewUrl?: string,
 ): Promise<SendResult> {
   if (!token) {
     return { ok: false, error: "TELEGRAM_TOKEN not configured", errorCode: "NO_TOKEN" };
@@ -95,8 +96,15 @@ export async function sendMessage(
     chat_id: chatId,
     text,
     parse_mode: "HTML",
-    disable_web_page_preview: true,
+    disable_web_page_preview: !linkPreviewUrl,
   };
+  if (linkPreviewUrl) {
+    body.link_preview_options = {
+      url: linkPreviewUrl,
+      prefer_small_media: true,
+      show_above_text: true,
+    };
+  }
   if (topicId) {
     body.message_thread_id = Number(topicId);
   }

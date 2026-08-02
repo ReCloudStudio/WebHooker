@@ -15,6 +15,7 @@ export interface Env {
   DISCORD_APPLICATION_ID?: string;
   TELEGRAM_TOKEN?: string;
   TELEGRAM_WEBHOOK_SECRET?: string;
+  TELEGRAM_RICH_HEADER_HOST?: string;
   ASSETS?: Fetcher;
   KV: KVNamespace;
   DB: D1Database;

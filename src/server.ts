@@ -10,6 +10,7 @@ import { createActionRoutes } from "./web/action-routes";
 import { createAdminRoutes } from "./web/admin-routes";
 import { createLegalRoutes } from "./web/legal-routes";
 import { createHomeRoutes } from "./web/home-routes";
+import { createRichHeaderRoutes } from "./web/richheader-routes";
 import { loadConfig } from "./config";
 import { log } from "./lib/log";
 
@@ -25,6 +26,7 @@ export function createServer(): Hono<{ Bindings: Env }> {
   app.route("/", createLegalRoutes());
   app.route("/", createHomeRoutes());
   app.route("/admin", createAdminRoutes());
+  app.route("/api", createRichHeaderRoutes());
 
   app.post("/webhook", async (c) => {
     const contentLength = Number(c.req.header("content-length") ?? 0);
