@@ -1,4 +1,4 @@
-import type { Route, Env, NeutralMessage } from "../types";
+import type { RouteTarget, Env, NeutralMessage } from "../types";
 
 export interface SendResult {
   ok: boolean;
@@ -11,5 +11,5 @@ export interface SendResult {
 
 export interface PlatformDriver {
   readonly id: string;
-  send(message: NeutralMessage, target: Route["target"], env: Env): Promise<SendResult>;
+  send(message: NeutralMessage, target: RouteTarget, env: Env): Promise<SendResult>;
 }

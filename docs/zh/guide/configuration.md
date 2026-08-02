@@ -14,6 +14,7 @@ WebHooker 需要多个密钥才能运行。本地开发时存储在 `.dev.vars` 
 | `GITHUB_CLIENT_ID`      | App 设置中的 OAuth 客户端 ID       |
 | `GITHUB_CLIENT_SECRET`  | App 设置中的 OAuth 客户端密钥      |
 | `DISCORD_TOKEN`         | Discord Bot Token                  |
+| `TELEGRAM_TOKEN`        | Telegram Bot Token（BotFather 获取）—— Telegram 路由必需 |
 
 ### 可选密钥
 
@@ -23,6 +24,7 @@ WebHooker 需要多个密钥才能运行。本地开发时存储在 `.dev.vars` 
 | `ADMIN_USER_IDS`         | 允许访问 WebUI 的 GitHub 用户 ID（或登录名），逗号分隔 | 未设置时 WebUI 关闭     |
 | `DISCORD_PUBLIC_KEY`     | Discord 应用的公钥（开发者门户获取），交互功能必需     | 未设置时交互返回 401    |
 | `DISCORD_APPLICATION_ID` | Discord 应用 ID；省略时自动获取                        | 自动获取                |
+| `TELEGRAM_WEBHOOK_SECRET`| `POST /telegram/webhook` 验签密钥（X-Telegram-Bot-Api-Secret-Token） | 未设置时不校验        |
 
 ## Web 控制台
 
@@ -54,7 +56,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 ## 路由
 
-路由定义了哪些事件被转发到哪些 Discord 频道。它们以 JSON 数组形式存储在 Cloudflare KV 中，键为 `config:routes`。
+路由定义了哪些事件被转发到哪些频道（Discord 或 Telegram）。它们以 JSON 数组形式存储在 Cloudflare KV 中，键为 `config:routes`。
 
 **没有默认路由**——每条路由必须自行定义目标频道。若未配置任何路由，则不会转发任何事件。
 
@@ -71,14 +73,17 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
     { "type": "event", "match": "push" },
     { "type": "repo", "match": "org/repo", "exclude": false }
   ],
-  "target": {
-    "channelId": "必填频道ID",
-    "threadId": "可选线程ID"
-  }
+  "targets": [
+    {
+      "platform": "discord",
+      "channelId": "必填频道ID",
+      "threadId": "可选线程ID"
+    }
+  ]
 }
 ```
 
-`target.channelId` 必填且按原样使用，不存在默认频道回退。
+`targets` 数组的每一项是一个推送目标，因此一条路由可同时转发到多个频道（例如同时发到 Discord 频道 **和** Telegram 群组）。`target.platform` 选择推送目标：`discord`（默认）或 `telegram`。**Discord** 需 `target.channelId`（`target.threadId` 可选的子区）；**Telegram** 需 `target.chatId`（群组/超级群组聊天 id，如 `-1001234567890`），`target.topicId`（话题的 `message_thread_id`，相当于 Discord 的子区）可选。不存在默认频道回退。
 
 其他路由字段：
 
@@ -102,10 +107,13 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
       { "type": "event", "match": "pull_request" },
       { "type": "actor", "match": "[bot]", "exclude": true }
     ],
-    "target": {
-      "channelId": "1234567890",
-      "threadId": "9876543210"
-    }
+    "targets": [
+      {
+        "platform": "telegram",
+        "chatId": "-1001234567890",
+        "topicId": "9876543210"
+      }
+    ]
   }
 ]
 ```

@@ -1,0 +1,82 @@
+import { log } from "../../lib/log";
+import type { SendResult } from "../types";
+
+const TELEGRAM_API = "https://api.telegram.org";
+
+interface TelegramResponse {
+  ok?: boolean;
+  description?: string;
+  result?: { message_id?: number };
+}
+
+export async function sendMessage(
+  token: string,
+  chatId: string,
+  text: string,
+  topicId?: string,
+): Promise<SendResult> {
+  if (!token) {
+    return { ok: false, error: "TELEGRAM_TOKEN not configured", errorCode: "NO_TOKEN" };
+  }
+
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+  };
+  if (topicId) {
+    body.message_thread_id = Number(topicId);
+  }
+
+  const url = `${TELEGRAM_API}/bot${token}/sendMessage`;
+  let lastStatus = 0;
+  let lastError = "";
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      lastStatus = res.status;
+      const data = (await res.json().catch(() => null)) as TelegramResponse | null;
+
+      if (res.status === 429) {
+        const retryAfter = (data as { retry_after?: number })?.retry_after ?? 1;
+        lastError = data?.description ?? `Rate limited (retry_after=${retryAfter})`;
+        await new Promise((r) => setTimeout(r, retryAfter * 1000));
+        continue;
+      }
+
+      if (!res.ok) {
+        lastError = data?.description ?? `HTTP ${res.status}`;
+        log.error({ status: res.status, err: lastError, chatId, attempts: attempt + 1 }, "Telegram API error");
+        return {
+          ok: false,
+          error: lastError,
+          errorCode: res.status >= 500 ? "TELEGRAM_5XX" : "TELEGRAM_ERROR",
+          status: res.status,
+          attempts: attempt + 1,
+        };
+      }
+
+      return {
+        ok: true,
+        status: res.status,
+        messageId: data?.result?.message_id != null ? String(data.result.message_id) : undefined,
+        attempts: attempt + 1,
+      };
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+      log.error({ err, chatId, attempts: attempt + 1 }, "Failed to send Telegram message");
+      if (attempt === 2) {
+        return { ok: false, error: lastError, errorCode: "NETWORK", status: lastStatus, attempts: attempt + 1 };
+      }
+      await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+    }
+  }
+
+  return { ok: false, error: lastError || "Failed to send Telegram message", errorCode: "RETRIES", status: lastStatus, attempts: 3 };
+}

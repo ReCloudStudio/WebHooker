@@ -52,7 +52,7 @@ const sampleRoutes: Route[] = [
     name: "Backend PRs",
     enabled: true,
     filters: [{ type: "event", match: "pull_request" }],
-    target: { channelId: "111" },
+    targets: [{ channelId: "111" }],
   },
 ];
 
@@ -133,6 +133,6 @@ describe("config routes persistence", () => {
     const second = await loadConfig(env);
     expect(second.routes).toHaveLength(1);
     expect(second.routes[0]!.id).toBe("backend-prs");
-    expect(second.routes[0]!.target.channelId).toBe("111");
+    expect(second.routes[0]!.targets[0]!.channelId).toBe("111");
   });
 });

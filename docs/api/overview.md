@@ -15,6 +15,7 @@ https://your-worker.workers.dev
 | `GET`    | `/health`                      | None              | Health check                                           |
 | `POST`   | `/webhook`                     | HMAC signature    | GitHub webhook ingestion                               |
 | `POST`   | `/discord/interactions`        | Ed25519 signature | Discord interactions (slash commands, buttons, modals) |
+| `POST`   | `/telegram/webhook`            | Secret token      | Telegram updates (bot `/gh` commands)                  |
 | `GET`    | `/auth/github`                 | None              | Start GitHub OAuth flow                                |
 | `GET`    | `/auth/github/callback`        | None              | OAuth callback                                         |
 | `DELETE` | `/auth/token/:userId`          | None              | Revoke user token                                      |
@@ -38,7 +39,7 @@ See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup. Admi
 
 - `GET /admin` — Serves the config console HTML
 - `GET /admin/api/routes` — Returns `{ "routes": Route[] }`
-- `PUT /admin/api/routes` — Body `{ "routes": Route[] }`; validates each route (id pattern, unique id, name, enabled, `groupId`, filters — empty only allowed for `fallback` routes — and string `target.channelId`) and persists to KV `config:routes`. Returns `200 { ok, count }` or `400 { error }` / `401 { error }`.
+- `PUT /admin/api/routes` — Body `{ "routes": Route[] }`; validates each route (id pattern, unique id, name, enabled, `groupId`, filters — empty only allowed for `fallback` routes — and platform-aware target: `target.channelId` for Discord, `target.chatId` for Telegram) and persists to KV `config:routes`. Returns `200 { ok, count }` or `400 { error }` / `401 { error }`.
 
 ## Health Check
 

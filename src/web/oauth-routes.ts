@@ -1,14 +1,17 @@
 import { Hono } from "hono";
 import { getOAuthURL, handleOAuthCallback } from "../github/oauth";
-import { removeToken, saveDiscordLink } from "../github/store";
+import { removeToken, saveDiscordLink, saveTelegramLink } from "../github/store";
 import { createAdminSession, adminCookie } from "./session";
 import { loadGroups, resolveScope, hasAnyAccess } from "./groups";
+import { sendMessage } from "../drivers/telegram/rest";
 import type { Env } from "../types";
 
 interface PendingState {
   redirectTo: string;
   expiresAt: number;
   discordUserId?: string;
+  telegramUserId?: string;
+  telegramChatId?: string;
 }
 
 function linkedPage(login: string): string {
@@ -89,6 +92,19 @@ export function createOAuthRoutes(): Hono<{ Bindings: Env }> {
         return c.html(linkedPage(result.login));
       }
       return c.json({ ok: true, discordUserId: pending.discordUserId, login: result.login });
+    }
+
+    // Telegram account-linking flow: bind the Telegram user to this GitHub account.
+    if (pending.telegramUserId) {
+      await saveTelegramLink(c.env.DB, pending.telegramUserId, result.userId);
+      if (pending.telegramChatId && c.env.TELEGRAM_TOKEN) {
+        await sendMessage(
+          c.env.TELEGRAM_TOKEN,
+          pending.telegramChatId,
+          `✅ GitHub 账号已绑定：**@${result.login}**。现在可以用 /gh comment 评论了。`,
+        ).catch(() => undefined);
+      }
+      return c.json({ ok: true, telegramUserId: pending.telegramUserId, login: result.login });
     }
 
     const isBrowser = (c.req.header("accept") ?? "").includes("text/html");

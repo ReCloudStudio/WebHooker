@@ -31,13 +31,15 @@ src/
 │   └── *.ts              # push、pull-request、issues、comments、workflow、release、repo 等
 ├── drivers/              # 平台驱动（可插拔推送目标）
 │   ├── types.ts          # PlatformDriver 接口 + SendResult
-│   ├── index.ts          # getDriver() 注册表（discord + telegram 占位）
+│   ├── index.ts          # getDriver() 注册表（discord + telegram）
 │   ├── discord/          # index.ts (驱动)、render.ts (NeutralMessage → embed)、
 │   │                     # rest.ts、interactions.ts、commands.ts
-│   └── telegram/         # TelegramDriver 占位（未实现）
+│   └── telegram/         # index.ts (驱动)、render.ts (NeutralMessage → Telegram HTML)、
+│                         # rest.ts (chat_id + message_thread_id)、updates.ts (webhook 验签)、
+│                         # commands.ts (/gh login|logout|comment|merge|close + 引用消息解析)
 ├── github/               # GitHub OAuth + 以用户身份操作
 │   ├── oauth.ts          # OAuth URL、回调 Token 交换、getUserOctokit、操作
-│   └── store.ts          # KV Token CRUD + D1 discord-link 映射
+│   └── store.ts          # KV Token CRUD + D1 discord-link/telegram-link 映射
 ├── web/                  # HTTP UI/API 路由
 │   ├── oauth-routes.ts   # GET /auth/github、回调、DELETE /token/:userId (KV 状态)
 │   ├── action-routes.ts  # POST /api/comment|merge|close|react (通过 KV 查找进行 Bearer Token 鉴权)

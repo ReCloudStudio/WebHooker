@@ -57,7 +57,7 @@ npx wrangler dev     # 启动本地开发服务器
 
 ### 路由配置
 
-路由存储在 KV（`config:routes`，JSON 格式）。**没有默认路由**——每条路由（包括目标 `channelId` / `threadId`）都必须显式定义，可通过 Web 控制台（`/admin`）或直接向 KV 存储 JSON 数组：
+路由存储在 KV（`config:routes`，JSON 格式）。**没有默认路由**——每条路由（包括目标）都必须显式定义，可通过 Web 控制台（`/admin`）或直接向 KV 存储 JSON 数组：
 
 ```json
 [
@@ -66,12 +66,19 @@ npx wrangler dev     # 启动本地开发服务器
     "name": "Push 事件",
     "enabled": true,
     "filters": [{ "type": "event", "match": "push" }],
-    "target": { "channelId": "频道ID" }
+    "target": { "platform": "discord", "channelId": "频道ID" }
+  },
+  {
+    "id": "telegram-issues",
+    "name": "Issue 推送 Telegram",
+    "enabled": true,
+    "filters": [{ "type": "event", "match": "issues" }],
+    "target": { "platform": "telegram", "chatId": "-1001234567890" }
   }
 ]
 ```
 
-`target.channelId` 必填且按原样使用，不存在默认频道回退。
+`target.platform` 选择推送目标：`discord`（默认）或 `telegram`。Discord 路由需 `target.channelId`（可选 `threadId` 指向子区）；Telegram 路由需 `target.chatId`（群组聊天 ID，可选 `topicId` 指向话题）。不存在默认频道回退。
 
 ### Web 控制台（`/admin`）
 

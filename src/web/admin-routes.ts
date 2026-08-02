@@ -98,16 +98,66 @@ function validateRoutes(
         return { ok: false, error: `route "${r.id}" filter[${j}].exclude must be boolean` };
       }
     }
-    const target = r.target as Record<string, unknown> | undefined;
-    if (!target || typeof target !== "object")
-      return { ok: false, error: `route "${r.id}" needs a target` };
+    const rawTarget = r.target as Record<string, unknown> | undefined;
+    const rawTargets = r.targets as unknown;
+    if (rawTargets === undefined && rawTarget && typeof rawTarget === "object") {
+      const legacy = validateTarget(r, rawTarget);
+      if (!legacy.ok) return legacy;
+      (r as Record<string, unknown>).targets = [legacy.target];
+      delete (r as Record<string, unknown>).target;
+    } else if (Array.isArray(rawTargets)) {
+      if (rawTargets.length === 0) {
+        return { ok: false, error: `route "${r.id}" needs at least one target` };
+      }
+      const normalized: Route["targets"] = [];
+      for (let j = 0; j < rawTargets.length; j++) {
+        const t = rawTargets[j] as Record<string, unknown>;
+        if (!t || typeof t !== "object") {
+          return { ok: false, error: `route "${r.id}".targets[${j}] is not an object` };
+        }
+        const result = validateTarget(r, t);
+        if (!result.ok) return result;
+        normalized.push(result.target);
+      }
+      (r as Record<string, unknown>).targets = normalized;
+    } else {
+      return { ok: false, error: `route "${r.id}" needs a targets array` };
+    }
+  }
+  return { ok: true, routes: routes as Route[] };
+}
+
+function validateTarget(
+  r: Record<string, unknown>,
+  target: Record<string, unknown>,
+): { ok: true; target: Route["targets"][number] } | { ok: false; error: string } {
+  const platform = target.platform === undefined ? "discord" : target.platform;
+  if (platform !== "discord" && platform !== "telegram") {
+    return { ok: false, error: `route "${r.id}".target.platform must be "discord" or "telegram"` };
+  }
+  if (platform === "telegram") {
+    if (typeof target.chatId !== "string" || target.chatId.trim().length === 0)
+      return { ok: false, error: `route "${r.id}".target.chatId is required` };
+    if (target.topicId !== undefined && typeof target.topicId !== "string") {
+      return { ok: false, error: `route "${r.id}".target.topicId must be a string` };
+    }
+  } else {
     if (typeof target.channelId !== "string" || target.channelId.trim().length === 0)
       return { ok: false, error: `route "${r.id}".target.channelId is required` };
     if (target.threadId !== undefined && typeof target.threadId !== "string") {
       return { ok: false, error: `route "${r.id}".target.threadId must be a string` };
     }
   }
-  return { ok: true, routes: routes as Route[] };
+  return {
+    ok: true,
+    target: {
+      platform,
+      channelId: platform === "telegram" ? undefined : (target.channelId as string),
+      threadId: platform === "telegram" ? undefined : ((target.threadId as string) ?? undefined),
+      chatId: platform === "telegram" ? (target.chatId as string) : undefined,
+      topicId: platform === "telegram" ? ((target.topicId as string) ?? undefined) : undefined,
+    },
+  };
 }
 
 function validateGroups(

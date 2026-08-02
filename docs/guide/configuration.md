@@ -14,6 +14,7 @@ WebHooker requires several secrets to function. For local development, store the
 | `GITHUB_CLIENT_ID`      | OAuth client ID from App settings               |
 | `GITHUB_CLIENT_SECRET`  | OAuth client secret from App settings           |
 | `DISCORD_TOKEN`         | Discord bot token                               |
+| `TELEGRAM_TOKEN`        | Telegram bot token (from BotFather) — required for Telegram routes |
 
 ### Optional Secrets
 
@@ -21,6 +22,7 @@ WebHooker requires several secrets to function. For local development, store the
 | ------------------------ | ----------------------------------------------------------------------------- | --------------------------------- |
 | `DISCORD_PUBLIC_KEY`     | Discord application public key (Developer Portal) — required for interactions | Unset → interactions return `401` |
 | `DISCORD_APPLICATION_ID` | Discord application id; auto-resolved when omitted                            | Auto-resolved                     |
+| `TELEGRAM_WEBHOOK_SECRET`| Secret token for `POST /telegram/webhook` verification (X-Telegram-Bot-Api-Secret-Token) | Disabled (no verification) |
 | `BASE_URL`               | Public URL for OAuth callbacks                                                | `http://localhost:8787`           |
 | `ADMIN_USER_IDS`         | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI      | Disabled                          |
 
@@ -54,7 +56,7 @@ The console lets you add, edit, delete, and toggle routes. Saved routes are writ
 
 ## Routes
 
-Routes define which events get forwarded to which Discord channels. They are stored in Cloudflare KV under the key `config:routes` as a JSON array.
+Routes define which events get forwarded to which channel (Discord or Telegram). They are stored in Cloudflare KV under the key `config:routes` as a JSON array.
 
 There are **no default routes** — each route must define its own target. If no routes are configured, no events are forwarded.
 
@@ -71,14 +73,17 @@ There are **no default routes** — each route must define its own target. If no
     { "type": "event", "match": "push" },
     { "type": "repo", "match": "org/repo", "exclude": false }
   ],
-  "target": {
-    "channelId": "REQUIRED_CHANNEL_ID",
-    "threadId": "OPTIONAL_THREAD_ID"
-  }
+  "targets": [
+    {
+      "platform": "discord",
+      "channelId": "REQUIRED_CHANNEL_ID",
+      "threadId": "OPTIONAL_THREAD_ID"
+    }
+  ]
 }
 ```
 
-`target.channelId` is required and used as-is; there is no fallback to a default channel.
+Each entry of `targets` is a push destination, so one route can forward to several channels at once (e.g. a Discord channel **and** a Telegram group). `target.platform` selects the platform: `discord` (default) or `telegram`. For **Discord**, `target.channelId` is required (a thread in `target.threadId` is optional). For **Telegram**, `target.chatId` (the group/supergroup chat id, e.g. `-1001234567890`) is required and `target.topicId` (the `message_thread_id` of a topic, equivalent of a Discord thread) is optional. There is no fallback to a default channel.
 
 Other route fields:
 
@@ -102,10 +107,13 @@ Other route fields:
       { "type": "event", "match": "pull_request" },
       { "type": "actor", "match": "[bot]", "exclude": true }
     ],
-    "target": {
-      "channelId": "1234567890",
-      "threadId": "9876543210"
-    }
+    "targets": [
+      {
+        "platform": "telegram",
+        "chatId": "-1001234567890",
+        "topicId": "9876543210"
+      }
+    ]
   }
 ]
 ```

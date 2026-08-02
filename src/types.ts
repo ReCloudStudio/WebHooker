@@ -13,6 +13,8 @@ export interface Env {
   GITHUB_REPO_URL?: string;
   DISCORD_PUBLIC_KEY?: string;
   DISCORD_APPLICATION_ID?: string;
+  TELEGRAM_TOKEN?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
   ASSETS?: Fetcher;
   KV: KVNamespace;
   DB: D1Database;
@@ -33,15 +35,20 @@ export interface Config {
   routes: Route[];
 }
 
+export interface RouteTarget {
+  platform?: "discord" | "telegram";
+  channelId?: string;
+  threadId?: string;
+  chatId?: string;
+  topicId?: string;
+}
+
 export interface Route {
   id: string;
   name: string;
   enabled: boolean;
   filters: Filter[];
-  target: {
-    channelId: string;
-    threadId?: string;
-  };
+  targets: RouteTarget[];
   lang?: string;
   groupId?: string;
   /**

@@ -74,27 +74,48 @@
             </button>
             <div class="err">{{ filterError }}</div>
           </div>
-          <div class="row2">
-            <div class="field">
-              <label>{{ t("routeEditor.channel") }}</label>
-              <input
-                v-model="form.channelId"
-                type="text"
-                :placeholder="t('routeEditor.channelPlaceholder')"
-                required
-              />
+          <div class="field">
+            <label
+              >{{ t("routeEditor.targets") }}
+              <span class="lbl-note">{{ t("routeEditor.targetsNote") }}</span></label
+            >
+            <div v-for="(tg, i) in form.targets" :key="i" class="filter-row">
+              <select v-model="tg.platform">
+                <option value="discord">Discord</option>
+                <option value="telegram">Telegram</option>
+              </select>
+              <template v-if="tg.platform === 'discord'">
+                <input
+                  v-model="tg.channelId"
+                  type="text"
+                  :placeholder="t('routeEditor.channelPlaceholder')"
+                />
+                <input
+                  v-model="tg.threadId"
+                  type="text"
+                  :placeholder="t('routeEditor.threadPlaceholder')"
+                />
+              </template>
+              <template v-else>
+                <input
+                  v-model="tg.chatId"
+                  type="text"
+                  :placeholder="t('routeEditor.chatPlaceholder')"
+                />
+                <input
+                  v-model="tg.topicId"
+                  type="text"
+                  :placeholder="t('routeEditor.topicPlaceholder')"
+                />
+              </template>
+              <button type="button" class="icon-btn danger" @click="form.targets.splice(i, 1)">
+                ✕
+              </button>
             </div>
-            <div class="field">
-              <label
-                >{{ t("routeEditor.thread") }}
-                <span class="lbl-note">{{ t("routeEditor.threadNote") }}</span></label
-              >
-              <input
-                v-model="form.threadId"
-                type="text"
-                :placeholder="t('routeEditor.threadPlaceholder')"
-              />
-            </div>
+            <button type="button" class="btn btn-ghost add-filter" @click="addTarget">
+              {{ t("routeEditor.addTarget") }}
+            </button>
+            <div class="err">{{ targetError }}</div>
           </div>
           <div class="err">{{ formError }}</div>
         </form>
@@ -113,7 +134,7 @@
 
 <script setup lang="ts">
 import { reactive, watch } from "vue";
-import type { Filter, Route } from "~/types";
+import type { Filter, Route, RouteTarget } from "~/types";
 import { FILTER_TYPES, fmtMatch } from "~/types";
 
 interface FilterForm extends Filter {
@@ -129,7 +150,22 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const isEdit = computed(() => props.route != null);
 const filterError = ref("");
+const targetError = ref("");
 const formError = ref("");
+
+interface TargetForm extends RouteTarget {
+  platform: "discord" | "telegram";
+}
+
+function blankTarget(): TargetForm {
+  return {
+    platform: "discord",
+    channelId: "",
+    threadId: "",
+    chatId: "",
+    topicId: "",
+  };
+}
 
 const form = reactive({
   id: "",
@@ -137,8 +173,7 @@ const form = reactive({
   lang: "",
   enabled: true,
   fallback: false,
-  channelId: "",
-  threadId: "",
+  targets: [] as TargetForm[],
   filters: [] as FilterForm[],
 });
 
@@ -160,6 +195,11 @@ function addFilter(): void {
   filterError.value = "";
 }
 
+function addTarget(): void {
+  form.targets.push(blankTarget());
+  targetError.value = "";
+}
+
 watch(
   () => props.open,
   (open) => {
@@ -170,8 +210,10 @@ watch(
     form.lang = r?.lang ?? "";
     form.enabled = r?.enabled ?? true;
     form.fallback = r?.fallback ?? false;
-    form.channelId = r?.target.channelId ?? "";
-    form.threadId = r?.target.threadId ?? "";
+    form.targets =
+      r && r.targets.length
+        ? r.targets.map((tg) => ({ ...blankTarget(), ...tg }))
+        : [blankTarget()];
     form.filters = (
       r && r.filters.length
         ? r.filters
@@ -180,6 +222,7 @@ watch(
           : [{ type: "event", match: "", exclude: false }]
     ).map((f) => ({ ...f, matchText: fmtMatch(f.match) })) as FilterForm[];
     filterError.value = "";
+    targetError.value = "";
     formError.value = "";
   },
 );
@@ -214,6 +257,20 @@ function collect(): Route | null {
     filterError.value = t("routeEditor.errAddFilter");
     return null;
   }
+
+  const targets: RouteTarget[] = [];
+  for (let i = 0; i < form.targets.length; i++) {
+    const tg = form.targets[i]!;
+    targets.push({
+      platform: tg.platform,
+      channelId: tg.channelId.trim() || undefined,
+      threadId: tg.threadId.trim() || undefined,
+      chatId: tg.chatId.trim() || undefined,
+      topicId: tg.topicId.trim() || undefined,
+    });
+  }
+  targetError.value = "";
+
   return {
     id: form.id.trim(),
     name: form.name.trim(),
@@ -221,10 +278,7 @@ function collect(): Route | null {
     fallback: form.fallback || undefined,
     lang: form.lang.trim() || undefined,
     filters,
-    target: {
-      channelId: form.channelId.trim(),
-      threadId: form.threadId.trim() || undefined,
-    },
+    targets,
   };
 }
 
@@ -240,10 +294,23 @@ function save(): void {
     formError.value = t("routeEditor.errName");
     return;
   }
-  if (!route.target.channelId) {
-    formError.value = t("routeEditor.errChannel");
+  if (!route.targets.length) {
+    targetError.value = t("routeEditor.errTargets");
     return;
+  }
+  for (let i = 0; i < route.targets.length; i++) {
+    const tg = route.targets[i]!;
+    if (tg.platform === "telegram") {
+      if (!tg.chatId) {
+        targetError.value = t("routeEditor.errChat", { n: i + 1 });
+        return;
+      }
+    } else if (!tg.channelId) {
+      targetError.value = t("routeEditor.errChannel", { n: i + 1 });
+      return;
+    }
   }
   emit("save", route);
 }
+
 </script>

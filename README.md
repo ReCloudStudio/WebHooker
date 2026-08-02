@@ -57,7 +57,7 @@ npx wrangler dev     # Start local dev server
 
 ### Routes
 
-Routes are stored in KV (`config:routes` as JSON). There are **no default routes** — every route (including its target `channelId` / `threadId`) must be defined explicitly, either via the Web UI (`/admin`) or by storing a JSON array in KV:
+Routes are stored in KV (`config:routes` as JSON). There are **no default routes** — every route (including its target) must be defined explicitly, either via the Web UI (`/admin`) or by storing a JSON array in KV:
 
 ```json
 [
@@ -66,12 +66,19 @@ Routes are stored in KV (`config:routes` as JSON). There are **no default routes
     "name": "Push Events",
     "enabled": true,
     "filters": [{ "type": "event", "match": "push" }],
-    "target": { "channelId": "CHANNEL_ID" }
+    "target": { "platform": "discord", "channelId": "CHANNEL_ID" }
+  },
+  {
+    "id": "telegram-issues",
+    "name": "Issues to Telegram",
+    "enabled": true,
+    "filters": [{ "type": "event", "match": "issues" }],
+    "target": { "platform": "telegram", "chatId": "-1001234567890" }
   }
 ]
 ```
 
-The `target.channelId` is required and is used as-is; there is no fallback to a default channel.
+`target.platform` selects the push target: `discord` (default) or `telegram`. Discord routes require `target.channelId` (optional `threadId` for a thread); Telegram routes require `target.chatId` (the group chat id, optional `topicId` for a topic). There is no fallback to a default channel.
 
 ### Web UI (`/admin`)
 

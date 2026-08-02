@@ -4,15 +4,20 @@ export interface Filter {
   exclude?: boolean;
 }
 
+export interface RouteTarget {
+  platform?: "discord" | "telegram";
+  channelId?: string;
+  threadId?: string;
+  chatId?: string;
+  topicId?: string;
+}
+
 export interface Route {
   id: string;
   name: string;
   enabled: boolean;
   filters: Filter[];
-  target: {
-    channelId: string;
-    threadId?: string;
-  };
+  targets: RouteTarget[];
   lang?: string;
   groupId?: string;
   fallback?: boolean;

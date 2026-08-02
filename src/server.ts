@@ -4,6 +4,7 @@ import { verifySignature } from "./events/verify";
 import { parseEvent } from "./events/parse";
 import { dispatchEvent } from "./core/dispatch";
 import { handleInteractionRequest } from "./drivers/discord/interactions";
+import { handleTelegramWebhookRequest } from "./drivers/telegram/updates";
 import { createOAuthRoutes } from "./web/oauth-routes";
 import { createActionRoutes } from "./web/action-routes";
 import { createAdminRoutes } from "./web/admin-routes";
@@ -71,6 +72,7 @@ export function createServer(): Hono<{ Bindings: Env }> {
   });
 
   app.post("/discord/interactions", (c) => handleInteractionRequest(c.req.raw, c.env));
+  app.post("/telegram/webhook", (c) => handleTelegramWebhookRequest(c.req.raw, c.env));
 
   app.notFound((c) => {
     if (c.env.ASSETS) {

@@ -7,7 +7,7 @@ const route: Route = {
   name: "Test",
   enabled: true,
   filters: [],
-  target: { channelId: "111" },
+  targets: [{ channelId: "111" }],
 };
 
 function event(ev: string, payload: Record<string, unknown>): WebhookEvent {

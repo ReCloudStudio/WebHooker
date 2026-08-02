@@ -40,7 +40,7 @@ src/
 │                         # milestone, discussion, repository, security, generic
 ├── drivers/              # Platform drivers (pluggable push targets)
 │   ├── types.ts          # PlatformDriver interface + SendResult
-│   ├── index.ts          # getDriver() registry (discord default + telegram stub)
+│   ├── index.ts          # getDriver() registry (discord default + telegram)
 │   ├── discord/
 │   │   ├── index.ts      # DiscordDriver: send → renderNeutralMessage + rest.sendMessage
 │   │   ├── render.ts     # renderNeutralMessage: NeutralMessage → Discord FormattedMessage
@@ -48,10 +48,14 @@ src/
 │   │   ├── interactions.ts # Ed25519 verify + interaction handlers (/gh, buttons, modals)
 │   │   └── commands.ts   # APP_COMMANDS + registerGlobalCommands/syncGuildCommands/syncCommands
 │   └── telegram/
-│       └── index.ts      # TelegramDriver stub (not implemented yet)
+│       ├── index.ts      # TelegramDriver: send → renderNeutralMessage + rest.sendMessage
+│       ├── render.ts     # renderNeutralMessage: NeutralMessage → Telegram HTML (parse_mode HTML)
+│       ├── rest.ts       # Telegram Bot API sendMessage (chat_id + message_thread_id), retry
+│       ├── updates.ts    # POST /telegram/webhook: secret-token verify + handleTelegramUpdate
+│       └── commands.ts   # Telegram /gh login|logout|comment|merge|close + reply-message parsing + syncTelegramWebhook
 ├── github/
 │   ├── oauth.ts          # OAuth URL, callback token exchange, getUserOctokit, comment/merge/close actions
-│   └── store.ts          # KV token CRUD + D1 discord-link mapping (was token-store.ts)
+│   └── store.ts          # KV token CRUD + D1 discord-link/telegram-link mapping (was token-store.ts)
 ├── web/                  # HTTP UI/API routes
 │   ├── oauth-routes.ts   # GET /auth/github, callback (admin session / discord-link), DELETE /token/:userId
 │   ├── action-routes.ts  # POST /api/comment|merge|react (Bearer token auth via KV lookup)
@@ -71,11 +75,14 @@ src/
 
 - Verify GitHub webhook signatures (Web Crypto HMAC-SHA256)
 - Verify Discord interactions (Web Crypto Ed25519, X-Signature-Ed25519 over timestamp + body)
+- Verify Telegram webhook calls (X-Telegram-Bot-Api-Secret-Token when configured)
 - Filter events by: event type, repo name, actor, action, branch, keyword (regex supported)
 - Format 23+ event types as Discord embeds
-- Route messages to Discord channels/threads via REST
+- Route messages to Discord channels/threads and Telegram chats/topics via REST
 - Serve `/gh` slash commands + message context-menu commands + PR merge/close buttons + comment modals
+- Serve Telegram `/gh` commands (login/logout/comment/merge/close) via reply-message parsing
 - Sync application commands from the scheduled trigger (global ~1h propagation + per-guild instant)
+- Sync the Telegram webhook URL from the scheduled trigger (setWebhook)
 
 ## Message Format Spec
 
@@ -105,8 +112,9 @@ npm run lint          # ESLint
 - **Production**: `wrangler secret put <NAME>` for each secret
 - **Routes**: KV key `config:routes` (JSON array, empty until configured)
 - **KV namespace**: Required binding for token/state/config/session storage
-- **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `discord_links` tables
+- **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `discord_links` + `telegram_links` tables
 - **Discord**: `DISCORD_PUBLIC_KEY` (Interactions Endpoint signature verification, from Discord Developer Portal) and `DISCORD_APPLICATION_ID` (optional, auto-resolved via `GET /oauth2/applications/@me` when omitted) are required for interactions
+- **Telegram**: `TELEGRAM_TOKEN` (Bot API token from BotFather) required for Telegram routes; `TELEGRAM_WEBHOOK_SECRET` (optional secret token for `POST /telegram/webhook` verification)
 
 ## Deployment
 

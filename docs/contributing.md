@@ -31,13 +31,15 @@ src/
 │   └── *.ts              # push, pull-request, issues, comments, workflow, release, repo, ...
 ├── drivers/              # Platform drivers (pluggable push targets)
 │   ├── types.ts          # PlatformDriver interface + SendResult
-│   ├── index.ts          # getDriver() registry (discord + telegram stub)
+│   ├── index.ts          # getDriver() registry (discord + telegram)
 │   ├── discord/          # index.ts (driver), render.ts (NeutralMessage → embed),
 │   │                     # rest.ts, interactions.ts, commands.ts
-│   └── telegram/         # TelegramDriver stub (not implemented yet)
+│   └── telegram/         # index.ts (driver), render.ts (NeutralMessage → Telegram HTML),
+│                         # rest.ts (chat_id + message_thread_id), updates.ts (webhook verify),
+│                         # commands.ts (/gh login|logout|comment|merge|close + reply parsing)
 ├── github/               # GitHub OAuth + as-user actions
 │   ├── oauth.ts          # OAuth URL, callback token exchange, getUserOctokit, actions
-│   └── store.ts          # KV token CRUD + D1 discord-link mapping
+│   └── store.ts          # KV token CRUD + D1 discord-link/telegram-link mapping
 ├── web/                  # HTTP UI/API routes
 │   ├── oauth-routes.ts   # GET /auth/github, callback, DELETE /token/:userId (KV state)
 │   ├── action-routes.ts  # POST /api/comment|merge|close|react (Bearer token auth via KV lookup)

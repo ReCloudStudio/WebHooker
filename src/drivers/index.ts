@@ -1,4 +1,4 @@
-import type { Route } from "../types";
+import type { RouteTarget } from "../types";
 import type { PlatformDriver } from "./types";
 import { DiscordDriver } from "./discord";
 import { TelegramDriver } from "./telegram";
@@ -8,8 +8,8 @@ const drivers: Record<string, PlatformDriver> = {
   telegram: new TelegramDriver(),
 };
 
-export function getDriver(target: Route["target"]): PlatformDriver {
-  const platform = (target as { platform?: string }).platform ?? "discord";
+export function getDriver(target: RouteTarget): PlatformDriver {
+  const platform = target.platform ?? "discord";
   const driver = drivers[platform];
   if (!driver) throw new Error(`No driver for platform "${platform}"`);
   return driver;

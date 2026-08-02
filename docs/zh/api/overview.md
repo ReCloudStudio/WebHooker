@@ -15,6 +15,7 @@ https://your-worker.workers.dev
 | `GET`    | `/health`                      | 无           | 健康检查                              |
 | `POST`   | `/webhook`                     | HMAC 签名    | GitHub webhook 接入                   |
 | `POST`   | `/discord/interactions`        | Ed25519 签名 | Discord 交互（斜杠命令、按钮、modal） |
+| `POST`   | `/telegram/webhook`            | Secret token | Telegram 更新（bot `/gh` 命令）       |
 | `GET`    | `/auth/github`                 | 无           | 启动 GitHub OAuth 流程                |
 | `GET`    | `/auth/github/callback`        | 无           | OAuth 回调                            |
 | `DELETE` | `/auth/token/:userId`          | 无           | 撤销用户 Token                        |
@@ -38,7 +39,7 @@ https://your-worker.workers.dev
 
 - `GET /admin` — 提供配置控制台 HTML
 - `GET /admin/api/routes` — 返回 `{ "routes": Route[] }`
-- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、唯一 id、name、enabled、groupId、过滤器、字符串 `target.channelId`）并持久化到 KV `config:routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }`。
+- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、唯一 id、name、enabled、groupId、过滤器、平台感知的 target：Discord 需 `target.channelId`，Telegram 需 `target.chatId`）并持久化到 KV `config:routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }`。
 
 ## 健康检查
 

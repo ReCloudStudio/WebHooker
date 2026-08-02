@@ -1,5 +1,6 @@
 import { createServer } from "./server";
 import { syncCommands } from "./drivers/discord/commands";
+import { syncTelegramWebhook } from "./drivers/telegram/commands";
 import type { Env } from "./types";
 import { log } from "./lib/log";
 
@@ -15,6 +16,11 @@ export default {
       await syncCommands(env);
     } catch (err) {
       log.error({ err }, "Discord command sync from cron failed");
+    }
+    try {
+      await syncTelegramWebhook(env);
+    } catch (err) {
+      log.error({ err }, "Telegram webhook sync from cron failed");
     }
   },
 };

@@ -129,7 +129,7 @@ describe("dispatchEvent fallback routing", () => {
         name: "Regular Push",
         enabled: true,
         filters: [{ type: "event", match: "push" }],
-        target: { channelId: "111" },
+        targets: [{ channelId: "111" }],
       },
       {
         id: "catch-all",
@@ -137,7 +137,7 @@ describe("dispatchEvent fallback routing", () => {
         enabled: true,
         filters: [],
         fallback: true,
-        target: { channelId: "222" },
+        targets: [{ channelId: "222" }],
       },
     ];
 

@@ -8,11 +8,24 @@ let configCache: { config: Config; expiresAt: number } | null = null;
 export async function loadRoutes(kv: KVNamespace): Promise<Route[]> {
   try {
     const stored = await kv.get<Route[]>(ROUTES_KEY, "json");
-    if (stored) return stored;
+    if (stored) return normalizeRoutes(stored);
   } catch (err) {
     log.warn({ err }, "Failed to load routes from KV");
   }
   return [];
+}
+
+/**
+ * Migrate legacy single-target routes (`target`) to the array form (`targets`).
+ */
+function normalizeRoutes(routes: Route[]): Route[] {
+  return routes.map((r) => {
+    if (r.targets && r.targets.length > 0) return r;
+    const legacy = (r as Route & { target?: Route["targets"][number] }).target;
+    if (!legacy) return r;
+    const { target: _target, ...rest } = r as Route & { target?: Route["targets"][number] };
+    return { ...rest, targets: [legacy] };
+  });
 }
 
 export async function saveRoutes(kv: KVNamespace, routes: Route[]): Promise<void> {

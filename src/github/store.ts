@@ -97,3 +97,29 @@ export async function getDiscordLink(
 export async function removeDiscordLink(db: D1Database, discordUserId: string): Promise<void> {
   await db.prepare("DELETE FROM discord_links WHERE discord_user_id = ?").bind(discordUserId).run();
 }
+
+export async function saveTelegramLink(
+  db: D1Database,
+  telegramUserId: string,
+  githubUserId: string,
+): Promise<void> {
+  await db
+    .prepare("INSERT OR REPLACE INTO telegram_links (telegram_user_id, github_user_id) VALUES (?, ?)")
+    .bind(telegramUserId, githubUserId)
+    .run();
+}
+
+export async function getTelegramLink(
+  db: D1Database,
+  telegramUserId: string,
+): Promise<string | null> {
+  const { results } = await db
+    .prepare("SELECT github_user_id FROM telegram_links WHERE telegram_user_id = ?")
+    .bind(telegramUserId)
+    .all<{ github_user_id: string }>();
+  return results[0]?.github_user_id ?? null;
+}
+
+export async function removeTelegramLink(db: D1Database, telegramUserId: string): Promise<void> {
+  await db.prepare("DELETE FROM telegram_links WHERE telegram_user_id = ?").bind(telegramUserId).run();
+}

@@ -51,7 +51,7 @@ describe("matchRoute", () => {
     name: "Test",
     enabled: true,
     filters: [],
-    target: { channelId: "123" },
+    targets: [{ channelId: "123" }],
   };
 
   it("matches all events when no filters", () => {

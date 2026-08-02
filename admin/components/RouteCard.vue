@@ -9,6 +9,13 @@
         <span class="route-name">{{ route.name || t("route.untitled") }}</span>
         <span class="route-id">{{ route.id }}</span>
         <span v-if="route.lang" class="badge lang">{{ route.lang }}</span>
+        <span
+          v-for="(tg, i) in route.targets"
+          :key="i"
+          class="badge"
+          :class="tg.platform === 'telegram' ? 'fallback' : 'lang'"
+          >{{ tg.platform === "telegram" ? "Telegram" : "Discord" }}</span
+        >
         <span v-if="route.fallback" class="badge fallback">{{ t("route.fallback") }}</span>
       </div>
       <div class="card-actions">
@@ -36,14 +43,20 @@
       >
     </div>
     <div class="target">
-      <span
-        ><b>{{ t("route.channel") }}</b
-        ><code>{{ route.target.channelId }}</code></span
-      >
-      <span v-if="route.target.threadId"
-        ><b>{{ t("route.thread") }}</b
-        ><code>{{ route.target.threadId }}</code></span
-      >
+      <div v-for="(tg, i) in route.targets" :key="i" class="target-group">
+        <span class="target-plat"
+          ><b>{{ tg.platform === "telegram" ? t("route.chat") : t("route.channel") }}</b
+          ><code>{{ tg.platform === "telegram" ? tg.chatId : tg.channelId }}</code></span
+        >
+        <span v-if="tg.platform === 'telegram' && tg.topicId"
+          ><b>{{ t("route.topic") }}</b
+          ><code>{{ tg.topicId }}</code></span
+        >
+        <span v-else-if="tg.platform !== 'telegram' && tg.threadId"
+          ><b>{{ t("route.thread") }}</b
+          ><code>{{ tg.threadId }}</code></span
+        >
+      </div>
     </div>
   </article>
 </template>
