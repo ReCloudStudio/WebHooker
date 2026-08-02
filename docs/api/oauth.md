@@ -77,7 +77,7 @@ Tokens are stored in KV with key pattern `token:{userId}`:
 }
 ```
 
-`expiresAt` is a Unix timestamp in milliseconds. KV entries expire at 90% of the token's lifetime (minimum 60 seconds). A reverse index `token-reverse:{sha256 of token}` maps the access token back to its user id so Bearer-authenticated endpoints can resolve the caller. Discord users linked to a GitHub account are stored under `discord-link:{discordUserId}`.
+`expiresAt` is a Unix timestamp in milliseconds. KV entries expire at 90% of the token's lifetime (minimum 60 seconds). A reverse index `token-reverse:{sha256 of token}` maps the access token back to its user id so Bearer-authenticated endpoints can resolve the caller. Discord users linked to a GitHub account are stored in the D1 `discord_links` table.
 
 ## Using Tokens
 

@@ -11,7 +11,7 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Runtime: Cloudflare Workers
 - HTTP framework: Hono
 - Discord interactions: HTTPS Interactions Endpoint (`POST /discord/interactions`, Ed25519-signed) — no Discord Gateway / Durable Object; bot stays offline, messages always sent via REST
-- Storage: Cloudflare KV (tokens, OAuth state, route config, admin sessions)
+- Storage: Cloudflare KV (tokens, OAuth state, route config, admin sessions, delivery dedup) + D1 (send logs, discord-link mapping)
 - Signature verification: Web Crypto API (HMAC-SHA256 for GitHub, Ed25519 for Discord)
 - GitHub OAuth: octokit + jose (JWT)
 - Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist
@@ -51,7 +51,7 @@ src/
 │       └── index.ts      # TelegramDriver stub (not implemented yet)
 ├── github/
 │   ├── oauth.ts          # OAuth URL, callback token exchange, getUserOctokit, comment/merge/close actions
-│   └── store.ts          # KV-based token CRUD + discord-link mapping (was token-store.ts)
+│   └── store.ts          # KV token CRUD + D1 discord-link mapping (was token-store.ts)
 ├── web/                  # HTTP UI/API routes
 │   ├── oauth-routes.ts   # GET /auth/github, callback (admin session / discord-link), DELETE /token/:userId
 │   ├── action-routes.ts  # POST /api/comment|merge|react (Bearer token auth via KV lookup)
@@ -62,7 +62,7 @@ src/
 │   └── legal-routes.ts   # legal / privacy / terms pages
 └── lib/                  # shared infra
     ├── i18n.ts           # loadTranslations, t() with param interpolation
-    ├── send-log.ts       # SendRecord, recordSend, getSendLog
+    ├── send-log.ts       # SendRecord, recordSend/getSendLog (D1 send_logs)
     ├── log.ts            # JSON console logger (info/warn/error/fatal)
     └── locales/          # en.ts, zh.ts translation dictionaries
 ```
@@ -104,7 +104,8 @@ npm run lint          # ESLint
 - **Local dev**: `.dev.vars` (wrangler reads this for env bindings)
 - **Production**: `wrangler secret put <NAME>` for each secret
 - **Routes**: KV key `config:routes` (JSON array, empty until configured)
-- **KV namespace**: Required binding for token/state/config storage
+- **KV namespace**: Required binding for token/state/config/session storage
+- **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `discord_links` tables
 - **Discord**: `DISCORD_PUBLIC_KEY` (Interactions Endpoint signature verification, from Discord Developer Portal) and `DISCORD_APPLICATION_ID` (optional, auto-resolved via `GET /oauth2/applications/@me` when omitted) are required for interactions
 
 ## Deployment
@@ -115,6 +116,9 @@ npx wrangler secret put DISCORD_TOKEN
 npx wrangler secret put DISCORD_PUBLIC_KEY
 npx wrangler kv namespace create KV
 # Update wrangler.jsonc with KV ID
+npx wrangler d1 create webhooker
+# Update wrangler.jsonc d1_databases with the database ID
+npx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
 npx wrangler deploy
 ```
 

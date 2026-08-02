@@ -270,7 +270,7 @@ async function handleButton(
   customId: string | undefined,
 ): Promise<void> {
   if (!userId) return respond(env, id, token, "无法识别你的 Discord 账号。");
-  const githubUserId = await getDiscordLink(env.KV, userId);
+  const githubUserId = await getDiscordLink(env.DB, userId);
   if (!githubUserId) {
     return respond(env, id, token, "你还没有绑定 GitHub 账号，请先使用 `/gh login`。");
   }
@@ -348,7 +348,7 @@ async function cmdLogout(
   userId: string | null,
 ): Promise<void> {
   if (!userId) return respond(env, id, token, "无法识别你的 Discord 账号。");
-  await removeDiscordLink(env.KV, userId);
+  await removeDiscordLink(env.DB, userId);
   await respond(env, id, token, "已解绑你的 GitHub 账号。");
 }
 
@@ -374,7 +374,7 @@ async function commentOp(
   source: string,
 ): Promise<void> {
   if (!userId) return respond(env, id, token, "无法识别你的 Discord 账号。");
-  const githubUserId = await getDiscordLink(env.KV, userId);
+  const githubUserId = await getDiscordLink(env.DB, userId);
   if (!githubUserId) {
     return respond(env, id, token, "你还没有绑定 GitHub 账号，请先使用 `/gh login`。");
   }
@@ -487,7 +487,7 @@ async function modalSubmit(
   const body = d.components?.[0]?.components?.find((c) => c.custom_id === "body")?.value?.trim();
   if (!body) return respond(env, id, token, "评论内容不能为空。");
 
-  const githubUserId = await getDiscordLink(env.KV, userId);
+  const githubUserId = await getDiscordLink(env.DB, userId);
   if (!githubUserId) {
     return respond(env, id, token, "你还没有绑定 GitHub 账号，请先使用 `/gh login`。");
   }

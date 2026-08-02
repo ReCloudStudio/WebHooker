@@ -12,6 +12,7 @@ function createEnv(overrides: Partial<Env> = {}): Env {
   return {
     GITHUB_WEBHOOK_SECRET: "secret",
     KV: {} as KVNamespace,
+    DB: {} as D1Database,
     ...overrides,
   };
 }
@@ -91,6 +92,17 @@ describe("dispatchEvent fallback routing", () => {
     } as unknown as KVNamespace;
   }
 
+  function createMockDB(): D1Database {
+    return {
+      prepare: () => ({
+        bind: () => ({
+          run: async () => ({ success: true }),
+          all: async () => ({ results: [] }),
+        }),
+      }),
+    } as unknown as D1Database;
+  }
+
   const baseConfig = {
     baseUrl: "https://example.com",
     github: {
@@ -110,7 +122,7 @@ describe("dispatchEvent fallback routing", () => {
       sent.push(url);
       return new Response("{}", { status: 200 });
     });
-    const env = createEnv({ KV: createMockKV() });
+    const env = createEnv({ KV: createMockKV(), DB: createMockDB() });
     const routes: Route[] = [
       {
         id: "regular-push",

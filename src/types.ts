@@ -15,6 +15,7 @@ export interface Env {
   DISCORD_APPLICATION_ID?: string;
   ASSETS?: Fetcher;
   KV: KVNamespace;
+  DB: D1Database;
 }
 
 export interface Config {

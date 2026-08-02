@@ -31,4 +31,11 @@
 			"id": "53abb6d985a44b80b2b08d510f73928a"
 		},
 	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "webhooker",
+			"database_id": "214a0104-3235-47c0-b7bf-ddda95f3c8ac"
+		},
+	],
 }

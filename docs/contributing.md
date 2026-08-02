@@ -37,7 +37,7 @@ src/
 │   └── telegram/         # TelegramDriver stub (not implemented yet)
 ├── github/               # GitHub OAuth + as-user actions
 │   ├── oauth.ts          # OAuth URL, callback token exchange, getUserOctokit, actions
-│   └── store.ts          # KV-based token CRUD + discord-link mapping
+│   └── store.ts          # KV token CRUD + D1 discord-link mapping
 ├── web/                  # HTTP UI/API routes
 │   ├── oauth-routes.ts   # GET /auth/github, callback, DELETE /token/:userId (KV state)
 │   ├── action-routes.ts  # POST /api/comment|merge|close|react (Bearer token auth via KV lookup)
@@ -48,7 +48,7 @@ src/
 │   └── legal-routes.ts   # Legal page routes
 └── lib/                  # Shared infrastructure
     ├── i18n.ts           # Message language overrides (en/zh)
-    ├── send-log.ts       # Send logging (logs:send KV keys)
+    ├── send-log.ts       # Send logging (D1 send_logs)
     ├── log.ts            # JSON console logger (info/warn/error/fatal)
     └── locales/          # en.ts, zh.ts translation dictionaries
 ```

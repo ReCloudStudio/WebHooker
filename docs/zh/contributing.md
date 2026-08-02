@@ -37,7 +37,7 @@ src/
 │   └── telegram/         # TelegramDriver 占位（未实现）
 ├── github/               # GitHub OAuth + 以用户身份操作
 │   ├── oauth.ts          # OAuth URL、回调 Token 交换、getUserOctokit、操作
-│   └── store.ts          # 基于 KV 的 Token CRUD + discord-link 映射
+│   └── store.ts          # KV Token CRUD + D1 discord-link 映射
 ├── web/                  # HTTP UI/API 路由
 │   ├── oauth-routes.ts   # GET /auth/github、回调、DELETE /token/:userId (KV 状态)
 │   ├── action-routes.ts  # POST /api/comment|merge|close|react (通过 KV 查找进行 Bearer Token 鉴权)
@@ -48,7 +48,7 @@ src/
 │   └── legal-routes.ts   # 法律页面路由
 └── lib/                  # 共享基础设施
     ├── i18n.ts           # 消息语言覆盖 (en/zh)
-    ├── send-log.ts       # 发送日志 (logs:send KV 键)
+    ├── send-log.ts       # 发送日志 (D1 send_logs)
     ├── log.ts            # JSON 控制台日志 (info/warn/error/fatal)
     └── locales/          # en.ts、zh.ts 翻译字典
 ```

@@ -1,39 +1,46 @@
 import { describe, it, expect } from "bun:test";
 import { recordSend, getSendLog } from "../lib/send-log";
 
-function createMockKV(): KVNamespace {
-  const store = new Map<string, { value: string; expiration?: number }>();
+function createMockDB(): D1Database {
+  const rows: Array<Record<string, unknown>> = [];
   return {
-    get: async (key: string, type?: string) => {
-      const entry = store.get(key);
-      if (!entry) return null;
-      if (entry.expiration && Date.now() / 1000 > entry.expiration) {
-        store.delete(key);
-        return null;
-      }
-      if (type === "json") return JSON.parse(entry.value);
-      return entry.value;
-    },
-    put: async (key: string, value: string, opts?: { expirationTtl?: number }) => {
-      const expiration = opts?.expirationTtl ? Date.now() / 1000 + opts.expirationTtl : undefined;
-      store.set(key, { value, expiration });
-    },
-    delete: async (key: string) => {
-      store.delete(key);
-    },
-    list: async () => ({
-      keys: [...store.keys()].map((k) => ({ name: k })),
-      list_complete: true,
-      cacheStatus: null,
+    prepare: (sql: string) => ({
+      bind: (..._args: unknown[]) => ({
+        run: async (): Promise<{ success: boolean }> => {
+          if (sql.startsWith("INSERT")) {
+            const args = _args as unknown[];
+            rows.push({
+              ts: args[0],
+              route_id: args[1],
+              event: args[2],
+              repo: args[3],
+              target: args[4],
+              ok: args[5],
+              error: args[6],
+            });
+          }
+          return { success: true };
+        },
+        all: async (): Promise<{ results: Array<Record<string, unknown>> }> => {
+          const args = _args as unknown[];
+          const limit = (args[0] as number) ?? 50;
+          return {
+            results: rows
+              .slice()
+              .sort((a, b) => (b.ts as number) - (a.ts as number))
+              .slice(0, limit),
+          };
+        },
+      }),
     }),
-  } as unknown as KVNamespace;
+  } as unknown as D1Database;
 }
 
 describe("send-log", () => {
   it("records and returns logs sorted newest first", async () => {
-    const kv = createMockKV();
-    await recordSend(kv, { ts: 1000, routeId: "a", event: "push", target: "111", ok: true });
-    await recordSend(kv, {
+    const db = createMockDB();
+    await recordSend(db, { ts: 1000, routeId: "a", event: "push", target: "111", ok: true });
+    await recordSend(db, {
       ts: 2000,
       routeId: "b",
       event: "issues",
@@ -41,7 +48,7 @@ describe("send-log", () => {
       ok: false,
       error: "Missing Permissions",
     });
-    const logs = await getSendLog(kv);
+    const logs = await getSendLog(db);
     expect(logs).toHaveLength(2);
     expect(logs[0]!.routeId).toBe("b");
     expect(logs[0]!.ok).toBe(false);
@@ -50,7 +57,7 @@ describe("send-log", () => {
   });
 
   it("returns empty when no logs", async () => {
-    const kv = createMockKV();
-    expect(await getSendLog(kv)).toEqual([]);
+    const db = createMockDB();
+    expect(await getSendLog(db)).toEqual([]);
   });
 });

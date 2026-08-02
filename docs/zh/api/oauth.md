@@ -77,7 +77,7 @@ Token 以键模式 `token:{userId}` 存储在 KV 中：
 }
 ```
 
-`expiresAt` 是毫秒级 Unix 时间戳。KV 条目在 Token 有效期的 90% 时过期（至少 60 秒）。反向索引 `token-reverse:{sha256 of token}` 将访问令牌映射回用户 id，使 Bearer 鉴权的端点能解析调用者。与 GitHub 账号绑定的 Discord 用户存储在 `discord-link:{discordUserId}` 下。
+`expiresAt` 是毫秒级 Unix 时间戳。KV 条目在 Token 有效期的 90% 时过期（至少 60 秒）。反向索引 `token-reverse:{sha256 of token}` 将访问令牌映射回用户 id，使 Bearer 鉴权的端点能解析调用者。与 GitHub 账号绑定的 Discord 用户存储在 D1 的 `discord_links` 表中。
 
 ## 使用 Token
 

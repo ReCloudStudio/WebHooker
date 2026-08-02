@@ -83,7 +83,7 @@ export function createOAuthRoutes(): Hono<{ Bindings: Env }> {
 
     // Discord account-linking flow: bind the Discord user to this GitHub account.
     if (pending.discordUserId) {
-      await saveDiscordLink(c.env.KV, pending.discordUserId, result.userId);
+      await saveDiscordLink(c.env.DB, pending.discordUserId, result.userId);
       const isBrowserLink = (c.req.header("accept") ?? "").includes("text/html");
       if (isBrowserLink) {
         return c.html(linkedPage(result.login));

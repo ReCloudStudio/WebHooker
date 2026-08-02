@@ -48,7 +48,7 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
         const message = formatEvent(route, event, tr, showEmoji);
         const result = await getDriver(route.target).send(message, route.target, env);
         if (!result.ok) throw new Error(result.error ?? "Send failed");
-        await recordSend(env.KV, {
+        await recordSend(env.DB, {
           ts: Date.now(),
           routeId: route.id,
           event: event.event,
@@ -57,7 +57,7 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
           ok: true,
         });
       } catch (err) {
-        await recordSend(env.KV, {
+        await recordSend(env.DB, {
           ts: Date.now(),
           routeId: route.id,
           event: event.event,

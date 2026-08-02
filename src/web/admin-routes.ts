@@ -227,13 +227,13 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     if (!s) return c.json({ error: "Unauthorized" }, 401);
     const limit = Math.min(Math.max(Number(c.req.query("limit") ?? 50), 1), 100);
     if (s.scope.isSuper) {
-      return c.json({ logs: await getSendLog(c.env.KV, limit) });
+      return c.json({ logs: await getSendLog(c.env.DB, limit) });
     }
     const all = await loadRoutes(c.env.KV);
     const allowed = new Set(
       all.filter((r) => r.groupId != null && s.scope.groupIds.has(r.groupId)).map((r) => r.id),
     );
-    const logs = (await getSendLog(c.env.KV, 200))
+    const logs = (await getSendLog(c.env.DB, 200))
       .filter((l) => allowed.has(l.routeId))
       .slice(0, limit);
     return c.json({ logs });

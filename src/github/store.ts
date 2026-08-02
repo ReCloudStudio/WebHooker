@@ -73,20 +73,27 @@ export async function findUserIdByToken(
  * as that GitHub account. The actual OAuth token lives under `token:{githubUserId}`.
  */
 export async function saveDiscordLink(
-  kv: KVNamespace,
+  db: D1Database,
   discordUserId: string,
   githubUserId: string,
 ): Promise<void> {
-  await kv.put(`discord-link:${discordUserId}`, githubUserId);
+  await db
+    .prepare("INSERT OR REPLACE INTO discord_links (discord_user_id, github_user_id) VALUES (?, ?)")
+    .bind(discordUserId, githubUserId)
+    .run();
 }
 
 export async function getDiscordLink(
-  kv: KVNamespace,
+  db: D1Database,
   discordUserId: string,
 ): Promise<string | null> {
-  return await kv.get(`discord-link:${discordUserId}`, "text");
+  const { results } = await db
+    .prepare("SELECT github_user_id FROM discord_links WHERE discord_user_id = ?")
+    .bind(discordUserId)
+    .all<{ github_user_id: string }>();
+  return results[0]?.github_user_id ?? null;
 }
 
-export async function removeDiscordLink(kv: KVNamespace, discordUserId: string): Promise<void> {
-  await kv.delete(`discord-link:${discordUserId}`);
+export async function removeDiscordLink(db: D1Database, discordUserId: string): Promise<void> {
+  await db.prepare("DELETE FROM discord_links WHERE discord_user_id = ?").bind(discordUserId).run();
 }

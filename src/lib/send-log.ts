@@ -10,36 +10,42 @@ export interface SendRecord {
   error?: string;
 }
 
-const KEY_PREFIX = "logs:send:";
-const RETENTION_TTL = 3600;
-const MAX_READ = 200;
-
-function randomHex(): string {
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-export async function recordSend(kv: KVNamespace, record: SendRecord): Promise<void> {
+export async function recordSend(db: D1Database, record: SendRecord): Promise<void> {
   try {
-    await kv.put(`${KEY_PREFIX}${record.ts}-${randomHex()}`, JSON.stringify(record), {
-      expirationTtl: RETENTION_TTL,
-    });
+    await db
+      .prepare(
+        "INSERT INTO send_logs (ts, route_id, event, repo, target, ok, error) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      )
+      .bind(
+        record.ts,
+        record.routeId,
+        record.event,
+        record.repo ?? null,
+        record.target,
+        record.ok ? 1 : 0,
+        record.error ?? null,
+      )
+      .run();
   } catch (err) {
     log.warn({ err }, "Failed to record send log");
   }
 }
 
-export async function getSendLog(kv: KVNamespace, limit = 50): Promise<SendRecord[]> {
+export async function getSendLog(db: D1Database, limit = 50): Promise<SendRecord[]> {
   try {
-    const list = await kv.list({ prefix: KEY_PREFIX, limit: MAX_READ });
-    const records = await Promise.all(list.keys.map((k) => kv.get<SendRecord>(k.name, "json")));
-    return records
-      .filter((r): r is SendRecord => r != null)
-      .sort((a, b) => b.ts - a.ts)
-      .slice(0, limit);
+    const { results } = await db
+      .prepare("SELECT * FROM send_logs ORDER BY ts DESC LIMIT ?")
+      .bind(limit)
+      .all<{ ts: number; route_id: string; event: string; repo: string | null; target: string; ok: number; error: string | null }>();
+    return results.map((r) => ({
+      ts: r.ts,
+      routeId: r.route_id,
+      event: r.event,
+      repo: r.repo ?? undefined,
+      target: r.target,
+      ok: r.ok === 1,
+      error: r.error ?? undefined,
+    }));
   } catch (err) {
     log.warn({ err }, "Failed to load send log");
     return [];
