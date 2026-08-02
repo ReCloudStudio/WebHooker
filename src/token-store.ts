@@ -87,9 +87,6 @@ export async function getDiscordLink(
   return await kv.get(`discord-link:${discordUserId}`, "text");
 }
 
-export async function removeDiscordLink(
-  kv: KVNamespace,
-  discordUserId: string,
-): Promise<void> {
+export async function removeDiscordLink(kv: KVNamespace, discordUserId: string): Promise<void> {
   await kv.delete(`discord-link:${discordUserId}`);
 }

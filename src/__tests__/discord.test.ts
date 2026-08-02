@@ -3,9 +3,7 @@ import { sendMessage } from "../discord-rest";
 import { dispatchEvent, isGatewayEnabled } from "../discord";
 import type { Env, Route } from "../types";
 
-function mockFetch(
-  handler: (url: string, init?: RequestInit) => Response,
-): void {
+function mockFetch(handler: (url: string, init?: RequestInit) => Response): void {
   globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
     Promise.resolve(handler(String(input), init));
 }

@@ -13,7 +13,12 @@
           <div class="row2">
             <div class="field">
               <label>{{ t("groupEditor.name") }}</label>
-              <input v-model="form.name" type="text" :placeholder="t('groupEditor.namePlaceholder')" required />
+              <input
+                v-model="form.name"
+                type="text"
+                :placeholder="t('groupEditor.namePlaceholder')"
+                required
+              />
             </div>
             <div class="field">
               <label>{{ t("groupEditor.id") }}</label>
@@ -28,19 +33,35 @@
             </div>
           </div>
           <div class="field">
-            <label>{{ t("groupEditor.admins") }} <span class="lbl-note">{{ t("groupEditor.adminsNote") }}</span></label>
-            <input v-model="form.adminIds" type="text" :placeholder="t('groupEditor.adminsPlaceholder')" />
+            <label
+              >{{ t("groupEditor.admins") }}
+              <span class="lbl-note">{{ t("groupEditor.adminsNote") }}</span></label
+            >
+            <input
+              v-model="form.adminIds"
+              type="text"
+              :placeholder="t('groupEditor.adminsPlaceholder')"
+            />
             <div class="hint">{{ t("groupEditor.adminsHint") }}</div>
           </div>
           <div class="field">
-            <label>{{ t("groupEditor.owners") }} <span class="lbl-note">{{ t("groupEditor.ownersNote") }}</span></label>
-            <input v-model="form.owners" type="text" :placeholder="t('groupEditor.ownersPlaceholder')" />
+            <label
+              >{{ t("groupEditor.owners") }}
+              <span class="lbl-note">{{ t("groupEditor.ownersNote") }}</span></label
+            >
+            <input
+              v-model="form.owners"
+              type="text"
+              :placeholder="t('groupEditor.ownersPlaceholder')"
+            />
             <div class="hint">{{ t("groupEditor.ownersHint") }}</div>
           </div>
           <div class="err">{{ formError }}</div>
         </form>
         <div class="editor-foot">
-          <button class="btn btn-ghost" type="button" @click="close">{{ t("groupEditor.cancel") }}</button>
+          <button class="btn btn-ghost" type="button" @click="close">
+            {{ t("groupEditor.cancel") }}
+          </button>
           <button class="btn btn-accent" type="button" :disabled="saving" @click="save">
             {{ t("groupEditor.save") }}
           </button>

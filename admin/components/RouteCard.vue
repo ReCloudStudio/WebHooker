@@ -12,20 +12,38 @@
         <span v-if="route.fallback" class="badge fallback">{{ t("route.fallback") }}</span>
       </div>
       <div class="card-actions">
-        <button class="icon-btn" :title="t('routeEditor.editTitle')" @click="$emit('edit', route)">✎</button>
-        <button class="icon-btn danger" :title="t('routeEditor.close')" @click="$emit('delete', route)">✕</button>
+        <button class="icon-btn" :title="t('routeEditor.editTitle')" @click="$emit('edit', route)">
+          ✎
+        </button>
+        <button
+          class="icon-btn danger"
+          :title="t('routeEditor.close')"
+          @click="$emit('delete', route)"
+        >
+          ✕
+        </button>
       </div>
     </div>
     <div class="chips">
       <span v-for="(f, i) in route.filters" :key="i" class="chip" :class="{ exclude: f.exclude }">
-        <span class="f-type">{{ f.exclude ? t("routeEditor.not") + " " : "" }}{{ t("filter." + f.type) }}</span>
+        <span class="f-type"
+          >{{ f.exclude ? t("routeEditor.not") + " " : "" }}{{ t("filter." + f.type) }}</span
+        >
         <span class="f-val">{{ fmtMatch(f.match) }}</span>
       </span>
-      <span v-if="!route.filters.length" class="chip"><span class="f-type">{{ t("route.noFilters") }}</span></span>
+      <span v-if="!route.filters.length" class="chip"
+        ><span class="f-type">{{ t("route.noFilters") }}</span></span
+      >
     </div>
     <div class="target">
-      <span><b>{{ t("route.channel") }}</b><code>{{ route.target.channelId }}</code></span>
-      <span v-if="route.target.threadId"><b>{{ t("route.thread") }}</b><code>{{ route.target.threadId }}</code></span>
+      <span
+        ><b>{{ t("route.channel") }}</b
+        ><code>{{ route.target.channelId }}</code></span
+      >
+      <span v-if="route.target.threadId"
+        ><b>{{ t("route.thread") }}</b
+        ><code>{{ route.target.threadId }}</code></span
+      >
     </div>
   </article>
 </template>

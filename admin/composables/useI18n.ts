@@ -192,7 +192,8 @@ const zh: Dict = {
   "groupEditor.owners": "来源限定",
   "groupEditor.ownersNote": "（GitHub 组织 / 用户登录名，逗号分隔）",
   "groupEditor.ownersPlaceholder": "my-org, some-user",
-  "groupEditor.ownersHint": "只有来自这些组织/用户的 webhook 事件才会进入本分组的路由。留空表示不限制。",
+  "groupEditor.ownersHint":
+    "只有来自这些组织/用户的 webhook 事件才会进入本分组的路由。留空表示不限制。",
   "groupEditor.cancel": "取消",
   "groupEditor.save": "保存分组",
   "groupEditor.errIdFormat": "ID 只能是 a-z / 0-9 / 短横线",

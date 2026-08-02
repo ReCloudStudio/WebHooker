@@ -12,7 +12,12 @@
         <form class="editor-body" @submit.prevent="save">
           <div class="field">
             <label>{{ t("routeEditor.name") }}</label>
-            <input v-model="form.name" type="text" :placeholder="t('routeEditor.namePlaceholder')" required />
+            <input
+              v-model="form.name"
+              type="text"
+              :placeholder="t('routeEditor.namePlaceholder')"
+              required
+            />
           </div>
           <div class="row2">
             <div class="field">
@@ -22,7 +27,11 @@
             </div>
             <div class="field">
               <label>{{ t("routeEditor.language") }}</label>
-              <input v-model="form.lang" type="text" :placeholder="t('routeEditor.langPlaceholder')" />
+              <input
+                v-model="form.lang"
+                type="text"
+                :placeholder="t('routeEditor.langPlaceholder')"
+              />
               <div class="hint">{{ t("routeEditor.langHint") }}</div>
             </div>
           </div>
@@ -32,38 +41,70 @@
           </div>
           <div class="field inline">
             <input v-model="form.fallback" type="checkbox" />
-            <span>{{ t("routeEditor.fallback") }} <span class="lbl-note">{{ t("routeEditor.fallbackHint") }}</span></span>
+            <span
+              >{{ t("routeEditor.fallback") }}
+              <span class="lbl-note">{{ t("routeEditor.fallbackHint") }}</span></span
+            >
           </div>
           <div class="field">
-            <label>{{ t("routeEditor.filters") }} <span class="lbl-note">{{ t("routeEditor.filtersNote") }}</span></label>
+            <label
+              >{{ t("routeEditor.filters") }}
+              <span class="lbl-note">{{ t("routeEditor.filtersNote") }}</span></label
+            >
             <div v-for="(f, i) in form.filters" :key="i" class="filter-row">
               <select v-model="f.type">
-                <option v-for="ft in FILTER_TYPES" :key="ft" :value="ft">{{ t("filter." + ft) }}</option>
+                <option v-for="ft in FILTER_TYPES" :key="ft" :value="ft">
+                  {{ t("filter." + ft) }}
+                </option>
               </select>
-              <input v-model="f.matchText" type="text" :placeholder="t('routeEditor.matchPlaceholder')" />
+              <input
+                v-model="f.matchText"
+                type="text"
+                :placeholder="t('routeEditor.matchPlaceholder')"
+              />
               <label class="inline">
                 <input v-model="f.exclude" type="checkbox" /><span>{{ t("routeEditor.not") }}</span>
               </label>
-              <button type="button" class="icon-btn danger" @click="form.filters.splice(i, 1)">✕</button>
+              <button type="button" class="icon-btn danger" @click="form.filters.splice(i, 1)">
+                ✕
+              </button>
             </div>
-            <button type="button" class="btn btn-ghost add-filter" @click="addFilter">{{ t("routeEditor.addFilter") }}</button>
+            <button type="button" class="btn btn-ghost add-filter" @click="addFilter">
+              {{ t("routeEditor.addFilter") }}
+            </button>
             <div class="err">{{ filterError }}</div>
           </div>
           <div class="row2">
             <div class="field">
               <label>{{ t("routeEditor.channel") }}</label>
-              <input v-model="form.channelId" type="text" :placeholder="t('routeEditor.channelPlaceholder')" required />
+              <input
+                v-model="form.channelId"
+                type="text"
+                :placeholder="t('routeEditor.channelPlaceholder')"
+                required
+              />
             </div>
             <div class="field">
-              <label>{{ t("routeEditor.thread") }} <span class="lbl-note">{{ t("routeEditor.threadNote") }}</span></label>
-              <input v-model="form.threadId" type="text" :placeholder="t('routeEditor.threadPlaceholder')" />
+              <label
+                >{{ t("routeEditor.thread") }}
+                <span class="lbl-note">{{ t("routeEditor.threadNote") }}</span></label
+              >
+              <input
+                v-model="form.threadId"
+                type="text"
+                :placeholder="t('routeEditor.threadPlaceholder')"
+              />
             </div>
           </div>
           <div class="err">{{ formError }}</div>
         </form>
         <div class="editor-foot">
-          <button class="btn btn-ghost" type="button" @click="close">{{ t("routeEditor.cancel") }}</button>
-          <button class="btn btn-accent" type="button" :disabled="saving" @click="save">{{ t("routeEditor.save") }}</button>
+          <button class="btn btn-ghost" type="button" @click="close">
+            {{ t("routeEditor.cancel") }}
+          </button>
+          <button class="btn btn-accent" type="button" :disabled="saving" @click="save">
+            {{ t("routeEditor.save") }}
+          </button>
         </div>
       </aside>
     </Transition>
@@ -131,11 +172,12 @@ watch(
     form.fallback = r?.fallback ?? false;
     form.channelId = r?.target.channelId ?? "";
     form.threadId = r?.target.threadId ?? "";
-    form.filters = (r && r.filters.length
-      ? r.filters
-      : form.fallback
-        ? []
-        : [{ type: "event", match: "", exclude: false }]
+    form.filters = (
+      r && r.filters.length
+        ? r.filters
+        : form.fallback
+          ? []
+          : [{ type: "event", match: "", exclude: false }]
     ).map((f) => ({ ...f, matchText: fmtMatch(f.match) })) as FilterForm[];
     filterError.value = "";
     formError.value = "";

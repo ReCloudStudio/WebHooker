@@ -67,7 +67,11 @@ const WORKFLOW_CONCLUSION_EMOJI: Record<string, string> = {
 
 type T = (key: string, params?: Record<string, string | number>) => string;
 
-export function formatEvent(route: Route, event: WebhookEvent, tr?: Translations): FormattedMessage {
+export function formatEvent(
+  route: Route,
+  event: WebhookEvent,
+  tr?: Translations,
+): FormattedMessage {
   const { event: eventType, payload } = event;
   const repo = (payload.repository as { full_name?: string })?.full_name;
   const sender = (payload.sender as { login?: string })?.login;
@@ -163,7 +167,9 @@ function formatPush(
     descriptionParts.push(t("events.push.branch_created"));
   }
 
-  descriptionParts.push(t("events.push.commits_pushed", { count, s: count !== 1 ? "s" : "", ref: ref ?? "" }));
+  descriptionParts.push(
+    t("events.push.commits_pushed", { count, s: count !== 1 ? "s" : "", ref: ref ?? "" }),
+  );
 
   if (compareUrl) {
     descriptionParts.push(t("events.push.view_comparison", { url: compareUrl }));
@@ -219,7 +225,11 @@ function formatPush(
     embeds: [
       {
         author,
-        title: t("events.push.title", { count, s: count !== 1 ? "s" : "", repo: repo ?? t("common.repository") }),
+        title: t("events.push.title", {
+          count,
+          s: count !== 1 ? "s" : "",
+          repo: repo ?? t("common.repository"),
+        }),
         url: compareUrl,
         color: GITHUB_COLORS.push,
         description: descriptionParts.join("\n"),
@@ -331,7 +341,11 @@ function formatPullRequest(
     embeds: [
       {
         author,
-        title: t("events.pr.title", { repo: repo ?? t("common.repository"), number: pr.number ?? "?", title: pr.title ?? t("common.untitled") }),
+        title: t("events.pr.title", {
+          repo: repo ?? t("common.repository"),
+          number: pr.number ?? "?",
+          title: pr.title ?? t("common.untitled"),
+        }),
         url: pr.html_url,
         color: GITHUB_COLORS[colorKey],
         description: descriptionParts.join("\n"),
@@ -412,7 +426,11 @@ function formatIssues(
     embeds: [
       {
         author,
-        title: t("events.issues.title", { repo: repo ?? t("common.repository"), number: issue.number ?? "?", title: issue.title ?? t("common.untitled") }),
+        title: t("events.issues.title", {
+          repo: repo ?? t("common.repository"),
+          number: issue.number ?? "?",
+          title: issue.title ?? t("common.untitled"),
+        }),
         url: issue.html_url,
         color: GITHUB_COLORS[colorKey],
         description: descriptionParts.join("\n"),
@@ -449,7 +467,11 @@ function formatIssueComment(
     embeds: [
       {
         author,
-        title: t("events.issue_comment.comment_on", { repo: repo ?? t("common.repository"), number: issue.number ?? "?", title: issue.title ?? t("common.untitled") }),
+        title: t("events.issue_comment.comment_on", {
+          repo: repo ?? t("common.repository"),
+          number: issue.number ?? "?",
+          title: issue.title ?? t("common.untitled"),
+        }),
         url: comment.html_url ?? issue.html_url,
         color: GITHUB_COLORS.issue_comment,
         description: `${t("events.issue_comment.action_comment", { action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
@@ -563,7 +585,13 @@ function formatRelease(
   const emoji = action === "deleted" ? "🗑️" : isPrerelease ? "⚠️" : "🚀";
 
   const descriptionParts: string[] = [];
-  descriptionParts.push(t("events.release.action_release", { emoji, action: al, tag: release.tag_name ?? t("common.unknown") }));
+  descriptionParts.push(
+    t("events.release.action_release", {
+      emoji,
+      action: al,
+      tag: release.tag_name ?? t("common.unknown"),
+    }),
+  );
 
   if (release.body) {
     const truncated = release.body.slice(0, 300);
@@ -574,7 +602,10 @@ function formatRelease(
     embeds: [
       {
         author,
-        title: t("events.release.title", { name: release.name ?? release.tag_name ?? "Release", repo: repo ?? t("common.repository") }),
+        title: t("events.release.title", {
+          name: release.name ?? release.tag_name ?? "Release",
+          repo: repo ?? t("common.repository"),
+        }),
         url: release.html_url,
         color: GITHUB_COLORS[colorKey],
         description: descriptionParts.join("\n"),
@@ -622,7 +653,12 @@ function formatCreate(
     embeds: [
       {
         author,
-        title: t("events.create.title", { emoji, type: refType, ref, repo: repo ?? t("common.repository") }),
+        title: t("events.create.title", {
+          emoji,
+          type: refType,
+          ref,
+          repo: repo ?? t("common.repository"),
+        }),
         color: GITHUB_COLORS.create,
         fields,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
@@ -647,7 +683,12 @@ function formatDelete(
     embeds: [
       {
         author,
-        title: t("events.delete.title", { emoji, type: refType, ref, repo: repo ?? t("common.repository") }),
+        title: t("events.delete.title", {
+          emoji,
+          type: refType,
+          ref,
+          repo: repo ?? t("common.repository"),
+        }),
         color: GITHUB_COLORS.delete,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
         timestamp: new Date().toISOString(),
@@ -693,7 +734,10 @@ function formatFork(
     embeds: [
       {
         author,
-        title: t("events.fork.title", { repo: repo ?? t("common.repository"), forkee: forkee?.full_name ?? t("common.unknown") }),
+        title: t("events.fork.title", {
+          repo: repo ?? t("common.repository"),
+          forkee: forkee?.full_name ?? t("common.unknown"),
+        }),
         url: forkee?.html_url ?? repoUrl,
         color: GITHUB_COLORS.fork,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
@@ -797,7 +841,11 @@ function formatPullRequestReview(
     embeds: [
       {
         author,
-        title: t("events.pr_review.title", { repo: repo ?? t("common.repository"), number: pr.number ?? "?", title: pr.title ?? t("common.untitled") }),
+        title: t("events.pr_review.title", {
+          repo: repo ?? t("common.repository"),
+          number: pr.number ?? "?",
+          title: pr.title ?? t("common.untitled"),
+        }),
         url: review.html_url,
         color: GITHUB_COLORS[colorKey],
         description: descriptionParts.join("\n"),
@@ -833,7 +881,10 @@ function formatPullRequestReviewComment(
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
   if (comment.path) {
-    const loc = comment.position != null ? t("events.pr_review_comment.line", { position: comment.position }) : "";
+    const loc =
+      comment.position != null
+        ? t("events.pr_review_comment.line", { position: comment.position })
+        : "";
     fields.push({
       name: t("fields.file"),
       value: `\`${comment.path}\`${loc}`,
@@ -845,7 +896,10 @@ function formatPullRequestReviewComment(
     embeds: [
       {
         author,
-        title: t("events.pr_review_comment.title", { repo: repo ?? t("common.repository"), number: pr.number ?? "?" }),
+        title: t("events.pr_review_comment.title", {
+          repo: repo ?? t("common.repository"),
+          number: pr.number ?? "?",
+        }),
         url: comment.html_url,
         color: GITHUB_COLORS.pull_request_review_commented,
         description: `${t("events.pr_review_comment.action_inline", { action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
@@ -889,7 +943,10 @@ function formatCommitComment(
     embeds: [
       {
         author,
-        title: t("events.commit_comment.title", { sha: shortSha, repo: repo ?? t("common.repository") }),
+        title: t("events.commit_comment.title", {
+          sha: shortSha,
+          repo: repo ?? t("common.repository"),
+        }),
         url: comment.html_url,
         color: GITHUB_COLORS.commit_comment,
         description: `${t("events.commit_comment.action_comment", { action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
@@ -1062,7 +1119,11 @@ function formatLabel(
     embeds: [
       {
         author,
-        title: t("events.label.title", { emoji, action: al, name: label.name ?? t("common.unknown") }),
+        title: t("events.label.title", {
+          emoji,
+          action: al,
+          name: label.name ?? t("common.unknown"),
+        }),
         color: GITHUB_COLORS.label,
         fields: fields.length > 0 ? fields : undefined,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
@@ -1133,7 +1194,11 @@ function formatMilestone(
     embeds: [
       {
         author,
-        title: t("events.milestone.title", { emoji: stateEmoji, action: al, title: milestone.title ?? t("common.unknown") }),
+        title: t("events.milestone.title", {
+          emoji: stateEmoji,
+          action: al,
+          title: milestone.title ?? t("common.unknown"),
+        }),
         url: milestone.html_url,
         color:
           milestone.state === "closed"
@@ -1179,13 +1244,20 @@ function formatDiscussion(
     embeds: [
       {
         author,
-        title: t("events.discussion.title", { emoji: stateEmoji, number: discussion.number ?? "?", title: discussion.title ?? t("common.untitled") }),
+        title: t("events.discussion.title", {
+          emoji: stateEmoji,
+          number: discussion.number ?? "?",
+          title: discussion.title ?? t("common.untitled"),
+        }),
         url: discussion.html_url,
         color:
           action === "answered"
             ? GITHUB_COLORS.discussion_answered
             : GITHUB_COLORS.discussion_created,
-        description: t("events.discussion.action_discussion", { action: al, category: category ? ` in **${category}**` : "" }),
+        description: t("events.discussion.action_discussion", {
+          action: al,
+          category: category ? ` in **${category}**` : "",
+        }),
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
         timestamp: new Date().toISOString(),
       },
@@ -1217,7 +1289,10 @@ function formatDiscussionComment(
     embeds: [
       {
         author,
-        title: t("events.discussion_comment.comment_on", { number: discussion.number ?? "?", title: discussion.title ?? t("common.untitled") }),
+        title: t("events.discussion_comment.comment_on", {
+          number: discussion.number ?? "?",
+          title: discussion.title ?? t("common.untitled"),
+        }),
         url: comment.html_url,
         color: GITHUB_COLORS.discussion_comment,
         description: `${t("events.discussion_comment.action_comment", { action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
@@ -1243,7 +1318,8 @@ function formatRepository(
 
   if (action === "renamed") {
     const changes = payload.changes as { name?: { from?: string } } | undefined;
-    const newName = (payload.repository as { full_name?: string })?.full_name ?? t("common.unknown");
+    const newName =
+      (payload.repository as { full_name?: string })?.full_name ?? t("common.unknown");
     fields.push({
       name: t("fields.renamed"),
       value: changes?.name?.from ? `${changes.name.from} → ${newName}` : newName,
@@ -1492,7 +1568,10 @@ function formatGeneric(
     embeds: [
       {
         author,
-        title: t("events.generic.title", { event: eventType, action: payload.action ? `: ${payload.action}` : "" }),
+        title: t("events.generic.title", {
+          event: eventType,
+          action: payload.action ? `: ${payload.action}` : "",
+        }),
         color: GITHUB_COLORS.default,
         footer: { text: t("common.footer", { repo: repo ?? t("common.github") }) },
         timestamp: new Date().toISOString(),

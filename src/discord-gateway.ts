@@ -50,7 +50,11 @@ const APP_COMMANDS = [
     type: COMMAND_TYPE.CHAT_INPUT,
     description: "GitHub 集成",
     options: [
-      { type: OPTION_TYPE.SUB_COMMAND, name: "login", description: "绑定你的 GitHub 账号以用本人身份评论" },
+      {
+        type: OPTION_TYPE.SUB_COMMAND,
+        name: "login",
+        description: "绑定你的 GitHub 账号以用本人身份评论",
+      },
       { type: OPTION_TYPE.SUB_COMMAND, name: "logout", description: "解绑你的 GitHub 账号" },
       {
         type: OPTION_TYPE.SUB_COMMAND_GROUP,
@@ -62,7 +66,12 @@ const APP_COMMANDS = [
             name: "add",
             description: "在 issue/PR 下新增评论",
             options: [
-              { type: OPTION_TYPE.STRING, name: "link", description: "issue/PR 链接", required: true },
+              {
+                type: OPTION_TYPE.STRING,
+                name: "link",
+                description: "issue/PR 链接",
+                required: true,
+              },
             ],
           },
           {
@@ -70,7 +79,12 @@ const APP_COMMANDS = [
             name: "edit",
             description: "编辑一条评论",
             options: [
-              { type: OPTION_TYPE.STRING, name: "link", description: "评论链接（含 #issuecomment-）", required: true },
+              {
+                type: OPTION_TYPE.STRING,
+                name: "link",
+                description: "评论链接（含 #issuecomment-）",
+                required: true,
+              },
             ],
           },
           {
@@ -78,7 +92,12 @@ const APP_COMMANDS = [
             name: "del",
             description: "删除一条评论",
             options: [
-              { type: OPTION_TYPE.STRING, name: "link", description: "评论链接（含 #issuecomment-）", required: true },
+              {
+                type: OPTION_TYPE.STRING,
+                name: "link",
+                description: "评论链接（含 #issuecomment-）",
+                required: true,
+              },
             ],
           },
         ],
@@ -186,7 +205,10 @@ export class DiscordGateway {
       });
 
       ws.addEventListener("error", (event) => {
-        log.error({ err: String((event as ErrorEvent).message ?? event) }, "Gateway WebSocket error");
+        log.error(
+          { err: String((event as ErrorEvent).message ?? event) },
+          "Gateway WebSocket error",
+        );
       });
     } catch (err) {
       this.connecting = false;
@@ -196,10 +218,7 @@ export class DiscordGateway {
   }
 
   private scheduleReconnect(): void {
-    const delay = Math.min(
-      BASE_RECONNECT_DELAY * 2 ** this.reconnectAttempt,
-      MAX_RECONNECT_DELAY,
-    );
+    const delay = Math.min(BASE_RECONNECT_DELAY * 2 ** this.reconnectAttempt, MAX_RECONNECT_DELAY);
     this.reconnectAttempt++;
     this.state.storage.setAlarm(Date.now() + delay);
   }
@@ -277,7 +296,10 @@ export class DiscordGateway {
 
   private identify(): void {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN || !this.token) {
-      log.warn({ hasSocket: !!this.socket, readyState: this.socket?.readyState ?? null }, "Cannot identify");
+      log.warn(
+        { hasSocket: !!this.socket, readyState: this.socket?.readyState ?? null },
+        "Cannot identify",
+      );
       return;
     }
     log.info("Sending IDENTIFY");
@@ -374,7 +396,14 @@ export class DiscordGateway {
         custom_id?: string;
         message?: { id?: string };
       };
-      return this.handleButton(id, token, userId, interaction.channel_id, data.message?.id, data.custom_id);
+      return this.handleButton(
+        id,
+        token,
+        userId,
+        interaction.channel_id,
+        data.message?.id,
+        data.custom_id,
+      );
     }
 
     if (interaction.type === INTERACTION_TYPE.COMMAND) {
@@ -382,14 +411,29 @@ export class DiscordGateway {
         name?: string;
         type?: number;
         target_id?: string;
-        options?: Array<{ name: string; options?: Array<{ name: string; value?: string; options?: Array<{ name: string; value?: string }> }> }>;
-        resolved?: { messages?: Record<string, { embeds?: Array<{ url?: string }>; content?: string }> };
+        options?: Array<{
+          name: string;
+          options?: Array<{
+            name: string;
+            value?: string;
+            options?: Array<{ name: string; value?: string }>;
+          }>;
+        }>;
+        resolved?: {
+          messages?: Record<string, { embeds?: Array<{ url?: string }>; content?: string }>;
+        };
       };
 
       // Right-click (message context-menu) commands.
       if (data.type === COMMAND_TYPE.MESSAGE) {
         const op =
-          data.name === MSG_CMD_ADD ? "add" : data.name === MSG_CMD_EDIT ? "edit" : data.name === MSG_CMD_DEL ? "del" : null;
+          data.name === MSG_CMD_ADD
+            ? "add"
+            : data.name === MSG_CMD_EDIT
+              ? "edit"
+              : data.name === MSG_CMD_DEL
+                ? "del"
+                : null;
         if (!op) return;
         const target = data.target_id ? data.resolved?.messages?.[data.target_id] : undefined;
         const source = target?.embeds?.[0]?.url ?? target?.content ?? "";
@@ -403,7 +447,14 @@ export class DiscordGateway {
         if (top?.name === "logout") return this.cmdLogout(id, token, userId);
         if (top?.name === "comment") {
           const sub = top.options?.[0];
-          const op = sub?.name === "add" ? "add" : sub?.name === "edit" ? "edit" : sub?.name === "del" ? "del" : null;
+          const op =
+            sub?.name === "add"
+              ? "add"
+              : sub?.name === "edit"
+                ? "edit"
+                : sub?.name === "del"
+                  ? "del"
+                  : null;
           if (!op) return;
           const link = sub?.options?.find((o) => o.name === "link")?.value ?? "";
           return this.commentOp(id, token, userId, op, link);
@@ -518,7 +569,8 @@ export class DiscordGateway {
   private async cmdLogin(id: string, token: string, userId: string | null): Promise<void> {
     if (!userId) return this.respond(id, token, "无法识别你的 Discord 账号。");
     const clientId = this.env.GITHUB_CLIENT_ID;
-    if (!clientId) return this.respond(id, token, "服务器未配置 GitHub OAuth（GITHUB_CLIENT_ID）。");
+    if (!clientId)
+      return this.respond(id, token, "服务器未配置 GitHub OAuth（GITHUB_CLIENT_ID）。");
 
     const state = crypto.randomUUID().replace(/-/g, "");
     await this.env.KV.put(
@@ -543,7 +595,8 @@ export class DiscordGateway {
   /** Map a GitHub op error code to a user-facing (Chinese) message. */
   private errText(err: unknown): string {
     const t = err instanceof Error ? err.message : String(err);
-    if (t === "GITHUB_TOKEN_EXPIRED") return "GitHub 授权已过期或无效，请重新使用 `/gh login` 绑定。";
+    if (t === "GITHUB_TOKEN_EXPIRED")
+      return "GitHub 授权已过期或无效，请重新使用 `/gh login` 绑定。";
     if (t === "GITHUB_FORBIDDEN") return "GitHub 拒绝了此操作：你的账号没有权限修改/删除这条评论。";
     if (t === "GITHUB_NOT_FOUND") return "找不到目标（可能评论已被删除或仓库不可访问）。";
     return `操作失败：${t}`;
@@ -568,14 +621,28 @@ export class DiscordGateway {
 
     if (op === "add") {
       const m = source.match(GITHUB_ISSUE_RE);
-      if (!m) return this.respond(id, token, "找不到 issue / PR 链接（右键 issue/PR 通知，或用 link 传入链接）。");
-      return this.openCommentModal(id, token, `${MODAL_ADD}${m[1]}|${m[2]}|${m[3]}`, `评论 ${m[1]}/${m[2]}#${m[3]}`);
+      if (!m)
+        return this.respond(
+          id,
+          token,
+          "找不到 issue / PR 链接（右键 issue/PR 通知，或用 link 传入链接）。",
+        );
+      return this.openCommentModal(
+        id,
+        token,
+        `${MODAL_ADD}${m[1]}|${m[2]}|${m[3]}`,
+        `评论 ${m[1]}/${m[2]}#${m[3]}`,
+      );
     }
 
     // edit / del both need a specific comment id.
     const m = source.match(GITHUB_COMMENT_RE);
     if (!m) {
-      return this.respond(id, token, "找不到评论链接（需含 `#issuecomment-...`，请右键某条评论通知，或粘贴评论链接）。");
+      return this.respond(
+        id,
+        token,
+        "找不到评论链接（需含 `#issuecomment-...`，请右键某条评论通知，或粘贴评论链接）。",
+      );
     }
     const [, owner, repo, commentId] = m;
 
@@ -591,7 +658,13 @@ export class DiscordGateway {
     // edit: fetch current body to prefill the modal.
     let prefill = "";
     try {
-      const { body } = await getCommentAsUser(this.env.KV, githubUserId, owner!, repo!, Number(commentId));
+      const { body } = await getCommentAsUser(
+        this.env.KV,
+        githubUserId,
+        owner!,
+        repo!,
+        Number(commentId),
+      );
       prefill = body;
     } catch (err) {
       return this.respond(id, token, this.errText(err));
@@ -662,7 +735,8 @@ export class DiscordGateway {
     // ghc|add|owner|repo|issueNumber
     if (customId.startsWith(MODAL_ADD)) {
       const [owner, repo, number] = customId.slice(MODAL_ADD.length).split("|");
-      if (!owner || !repo || !number) return this.respond(id, token, "内部错误：无法解析目标 issue。");
+      if (!owner || !repo || !number)
+        return this.respond(id, token, "内部错误：无法解析目标 issue。");
       try {
         const { htmlUrl, login } = await commentAsUser(
           this.env.KV,
@@ -681,7 +755,8 @@ export class DiscordGateway {
     // ghc|edit|owner|repo|commentId
     if (customId.startsWith(MODAL_EDIT)) {
       const [owner, repo, commentId] = customId.slice(MODAL_EDIT.length).split("|");
-      if (!owner || !repo || !commentId) return this.respond(id, token, "内部错误：无法解析目标评论。");
+      if (!owner || !repo || !commentId)
+        return this.respond(id, token, "内部错误：无法解析目标评论。");
       try {
         const { htmlUrl } = await editCommentAsUser(
           this.env.KV,

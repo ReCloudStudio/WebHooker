@@ -53,6 +53,9 @@ export function t(
   translations?: Translations,
 ): string {
   const dict = translations ?? en;
-  const raw = getByPath(dict as Record<string, unknown>, key) ?? getByPath(en as Record<string, unknown>, key) ?? key;
+  const raw =
+    getByPath(dict as Record<string, unknown>, key) ??
+    getByPath(en as Record<string, unknown>, key) ??
+    key;
   return params ? interpolate(raw, params) : raw;
 }

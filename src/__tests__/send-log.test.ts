@@ -21,7 +21,11 @@ function createMockKV(): KVNamespace {
     delete: async (key: string) => {
       store.delete(key);
     },
-    list: async () => ({ keys: [...store.keys()].map((k) => ({ name: k })), list_complete: true, cacheStatus: null }),
+    list: async () => ({
+      keys: [...store.keys()].map((k) => ({ name: k })),
+      list_complete: true,
+      cacheStatus: null,
+    }),
   } as unknown as KVNamespace;
 }
 

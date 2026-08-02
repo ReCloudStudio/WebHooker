@@ -167,7 +167,11 @@ header {
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s,
+    transform 0.1s;
 }
 
 .btn:hover {
@@ -279,7 +283,9 @@ main {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px 22px;
-  transition: border-color 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
   animation: rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
@@ -407,7 +413,9 @@ main {
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.18s, border-color 0.18s;
+  transition:
+    background 0.18s,
+    border-color 0.18s;
 }
 
 .switch .track::after {
@@ -620,7 +628,9 @@ main {
   color: var(--text);
   font-family: var(--ui);
   font-size: 13.5px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .field input[type="text"]:focus {
@@ -733,7 +743,9 @@ main {
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity 0.22s, transform 0.22s;
+  transition:
+    opacity 0.22s,
+    transform 0.22s;
 }
 
 .toast-enter-from,
@@ -782,7 +794,9 @@ main {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .tab:hover {

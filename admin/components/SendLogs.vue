@@ -2,7 +2,9 @@
   <div>
     <div class="log-toolbar">
       <span class="kpi-label">{{ t("logs.lastSends", { n: logs.length }) }}</span>
-      <button class="btn btn-ghost btn-sm" :disabled="loading" @click="refresh">{{ t("logs.refresh") }}</button>
+      <button class="btn btn-ghost btn-sm" :disabled="loading" @click="refresh">
+        {{ t("logs.refresh") }}
+      </button>
     </div>
 
     <p v-if="error" class="err">{{ error }}</p>
@@ -17,8 +19,14 @@
           <span class="log-time">{{ fmtTime(l.ts) }}</span>
         </div>
         <div class="log-meta">
-          <span v-if="l.repo"><b>{{ t("logs.repo") }}</b><code>{{ l.repo }}</code></span>
-          <span><b>{{ t("logs.target") }}</b><code>{{ l.target }}</code></span>
+          <span v-if="l.repo"
+            ><b>{{ t("logs.repo") }}</b
+            ><code>{{ l.repo }}</code></span
+          >
+          <span
+            ><b>{{ t("logs.target") }}</b
+            ><code>{{ l.target }}</code></span
+          >
         </div>
         <div v-if="!l.ok && l.error" class="log-error">{{ l.error }}</div>
       </article>

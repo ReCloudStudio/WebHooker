@@ -144,7 +144,16 @@ export function createActionRoutes(): Hono<{ Bindings: Env }> {
     if (!userId) return c.json({ error: "Invalid or expired token" }, 401);
 
     const body = await readJson(c);
-    const reactions = ["+1", "-1", "laugh", "confused", "heart", "hooray", "rocket", "eyes"] as const;
+    const reactions = [
+      "+1",
+      "-1",
+      "laugh",
+      "confused",
+      "heart",
+      "hooray",
+      "rocket",
+      "eyes",
+    ] as const;
     if (
       !body ||
       !isNonEmptyString(body.owner) ||
@@ -164,14 +173,7 @@ export function createActionRoutes(): Hono<{ Bindings: Env }> {
         repo: body.repo,
         issue_number: body.issueNumber,
         content: body.reaction as
-          | "+1"
-          | "-1"
-          | "laugh"
-          | "confused"
-          | "heart"
-          | "hooray"
-          | "rocket"
-          | "eyes",
+          "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes",
       });
     } catch (err) {
       log.error({ err }, "Failed to create reaction");

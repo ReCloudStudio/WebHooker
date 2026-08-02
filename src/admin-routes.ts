@@ -7,13 +7,7 @@ import {
   clearAdminCookie,
   type AdminSession,
 } from "./admin-session";
-import {
-  loadGroups,
-  saveGroups,
-  resolveScope,
-  hasAnyAccess,
-  type AccessScope,
-} from "./groups";
+import { loadGroups, saveGroups, resolveScope, hasAnyAccess, type AccessScope } from "./groups";
 import { getSendLog } from "./send-log";
 import { log } from "./log";
 
@@ -40,9 +34,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
     const ak = Object.keys(ao);
     const bk = Object.keys(bo);
     if (ak.length !== bk.length) return false;
-    return ak.every(
-      (k) => Object.prototype.hasOwnProperty.call(bo, k) && deepEqual(ao[k], bo[k]),
-    );
+    return ak.every((k) => Object.prototype.hasOwnProperty.call(bo, k) && deepEqual(ao[k], bo[k]));
   }
   return false;
 }
@@ -314,7 +306,10 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     const groupId = c.req.param("groupId");
     const access = groupAccess(s, groupId);
     if (!access.ok) {
-      return c.json({ error: access.status === 404 ? "Group not found" : "Forbidden" }, access.status);
+      return c.json(
+        { error: access.status === 404 ? "Group not found" : "Forbidden" },
+        access.status,
+      );
     }
     const all = await loadRoutes(c.env.KV);
     return c.json({ group: access.group, routes: all.filter((r) => r.groupId === groupId) });
@@ -326,7 +321,10 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     const groupId = c.req.param("groupId");
     const access = groupAccess(s, groupId);
     if (!access.ok) {
-      return c.json({ error: access.status === 404 ? "Group not found" : "Forbidden" }, access.status);
+      return c.json(
+        { error: access.status === 404 ? "Group not found" : "Forbidden" },
+        access.status,
+      );
     }
 
     let body: unknown;

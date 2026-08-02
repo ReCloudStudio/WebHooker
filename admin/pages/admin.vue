@@ -112,7 +112,11 @@
                     <span class="route-id">{{ g.id }}</span>
                   </div>
                   <div v-if="isSuper" class="card-actions" @click.stop>
-                    <button class="icon-btn" :title="t('groupEditor.editTitle')" @click="openEditGroup(g)">
+                    <button
+                      class="icon-btn"
+                      :title="t('groupEditor.editTitle')"
+                      @click="openEditGroup(g)"
+                    >
                       ✎
                     </button>
                     <button class="icon-btn danger" @click="onDeleteGroup(g)">✕</button>

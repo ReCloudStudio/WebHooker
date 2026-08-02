@@ -35,9 +35,7 @@ export async function recordSend(kv: KVNamespace, record: SendRecord): Promise<v
 export async function getSendLog(kv: KVNamespace, limit = 50): Promise<SendRecord[]> {
   try {
     const list = await kv.list({ prefix: KEY_PREFIX, limit: MAX_READ });
-    const records = await Promise.all(
-      list.keys.map((k) => kv.get<SendRecord>(k.name, "json")),
-    );
+    const records = await Promise.all(list.keys.map((k) => kv.get<SendRecord>(k.name, "json")));
     return records
       .filter((r): r is SendRecord => r != null)
       .sort((a, b) => b.ts - a.ts)
