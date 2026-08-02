@@ -35,13 +35,19 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 ### 端点
 
-| 端点                    | 说明                   |
-| ----------------------- | ---------------------- |
-| `GET /admin`            | 配置控制台页面         |
-| `GET /admin/login`      | 开始 GitHub OAuth 登录 |
-| `GET /admin/logout`     | 销毁会话               |
-| `GET /admin/api/routes` | 列出路由（仅管理员）   |
-| `PUT /admin/api/routes` | 替换路由（仅管理员）   |
+| 端点                               | 说明                         |
+| ---------------------------------- | ---------------------------- |
+| `GET /admin`                       | 配置控制台页面               |
+| `GET /admin/login`                 | 开始 GitHub OAuth 登录       |
+| `GET /admin/logout`                | 销毁会话                     |
+| `GET /admin/api/me`                | 当前会话、权限范围和分组     |
+| `GET /admin/api/routes`            | 列出路由（仅管理员）         |
+| `PUT /admin/api/routes`            | 替换路由（仅管理员）         |
+| `GET /admin/api/groups`            | 列出分组（按权限过滤）       |
+| `PUT /admin/api/groups`            | 替换分组（仅超级管理员）     |
+| `GET /admin/api/groups/:id/routes` | 列出某分组的路由             |
+| `PUT /admin/api/groups/:id/routes` | 替换某分组的路由             |
+| `GET /admin/api/logs`              | 发送日志（按可访问路由过滤） |
 
 控制台支持新增、编辑、删除和开关路由。保存后立即写入 KV `config:routes` 并使配置缓存失效，下一次 webhook 处理即会生效。
 
@@ -58,6 +64,8 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
   "id": "unique-route-id",
   "name": "可读名称",
   "enabled": true,
+  "groupId": "my-group",
+  "fallback": false,
   "filters": [
     { "type": "event", "match": "push" },
     { "type": "repo", "match": "org/repo", "exclude": false }
@@ -71,6 +79,14 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 `target.channelId` 必填且按原样使用，不存在默认频道回退。
 
+其他路由字段：
+
+| 字段       | 类型    | 必需 | 说明                                                                   |
+| ---------- | ------- | ---- | ---------------------------------------------------------------------- |
+| `groupId`  | string  | 是   | 该路由所属[分组](#分组)的 id                                           |
+| `fallback` | boolean | 否   | 为 `true` 时，仅当没有其它路由匹配该事件时才发送，其自身过滤器会被忽略 |
+| `lang`     | string  | 否   | 该路由的消息语言覆盖（如 `en`、`zh`），默认跟随全局设置                |
+
 ### 自定义路由示例
 
 ```json
@@ -79,6 +95,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
     "id": "backend-prs",
     "name": "后端 PR",
     "enabled": true,
+    "groupId": "backend-team",
     "filters": [
       { "type": "repo", "match": "myorg/backend" },
       { "type": "event", "match": "pull_request" },
@@ -91,6 +108,35 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
   }
 ]
 ```
+
+## 分组
+
+路由隶属于分组。分组用于限定管理权限，并可限制哪些事件允许流入。它们以 JSON 数组形式存储在 Cloudflare KV 中，键为 `config:groups`。
+
+### 分组模式
+
+```json
+{
+  "id": "backend-team",
+  "name": "后端团队",
+  "adminIds": ["rhencloud"],
+  "owners": ["myorg"]
+}
+```
+
+| 字段       | 类型     | 必需 | 说明                                                  |
+| ---------- | -------- | ---- | ----------------------------------------------------- |
+| `id`       | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用 |
+| `name`     | string   | 是   | 可读的分组名称                                        |
+| `adminIds` | string[] | 是   | 可管理该分组路由的 GitHub 用户 ID 或登录名            |
+| `owners`   | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制   |
+
+### 权限模型
+
+- **超级管理员**（`ADMIN_USER_IDS`）可查看和编辑所有分组及全部路由。
+- **分组管理员**（`adminIds`）只能查看和编辑其管理的分组；提交其分组之外的路由返回 `403`。
+- 分组管理端点通过 `/admin/api/groups/:id/routes` 一次只操作一个分组；`groupId` 由路径参数强制指定。
+- `owners` 列表限定哪些事件参与者（发送者登录名）的事件会被该分组的路由投递。
 
 ## 过滤器类型
 
@@ -108,7 +154,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 - 路由中的所有过滤器必须都匹配才触发路由（AND 逻辑）
 - 在任何过滤器上设置 `"exclude": true` 可反转匹配逻辑（NOT 逻辑）
 - `keyword` 过滤器支持正则表达式——如果正则有误，回退到子串匹配
-- `branch` 过滤器适用于 push、pull_request、create/delete、workflow_run 和 code_scanning_alert 事件
+- `branch` 过滤器适用于 push、pull_request、pull_request_review、pull_request_review_comment、create/delete、workflow_run 和 code_scanning_alert 事件
 
 ### 匹配值
 
@@ -121,9 +167,14 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 ## KV 存储布局
 
-| 键模式           | 值                             | TTL    |
-| ---------------- | ------------------------------ | ------ |
-| `config:routes`  | JSON 路由数组                  | 永久   |
-| `session:{id}`   | 管理员会话 `{ userId, login }` | 7 天   |
-| `token:{userId}` | `{ accessToken, expiresAt }`   | 至过期 |
-| `state:{hex}`    | `{ userId, createdAt }`        | 600 秒 |
+| 键模式                   | 值                                                  | TTL                |
+| ------------------------ | --------------------------------------------------- | ------------------ |
+| `config:routes`          | JSON 路由数组                                       | 永久               |
+| `config:groups`          | JSON 分组数组                                       | 永久               |
+| `session:{id}`           | 管理员会话 `{ userId, login }`                      | 7 天               |
+| `token:{userId}`         | `{ userId, accessToken, expiresAt, refreshToken? }` | 0.9 × Token 有效期 |
+| `token-reverse:{sha256}` | 用于按 Token 反查的用户 id                          | 0.9 × Token 有效期 |
+| `discord-link:{userId}`  | 与 Discord 用户绑定的 GitHub 用户 id                | 永久               |
+| `state:{hex}`            | `{ redirectTo, expiresAt, discordUserId? }`         | 600 秒             |
+| `delivery:{id}`          | Webhook 投递 id（去重标记）                         | 300 秒             |
+| `logs:send:{ts}-{hex}`   | 发送记录                                            | 1 小时             |

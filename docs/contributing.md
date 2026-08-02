@@ -16,16 +16,24 @@ npm run dev                  # Start local dev server
 src/
 ├── index.ts              # CF Workers entry (fetch + scheduled), exports DiscordGateway DO
 ├── types.ts              # Env, Config, Route, Filter, WebhookEvent, FormattedMessage
-├── config.ts             # Loads routes from KV (fallback to 7 defaults), builds Config from env
-├── server.ts             # Hono app: /health, /webhook, mounts /auth + /
+├── config.ts             # Loads routes from KV (returns [] if unset), builds Config from env
+├── server.ts             # Hono app: /health, /webhook, mounts /auth, /admin + /
 ├── webhook.ts            # HMAC verify (Web Crypto), parseEvent, extractBranch, matchRoute
-├── discord.ts            # Dispatch via DO RPC, initGateway (scheduled)
+├── discord.ts            # Dispatch via Discord REST (DO RPC when gateway enabled), initGateway (scheduled)
+├── discord-rest.ts       # Discord REST sendMessage with retry + rate-limit handling
 ├── discord-gateway.ts    # Durable Object: Discord Gateway WS, heartbeat, channel cache, send
 ├── formatter.ts          # 23 event formatters + generic fallback
 ├── github-oauth.ts       # OAuth URL, callback token exchange, getUserOctokit
 ├── oauth-routes.ts       # GET /auth/github, callback, DELETE /token/:userId (KV state)
-├── action-routes.ts      # POST /api/comment|merge|react (Bearer token auth via KV lookup)
+├── action-routes.ts      # POST /api/comment|merge|close|react (Bearer token auth via KV lookup)
+├── admin-routes.ts       # /admin API: routes, groups, me, logs (session + scope auth)
+├── admin-session.ts      # Admin session CRUD (KV session:{id}), cookie helpers
+├── groups.ts             # Group loading, group-admin access scoping
+├── i18n.ts               # Message language overrides (en/zh)
+├── send-log.ts           # Send logging (logs:send KV keys)
 ├── token-store.ts        # KV-based token CRUD with findUserIdByToken reverse lookup
+├── home-routes.ts        # Landing page routes
+├── legal-routes.ts       # Legal page routes
 └── log.ts                # JSON console logger (info/warn/error/fatal)
 ```
 
@@ -37,6 +45,7 @@ src/
 | `npm run typecheck`    | TypeScript type checking        |
 | `npm run lint`         | ESLint (TypeScript)             |
 | `npm run lint:md`      | Markdownlint (Markdown)         |
+| `npm test`             | Run unit tests (bun test)       |
 | `npm run format`       | Format all files with Prettier  |
 | `npm run format:check` | Check Prettier formatting       |
 | `npm run docs:dev`     | Start VitePress docs dev server |
@@ -56,10 +65,10 @@ src/
 ## Testing
 
 ```bash
-# Functional tests (requires wrangler dev running)
-bash /tmp/test-webhooker.sh
+# Run the unit test suite (bun test)
+npm test
 
-# Or manually
+# Or manually check the health endpoint
 curl http://localhost:8787/health
 ```
 

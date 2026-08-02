@@ -10,28 +10,34 @@ https://your-worker.workers.dev
 
 ## Endpoints
 
-| Method   | Path                    | Auth           | Description              |
-| -------- | ----------------------- | -------------- | ------------------------ |
-| `GET`    | `/health`               | None           | Health check             |
-| `POST`   | `/webhook`              | HMAC signature | GitHub webhook ingestion |
-| `GET`    | `/auth/github`          | None           | Start GitHub OAuth flow  |
-| `GET`    | `/auth/github/callback` | None           | OAuth callback           |
-| `DELETE` | `/auth/token/:userId`   | None           | Revoke user token        |
-| `POST`   | `/api/comment`          | Bearer token   | Create issue comment     |
-| `POST`   | `/api/merge`            | Bearer token   | Merge pull request       |
-| `POST`   | `/api/close`            | Bearer token   | Close pull request       |
-| `POST`   | `/api/react`            | Bearer token   | Add reaction to issue    |
-| `GET`    | `/admin`                | Admin session  | Config console UI        |
-| `GET`    | `/admin/api/routes`     | Admin session  | List routes              |
-| `PUT`    | `/admin/api/routes`     | Admin session  | Replace routes           |
+| Method   | Path                           | Auth           | Description              |
+| -------- | ------------------------------ | -------------- | ------------------------ |
+| `GET`    | `/health`                      | None           | Health check             |
+| `POST`   | `/webhook`                     | HMAC signature | GitHub webhook ingestion |
+| `GET`    | `/auth/github`                 | None           | Start GitHub OAuth flow  |
+| `GET`    | `/auth/github/callback`        | None           | OAuth callback           |
+| `DELETE` | `/auth/token/:userId`          | None           | Revoke user token        |
+| `POST`   | `/api/comment`                 | Bearer token   | Create issue comment     |
+| `POST`   | `/api/merge`                   | Bearer token   | Merge pull request       |
+| `POST`   | `/api/close`                   | Bearer token   | Close pull request       |
+| `POST`   | `/api/react`                   | Bearer token   | Add reaction to issue    |
+| `GET`    | `/admin`                       | Admin session  | Config console UI        |
+| `GET`    | `/admin/api/routes`            | Admin session  | List routes              |
+| `PUT`    | `/admin/api/routes`            | Admin session  | Replace routes           |
+| `GET`    | `/admin/api/groups`            | Admin session  | List groups (scoped)     |
+| `PUT`    | `/admin/api/groups`            | Admin session  | Replace groups (super)   |
+| `GET`    | `/admin/api/groups/:id/routes` | Admin session  | List a group's routes    |
+| `PUT`    | `/admin/api/groups/:id/routes` | Admin session  | Replace a group's routes |
+| `GET`    | `/admin/api/me`                | Admin session  | Current session info     |
+| `GET`    | `/admin/api/logs`              | Admin session  | Send logs (scoped)       |
 
 ## Admin Console
 
-See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup. Admin endpoints require a session cookie obtained via `GET /admin/login` (GitHub OAuth); the signed-in user must be listed in `ADMIN_USER_IDS`.
+See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup. Admin endpoints require a session cookie obtained via `GET /admin/login` (GitHub OAuth); the signed-in user must be listed in `ADMIN_USER_IDS` or manage a group.
 
 - `GET /admin` — Serves the config console HTML
 - `GET /admin/api/routes` — Returns `{ "routes": Route[] }`
-- `PUT /admin/api/routes` — Body `{ "routes": Route[] }`; validates each route (id pattern, unique id, name, enabled, ≥1 valid filter, string `target.channelId`) and persists to KV `config:routes`. Returns `200 { ok, count }` or `400 { error }` / `401 { error }`.
+- `PUT /admin/api/routes` — Body `{ "routes": Route[] }`; validates each route (id pattern, unique id, name, enabled, `groupId`, filters — empty only allowed for `fallback` routes — and string `target.channelId`) and persists to KV `config:routes`. Returns `200 { ok, count }` or `400 { error }` / `401 { error }`.
 
 ## Health Check
 

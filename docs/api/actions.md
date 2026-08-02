@@ -57,16 +57,16 @@ Merges a pull request.
   "owner": "org",
   "repo": "repo",
   "pullNumber": 42,
-  "mergeMethod": "squash"
+  "method": "squash"
 }
 ```
 
-| Field         | Type   | Required | Description                                       |
-| ------------- | ------ | -------- | ------------------------------------------------- |
-| `owner`       | string | Yes      | Repository owner                                  |
-| `repo`        | string | Yes      | Repository name                                   |
-| `pullNumber`  | number | Yes      | Pull request number                               |
-| `mergeMethod` | string | No       | `merge`, `squash`, or `rebase` (default: `merge`) |
+| Field        | Type   | Required | Description                                        |
+| ------------ | ------ | -------- | -------------------------------------------------- |
+| `owner`      | string | Yes      | Repository owner                                   |
+| `repo`       | string | Yes      | Repository name                                    |
+| `pullNumber` | number | Yes      | Pull request number                                |
+| `method`     | string | No       | `merge`, `squash`, or `rebase` (default: `squash`) |
 
 **Response:** `200` with GitHub merge response.
 
@@ -88,11 +88,11 @@ Closes a pull request without merging.
 }
 ```
 
-| Field        | Type   | Required | Description             |
-| ------------ | ------ | -------- | ----------------------- |
-| `owner`      | string | Yes      | Repository owner        |
-| `repo`       | string | Yes      | Repository name         |
-| `pullNumber` | number | Yes      | Pull request number     |
+| Field        | Type   | Required | Description         |
+| ------------ | ------ | -------- | ------------------- |
+| `owner`      | string | Yes      | Repository owner    |
+| `repo`       | string | Yes      | Repository name     |
+| `pullNumber` | number | Yes      | Pull request number |
 
 **Response:** `200` with GitHub update response.
 
@@ -111,7 +111,7 @@ Adds an emoji reaction to an issue or comment.
   "owner": "org",
   "repo": "repo",
   "issueNumber": 42,
-  "content": "rocket"
+  "reaction": "rocket"
 }
 ```
 
@@ -120,7 +120,7 @@ Adds an emoji reaction to an issue or comment.
 | `owner`       | string | Yes      | Repository owner             |
 | `repo`        | string | Yes      | Repository name              |
 | `issueNumber` | number | Yes      | Issue, PR, or comment number |
-| `content`     | string | Yes      | Reaction type (see below)    |
+| `reaction`    | string | Yes      | Reaction type (see below)    |
 
 **Reaction Types:**
 

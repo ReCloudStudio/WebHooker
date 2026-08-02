@@ -21,9 +21,9 @@ Redirects the user to GitHub's authorization page.
 
 **Query Parameters:**
 
-| Parameter | Description                        |
-| --------- | ---------------------------------- |
-| `userId`  | Your application's user identifier |
+| Parameter  | Description                                                                                                                              |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `redirect` | Optional relative path to return to after sign-in (e.g. `/admin`). Must start with `/` but not `//`; any unsafe value falls back to `/`. |
 
 **Response:** `302` redirect to GitHub OAuth authorize URL.
 
@@ -42,7 +42,11 @@ GitHub redirects here after authorization. Exchanges the code for an access toke
 | `code`    | Authorization code                  |
 | `state`   | State parameter for CSRF protection |
 
-**Response:** Redirects to your `BASE_URL` with a success/error indicator.
+**Response:**
+
+- **Browser flow** (`Accept: text/html`): sets an admin session cookie, then redirects to the `redirect` target. Users without admin access are redirected to `/admin?error=forbidden`.
+- **JSON flow**: returns `{ "userId": "...", "login": "...", "redirectTo": "..." }`.
+- **Discord link flow** (started with a pending `discordUserId`): links the Discord user to this GitHub account, returning `{ "ok": true, "discordUserId": "...", "login": "..." }` — or a success page in the browser.
 
 ### Revoke Token
 
@@ -66,12 +70,14 @@ Tokens are stored in KV with key pattern `token:{userId}`:
 
 ```json
 {
+  "userId": "12345",
   "accessToken": "gho_...",
-  "expiresAt": "2025-01-01T00:00:00.000Z"
+  "expiresAt": 1735689600000,
+  "refreshToken": "..."
 }
 ```
 
-Tokens are automatically expired based on the `expiresAt` timestamp.
+`expiresAt` is a Unix timestamp in milliseconds. KV entries expire at 90% of the token's lifetime (minimum 60 seconds). A reverse index `token-reverse:{sha256 of token}` maps the access token back to its user id so Bearer-authenticated endpoints can resolve the caller. Discord users linked to a GitHub account are stored under `discord-link:{discordUserId}`.
 
 ## Using Tokens
 

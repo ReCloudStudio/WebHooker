@@ -33,12 +33,12 @@ POST /api/comment
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-| --- | --- | --- | --- |
-| `owner` | string | 是 | 仓库所有者 |
-| `repo` | string | 是 | 仓库名称 |
-| `issueNumber` | number | 是 | 议题或 PR 编号 |
-| `body` | string | 是 | 评论内容（支持 Markdown） |
+| 字段          | 类型   | 必需 | 说明                      |
+| ------------- | ------ | ---- | ------------------------- |
+| `owner`       | string | 是   | 仓库所有者                |
+| `repo`        | string | 是   | 仓库名称                  |
+| `issueNumber` | number | 是   | 议题或 PR 编号            |
+| `body`        | string | 是   | 评论内容（支持 Markdown） |
 
 **响应：** `200` 与 GitHub API 响应。
 
@@ -57,18 +57,44 @@ POST /api/merge
   "owner": "org",
   "repo": "repo",
   "pullNumber": 42,
-  "mergeMethod": "squash"
+  "method": "squash"
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-| --- | --- | --- | --- |
-| `owner` | string | 是 | 仓库所有者 |
-| `repo` | string | 是 | 仓库名称 |
-| `pullNumber` | number | 是 | 拉取请求编号 |
-| `mergeMethod` | string | 否 | `merge`、`squash` 或 `rebase`（默认：`merge`） |
+| 字段         | 类型   | 必需 | 说明                                            |
+| ------------ | ------ | ---- | ----------------------------------------------- |
+| `owner`      | string | 是   | 仓库所有者                                      |
+| `repo`       | string | 是   | 仓库名称                                        |
+| `pullNumber` | number | 是   | 拉取请求编号                                    |
+| `method`     | string | 否   | `merge`、`squash` 或 `rebase`（默认：`squash`） |
 
 **响应：** `200` 与 GitHub 合并响应。
+
+### 关闭拉取请求
+
+```
+POST /api/close
+```
+
+不合并、直接关闭拉取请求。
+
+**请求体：**
+
+```json
+{
+  "owner": "org",
+  "repo": "repo",
+  "pullNumber": 42
+}
+```
+
+| 字段         | 类型   | 必需 | 说明         |
+| ------------ | ------ | ---- | ------------ |
+| `owner`      | string | 是   | 仓库所有者   |
+| `repo`       | string | 是   | 仓库名称     |
+| `pullNumber` | number | 是   | 拉取请求编号 |
+
+**响应：** `200` 与 GitHub 更新响应。
 
 ### 添加反应
 
@@ -85,16 +111,16 @@ POST /api/react
   "owner": "org",
   "repo": "repo",
   "issueNumber": 42,
-  "content": "rocket"
+  "reaction": "rocket"
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-| --- | --- | --- | --- |
-| `owner` | string | 是 | 仓库所有者 |
-| `repo` | string | 是 | 仓库名称 |
-| `issueNumber` | number | 是 | 议题、PR 或评论编号 |
-| `content` | string | 是 | 反应类型（见下方） |
+| 字段          | 类型   | 必需 | 说明                |
+| ------------- | ------ | ---- | ------------------- |
+| `owner`       | string | 是   | 仓库所有者          |
+| `repo`        | string | 是   | 仓库名称            |
+| `issueNumber` | number | 是   | 议题、PR 或评论编号 |
+| `reaction`    | string | 是   | 反应类型（见下方）  |
 
 **反应类型：**
 
@@ -104,8 +130,8 @@ POST /api/react
 
 ## 错误响应
 
-| 状态码 | 响应体 | 原因 |
-| --- | --- | --- |
-| `401` | `{"error": "Unauthorized"}` | 缺少或无效的 Bearer Token |
-| `400` | `{"error": "..."}` | 无效的请求体 |
-| `500` | `{"error": "..."}` | GitHub API 错误 |
+| 状态码 | 响应体                      | 原因                      |
+| ------ | --------------------------- | ------------------------- |
+| `401`  | `{"error": "Unauthorized"}` | 缺少或无效的 Bearer Token |
+| `400`  | `{"error": "..."}`          | 无效的请求体              |
+| `500`  | `{"error": "..."}`          | GitHub API 错误           |

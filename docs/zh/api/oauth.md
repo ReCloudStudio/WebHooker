@@ -21,9 +21,9 @@ GET /auth/github
 
 **查询参数：**
 
-| 参数 | 说明 |
-| --- | --- |
-| `userId` | 你的应用用户标识符 |
+| 参数       | 说明                                                                                                     |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| `redirect` | 可选，登录后返回的相对路径（如 `/admin`）。必须以 `/` 开头但不能以 `//` 开头；任何不安全的值回退为 `/`。 |
 
 **响应：** `302` 重定向到 GitHub OAuth 授权 URL。
 
@@ -37,12 +37,16 @@ GitHub 授权后重定向到此地址。将 code 交换为访问令牌并存储�
 
 **查询参数（来自 GitHub）：**
 
-| 参数 | 说明 |
-| --- | --- |
-| `code` | 授权码 |
+| 参数    | 说明                |
+| ------- | ------------------- |
+| `code`  | 授权码              |
 | `state` | CSRF 保护的状态参数 |
 
-**响应：** 重定向到你的 `BASE_URL`，附带成功/失败指示。
+**响应：**
+
+- **浏览器流程**（`Accept: text/html`）：设置管理员会话 Cookie，然后重定向到 `redirect` 目标；无管理权限的用户被重定向到 `/admin?error=forbidden`。
+- **JSON 流程**：返回 `{ "userId": "...", "login": "...", "redirectTo": "..." }`。
+- **Discord 绑定流程**（以未决的 `discordUserId` 启动时）：将 Discord 用户绑定到此 GitHub 账号，返回 `{ "ok": true, "discordUserId": "...", "login": "..." }`——浏览器中则显示成功页面。
 
 ### 撤销 Token
 
@@ -66,12 +70,14 @@ Token 以键模式 `token:{userId}` 存储在 KV 中：
 
 ```json
 {
+  "userId": "12345",
   "accessToken": "gho_...",
-  "expiresAt": "2025-01-01T00:00:00.000Z"
+  "expiresAt": 1735689600000,
+  "refreshToken": "..."
 }
 ```
 
-Token 会根据 `expiresAt` 时间戳自动过期。
+`expiresAt` 是毫秒级 Unix 时间戳。KV 条目在 Token 有效期的 90% 时过期（至少 60 秒）。反向索引 `token-reverse:{sha256 of token}` 将访问令牌映射回用户 id，使 Bearer 鉴权的端点能解析调用者。与 GitHub 账号绑定的 Discord 用户存储在 `discord-link:{discordUserId}` 下。
 
 ## 使用 Token
 
