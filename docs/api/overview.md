@@ -19,6 +19,7 @@ https://your-worker.workers.dev
 | `DELETE` | `/auth/token/:userId`   | None           | Revoke user token        |
 | `POST`   | `/api/comment`          | Bearer token   | Create issue comment     |
 | `POST`   | `/api/merge`            | Bearer token   | Merge pull request       |
+| `POST`   | `/api/close`            | Bearer token   | Close pull request       |
 | `POST`   | `/api/react`            | Bearer token   | Add reaction to issue    |
 | `GET`    | `/admin`                | Admin session  | Config console UI        |
 | `GET`    | `/admin/api/routes`     | Admin session  | List routes              |

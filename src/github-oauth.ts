@@ -150,3 +150,46 @@ export async function deleteCommentAsUser(
     throw mapGitHubError(err);
   }
 }
+
+/** Merge a pull request as the linked GitHub user. GitHub enforces permission (403 if not allowed). */
+export async function mergePullRequestAsUser(
+  kv: KVNamespace,
+  githubUserId: string,
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  method: "merge" | "squash" | "rebase" = "squash",
+): Promise<void> {
+  const octokit = await requireOctokit(kv, githubUserId);
+  try {
+    await octokit.rest.pulls.merge({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      merge_method: method,
+    });
+  } catch (err) {
+    throw mapGitHubError(err);
+  }
+}
+
+/** Close a pull request as the linked GitHub user. GitHub enforces permission (403 if not allowed). */
+export async function closePullRequestAsUser(
+  kv: KVNamespace,
+  githubUserId: string,
+  owner: string,
+  repo: string,
+  pullNumber: number,
+): Promise<void> {
+  const octokit = await requireOctokit(kv, githubUserId);
+  try {
+    await octokit.rest.pulls.update({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      state: "closed",
+    });
+  } catch (err) {
+    throw mapGitHubError(err);
+  }
+}

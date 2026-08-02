@@ -6,6 +6,8 @@ import {
   getCommentAsUser,
   editCommentAsUser,
   deleteCommentAsUser,
+  mergePullRequestAsUser,
+  closePullRequestAsUser,
 } from "./github-oauth";
 import { getDiscordLink, removeDiscordLink } from "./token-store";
 import type { Env } from "./types";
@@ -23,8 +25,8 @@ const MAX_RECONNECT_DELAY = 60_000;
 const ALARM_INTERVAL = 30;
 
 // Discord interaction protocol constants
-const INTERACTION_TYPE = { COMMAND: 2, MODAL_SUBMIT: 5 } as const;
-const CALLBACK_TYPE = { MESSAGE: 4, MODAL: 9 } as const;
+const INTERACTION_TYPE = { COMMAND: 2, BUTTON: 3, MODAL_SUBMIT: 5 } as const;
+const CALLBACK_TYPE = { MESSAGE: 4, DEFERRED_MESSAGE: 5, MODAL: 9 } as const;
 const COMMAND_TYPE = { CHAT_INPUT: 1, MESSAGE: 3 } as const;
 const OPTION_TYPE = { SUB_COMMAND: 1, SUB_COMMAND_GROUP: 2, STRING: 3 } as const;
 const EPHEMERAL = 64;
@@ -37,6 +39,10 @@ const MSG_CMD_DEL = "GitHub: 删除评论";
 // Modal custom_id encodings (delimiter '|' never appears in owner/repo).
 const MODAL_ADD = "ghc|add|"; // ghc|add|owner|repo|issueNumber
 const MODAL_EDIT = "ghc|edit|"; // ghc|edit|owner|repo|commentId
+
+// PR notification button custom_id encodings.
+const BTN_MERGE = "ghpr|merge|"; // ghpr|merge|owner|repo|pullNumber
+const BTN_CLOSE = "ghpr|close|"; // ghpr|close|owner|repo|pullNumber
 
 const APP_COMMANDS = [
   {
@@ -348,6 +354,7 @@ export class DiscordGateway {
       token: string;
       type: number;
       guild_id?: string;
+      channel_id?: string;
       member?: { user?: { id?: string } };
       user?: { id?: string };
       data?: Record<string, unknown>;
@@ -355,6 +362,14 @@ export class DiscordGateway {
     const userId = interaction.member?.user?.id ?? interaction.user?.id ?? null;
     const id = interaction.id;
     const token = interaction.token;
+
+    if (interaction.type === INTERACTION_TYPE.BUTTON) {
+      const data = interaction.data as {
+        custom_id?: string;
+        message?: { id?: string };
+      };
+      return this.handleButton(id, token, userId, interaction.channel_id, data.message?.id, data.custom_id);
+    }
 
     if (interaction.type === INTERACTION_TYPE.COMMAND) {
       const data = interaction.data as {
@@ -414,6 +429,83 @@ export class DiscordGateway {
     if (!res.ok) {
       const err = await res.text();
       log.warn({ status: res.status, err }, "Interaction callback failed");
+    }
+  }
+
+  /** Replace the deferred (ephemeral) response body with the final result. */
+  private async updateOriginal(id: string, token: string, content: string): Promise<void> {
+    const res = await fetch(`${DISCORD_API}/interactions/${id}/${token}/messages/@original`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      log.warn({ status: res.status, err }, "Failed to update interaction response");
+    }
+  }
+
+  /**
+   * PR notification buttons: merge or close the PR as the clicker's linked
+   * GitHub account. The clicker must have run `/gh login` first.
+   */
+  private async handleButton(
+    id: string,
+    token: string,
+    userId: string | null,
+    channelId: string | undefined,
+    messageId: string | undefined,
+    customId: string | undefined,
+  ): Promise<void> {
+    if (!userId) return this.respond(id, token, "无法识别你的 Discord 账号。");
+    const githubUserId = await getDiscordLink(this.env.KV, userId);
+    if (!githubUserId) {
+      return this.respond(id, token, "你还没有绑定 GitHub 账号，请先使用 `/gh login`。");
+    }
+
+    let op: "merge" | "close";
+    let rest: string;
+    if (customId?.startsWith(BTN_MERGE)) {
+      op = "merge";
+      rest = customId.slice(BTN_MERGE.length);
+    } else if (customId?.startsWith(BTN_CLOSE)) {
+      op = "close";
+      rest = customId.slice(BTN_CLOSE.length);
+    } else {
+      return;
+    }
+
+    const [owner, repo, number] = rest.split("|");
+    if (!owner || !repo || !number) return;
+
+    // Acknowledge first (deferred, ephemeral) so the clicker sees a spinner
+    // while the GitHub API call runs.
+    await this.interactionCallback(id, token, {
+      type: CALLBACK_TYPE.DEFERRED_MESSAGE,
+      data: { flags: EPHEMERAL },
+    });
+
+    try {
+      if (op === "merge") {
+        await mergePullRequestAsUser(this.env.KV, githubUserId, owner, repo, Number(number));
+      } else {
+        await closePullRequestAsUser(this.env.KV, githubUserId, owner, repo, Number(number));
+      }
+      // Remove the buttons from the notification so nobody double-clicks.
+      if (channelId && messageId) {
+        await fetch(`${DISCORD_API}/channels/${channelId}/messages/${messageId}`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bot ${this.botToken()}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ components: [] }),
+        }).catch((err) => log.warn({ err: String(err) }, "Failed to strip PR buttons"));
+      }
+      const label = op === "merge" ? "合并" : "关闭";
+      await this.updateOriginal(id, token, `✅ 已${label} PR ${owner}/${repo}#${number}`);
+    } catch (err) {
+      await this.updateOriginal(id, token, this.errText(err));
     }
   }
 

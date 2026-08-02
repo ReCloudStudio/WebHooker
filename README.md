@@ -208,6 +208,10 @@ When the Gateway is enabled, the bot registers native **slash** and **message co
 
   For `edit` / `del`, copy the specific comment link on GitHub (comment ⋯ menu → **Copy link**). `add` / `edit` open a modal to enter/adjust the comment body (prefilled for edit).
 
+**3. Merge / close a PR** — notifications for open PRs include **合并 / 关闭** (merge/close) buttons:
+
+- Clicking a button merges (squash) or closes the PR as **your linked** GitHub account; GitHub enforces permission. On success the buttons are removed from the notification and the result is shown in an ephemeral reply.
+
 **Requirements:**
 
 | Item            | How                                                                   |

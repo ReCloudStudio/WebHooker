@@ -1,6 +1,6 @@
 # Actions
 
-User action endpoints allow commenting on issues, merging PRs, and adding reactions. All action endpoints require a valid Bearer token from the OAuth flow.
+User action endpoints allow commenting on issues, merging/closing PRs, and adding reactions. All action endpoints require a valid Bearer token from the OAuth flow.
 
 ## Authentication
 
@@ -69,6 +69,32 @@ Merges a pull request.
 | `mergeMethod` | string | No       | `merge`, `squash`, or `rebase` (default: `merge`) |
 
 **Response:** `200` with GitHub merge response.
+
+### Close Pull Request
+
+```
+POST /api/close
+```
+
+Closes a pull request without merging.
+
+**Request Body:**
+
+```json
+{
+  "owner": "org",
+  "repo": "repo",
+  "pullNumber": 42
+}
+```
+
+| Field        | Type   | Required | Description             |
+| ------------ | ------ | -------- | ----------------------- |
+| `owner`      | string | Yes      | Repository owner        |
+| `repo`       | string | Yes      | Repository name         |
+| `pullNumber` | number | Yes      | Pull request number     |
+
+**Response:** `200` with GitHub update response.
 
 ### Add Reaction
 

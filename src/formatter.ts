@@ -311,6 +311,22 @@ function formatPullRequest(
     });
   }
 
+  // Merge / close buttons on the Discord notification. They only make sense
+  // while the PR is still open. custom_id encodes the action + owner/repo/number
+  // (repo full_name never contains "|").
+  const actionable = pr.state === "open" && !!repo && pr.number != null;
+  const components = actionable
+    ? [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "合并", custom_id: `ghpr|merge|${repo}|${pr.number}` },
+            { type: 2, style: 4, label: "关闭", custom_id: `ghpr|close|${repo}|${pr.number}` },
+          ],
+        },
+      ]
+    : undefined;
+
   return {
     embeds: [
       {
@@ -324,6 +340,7 @@ function formatPullRequest(
         timestamp: new Date().toISOString(),
       },
     ],
+    ...(components ? { components } : {}),
   };
 }
 

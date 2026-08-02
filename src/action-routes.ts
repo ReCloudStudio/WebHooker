@@ -64,6 +64,30 @@ export function createActionRoutes(): Hono<{ Bindings: Env }> {
     return c.json({ ok: true });
   });
 
+  app.post("/api/close", async (c) => {
+    const token = extractBearerToken(c);
+    if (!token) return c.json({ error: "Missing authorization" }, 401);
+    const userId = await findUserIdByToken(c.env.KV, token);
+    if (!userId) return c.json({ error: "Invalid or expired token" }, 401);
+
+    const body = await c.req.json<{
+      owner: string;
+      repo: string;
+      pullNumber: number;
+    }>();
+    const octokit = await getUserOctokit(userId, c.env.KV);
+    if (!octokit) return c.json({ error: "Not authorized" }, 401);
+
+    await octokit.rest.pulls.update({
+      owner: body.owner,
+      repo: body.repo,
+      pull_number: body.pullNumber,
+      state: "closed",
+    });
+
+    return c.json({ ok: true });
+  });
+
   app.post("/api/react", async (c) => {
     const token = extractBearerToken(c);
     if (!token) return c.json({ error: "Missing authorization" }, 401);

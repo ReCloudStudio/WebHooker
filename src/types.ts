@@ -88,4 +88,13 @@ export interface FormattedMessage {
     footer?: { text: string };
     timestamp?: string;
   }>;
+  components?: Array<{
+    type: number;
+    components: Array<{
+      type: number;
+      style?: number;
+      label?: string;
+      custom_id?: string;
+    }>;
+  }>;
 }
