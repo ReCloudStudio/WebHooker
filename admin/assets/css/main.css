@@ -696,6 +696,52 @@ main {
   width: 100%;
 }
 
+.target-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) auto;
+  grid-template-areas:
+    "select del"
+    "in1 in2";
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.target-row select {
+  grid-area: select;
+  width: 100%;
+  padding: 7px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--ui);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.target-row input[type="text"] {
+  width: 100%;
+  min-width: 0;
+}
+
+.target-row input.tg-in1 {
+  grid-area: in1;
+}
+
+.target-row input.tg-in2 {
+  grid-area: in2;
+}
+
+.target-row > .icon-btn {
+  grid-area: del;
+  justify-self: end;
+}
+
 .add-filter {
   margin-top: 4px;
   width: 100%;
@@ -1006,6 +1052,14 @@ main {
 @media (max-width: 720px) {
   .filter-row {
     grid-template-columns: 100px 1fr auto;
+  }
+
+  .target-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "select del"
+      "in1 in1"
+      "in2 in2";
   }
 
   header {

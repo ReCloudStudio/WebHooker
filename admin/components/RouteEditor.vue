@@ -79,7 +79,7 @@
               >{{ t("routeEditor.targets") }}
               <span class="lbl-note">{{ t("routeEditor.targetsNote") }}</span></label
             >
-            <div v-for="(tg, i) in form.targets" :key="i" class="filter-row">
+            <div v-for="(tg, i) in form.targets" :key="i" class="target-row">
               <select v-model="tg.platform">
                 <option value="discord">Discord</option>
                 <option value="telegram">Telegram</option>
@@ -88,11 +88,13 @@
                 <input
                   v-model="tg.channelId"
                   type="text"
+                  class="tg-in1"
                   :placeholder="t('routeEditor.channelPlaceholder')"
                 />
                 <input
                   v-model="tg.threadId"
                   type="text"
+                  class="tg-in2"
                   :placeholder="t('routeEditor.threadPlaceholder')"
                 />
               </template>
@@ -100,11 +102,13 @@
                 <input
                   v-model="tg.chatId"
                   type="text"
+                  class="tg-in1"
                   :placeholder="t('routeEditor.chatPlaceholder')"
                 />
                 <input
                   v-model="tg.topicId"
                   type="text"
+                  class="tg-in2"
                   :placeholder="t('routeEditor.topicPlaceholder')"
                 />
               </template>
