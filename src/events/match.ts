@@ -48,6 +48,14 @@ function extractBranch(event: WebhookEvent): string | undefined {
     const suite = event.payload.check_suite as { head_branch?: string } | undefined;
     return suite?.head_branch;
   }
+  if (event.event === "workflow_job") {
+    const job = event.payload.workflow_job as { head_branch?: string } | undefined;
+    return job?.head_branch;
+  }
+  if (event.event === "deployment") {
+    const deployment = event.payload.deployment as { ref?: string } | undefined;
+    return deployment?.ref?.replace("refs/heads/", "");
+  }
   if (event.event === "commit_comment") {
     const comment = event.payload.comment as { position?: number | null } | undefined;
     if (comment?.position != null) {

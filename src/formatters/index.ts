@@ -6,13 +6,13 @@ import { formatPullRequest } from "./pull-request";
 import { formatPullRequestReview, formatPullRequestReviewComment } from "./review";
 import { formatIssues } from "./issues";
 import { formatIssueComment } from "./comments";
-import { formatWorkflowRun } from "./workflow";
+import { formatWorkflowRun, formatWorkflowJob } from "./workflow";
 import { formatRelease } from "./release";
 import { formatCreate, formatDelete } from "./create";
 import { formatStar, formatFork } from "./repo";
-import { formatCheckRun, formatCheckSuite } from "./check";
+import { formatCheckRun, formatCheckSuite, formatStatus } from "./check";
 import { formatCommitComment } from "./commit-comment";
-import { formatDeploymentStatus } from "./deployment";
+import { formatDeployment, formatDeploymentStatus } from "./deployment";
 import { formatMember } from "./member";
 import { formatLabel } from "./label";
 import { formatMilestone } from "./milestone";
@@ -20,6 +20,7 @@ import { formatDiscussion, formatDiscussionComment } from "./discussion";
 import { formatRepository } from "./repository";
 import { formatCodeScanningAlert, formatDependabotAlert } from "./security";
 import { formatGeneric } from "./generic";
+import { formatPing } from "./ping";
 
 export type { T } from "./helpers";
 export { formatPush } from "./push";
@@ -27,13 +28,13 @@ export { formatPullRequest } from "./pull-request";
 export { formatPullRequestReview, formatPullRequestReviewComment } from "./review";
 export { formatIssues } from "./issues";
 export { formatIssueComment } from "./comments";
-export { formatWorkflowRun } from "./workflow";
+export { formatWorkflowRun, formatWorkflowJob } from "./workflow";
 export { formatRelease } from "./release";
 export { formatCreate, formatDelete } from "./create";
 export { formatStar, formatFork } from "./repo";
-export { formatCheckRun, formatCheckSuite } from "./check";
+export { formatCheckRun, formatCheckSuite, formatStatus } from "./check";
 export { formatCommitComment } from "./commit-comment";
-export { formatDeploymentStatus } from "./deployment";
+export { formatDeployment, formatDeploymentStatus } from "./deployment";
 export { formatMember } from "./member";
 export { formatLabel } from "./label";
 export { formatMilestone } from "./milestone";
@@ -41,6 +42,7 @@ export { formatDiscussion, formatDiscussionComment } from "./discussion";
 export { formatRepository } from "./repository";
 export { formatCodeScanningAlert, formatDependabotAlert } from "./security";
 export { formatGeneric } from "./generic";
+export { formatPing } from "./ping";
 
 export function formatEvent(
   route: Route,
@@ -77,6 +79,14 @@ export function formatEvent(
       return formatIssueComment(payload, repo, author, t, showEmoji);
     case "workflow_run":
       return formatWorkflowRun(payload, repo, author, t, showEmoji);
+    case "workflow_job":
+      return formatWorkflowJob(payload, repo, author, t, showEmoji);
+    case "status":
+      return formatStatus(payload, repo, author, t, showEmoji);
+    case "deployment":
+      return formatDeployment(payload, repo, author, t, showEmoji);
+    case "ping":
+      return formatPing(payload, repo, author, t, showEmoji);
     case "release":
       return formatRelease(payload, repo, author, t, showEmoji);
     case "create":

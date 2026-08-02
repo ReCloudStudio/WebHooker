@@ -2,6 +2,96 @@ import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS, WORKFLOW_CONCLUSION_EMOJI } from "./colors";
 import { emojiPrefix, type T, buildMessage } from "./helpers";
 
+export function formatWorkflowJob(
+  payload: Record<string, unknown>,
+  repo: string | undefined,
+  author: NeutralAuthor,
+  t: T,
+  showEmoji: boolean,
+): NeutralMessage {
+  const job = payload.workflow_job as {
+    name?: string;
+    status?: string;
+    conclusion?: string | null;
+    head_branch?: string;
+    head_sha?: string;
+    html_url?: string;
+    workflow_name?: string;
+    run_id?: number;
+  };
+
+  const status =
+    job.status === "queued"
+      ? "queued"
+      : job.status === "in_progress"
+        ? "running"
+        : (job.conclusion ?? "pending");
+  const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
+  const colorKey =
+    status === "success"
+      ? "workflow_run_success"
+      : status === "failure"
+        ? "workflow_run_failure"
+        : "workflow_run_other";
+
+  const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
+
+  fields.push({
+    name: t("fields.status"),
+    value: `${em(emoji)}${status}`,
+    inline: true,
+  });
+
+  if (job.name) {
+    fields.push({
+      name: t("fields.job"),
+      value: job.name,
+      inline: true,
+    });
+  }
+
+  if (job.workflow_name) {
+    fields.push({
+      name: t("fields.workflow"),
+      value: job.workflow_name,
+      inline: true,
+    });
+  }
+
+  if (job.head_branch) {
+    fields.push({
+      name: t("fields.branch"),
+      value: `\`${job.head_branch}\``,
+      inline: true,
+    });
+  }
+
+  if (job.head_sha) {
+    fields.push({
+      name: t("fields.commit"),
+      value: `\`${job.head_sha.slice(0, 7)}\``,
+      inline: true,
+    });
+  }
+
+  return buildMessage(
+    {
+      author,
+      title: t("events.workflow_job.title", {
+        repo: repo ?? t("common.repository"),
+        name: job.name ?? "Job",
+        conclusion: status,
+      }),
+      url: job.html_url,
+      color: GITHUB_COLORS[colorKey],
+      fields,
+    },
+    t,
+    repo,
+  );
+}
+
 export function formatWorkflowRun(
   payload: Record<string, unknown>,
   repo: string | undefined,

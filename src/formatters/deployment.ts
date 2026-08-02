@@ -2,6 +2,77 @@ import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
 import { emojiPrefix, type T, buildMessage } from "./helpers";
 
+export function formatDeployment(
+  payload: Record<string, unknown>,
+  repo: string | undefined,
+  author: NeutralAuthor,
+  t: T,
+  showEmoji: boolean,
+): NeutralMessage {
+  const deployment = payload.deployment as {
+    environment?: string;
+    ref?: string;
+    sha?: string;
+    description?: string;
+    html_url?: string;
+    statuses_url?: string;
+  };
+
+  const emoji = "🚀";
+  const em = (e: string): string => emojiPrefix(e, showEmoji);
+  const env = deployment.environment ?? t("common.unknown");
+  const shortSha = deployment.sha?.slice(0, 7) ?? "???????";
+  const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
+
+  fields.push({
+    name: t("fields.status"),
+    value: `${em(emoji)}created`,
+    inline: true,
+  });
+
+  fields.push({
+    name: t("fields.environment"),
+    value: env,
+    inline: true,
+  });
+
+  if (deployment.ref) {
+    fields.push({
+      name: t("fields.branch_tag"),
+      value: `\`${deployment.ref}\``,
+      inline: true,
+    });
+  }
+
+  if (deployment.sha) {
+    fields.push({
+      name: t("fields.commit"),
+      value: `\`${shortSha}\``,
+      inline: true,
+    });
+  }
+
+  if (deployment.description) {
+    fields.push({
+      name: t("fields.description"),
+      value: deployment.description,
+      inline: false,
+    });
+  }
+
+  return buildMessage(
+    {
+      author,
+      title: t("events.deployment.title", { repo: repo ?? t("common.repository"), env, state: "created" }),
+      url: deployment.html_url ?? deployment.statuses_url,
+      color: GITHUB_COLORS.deployment_pending,
+      fields,
+    },
+    t,
+    repo,
+  );
+}
+
 export function formatDeploymentStatus(
   payload: Record<string, unknown>,
   repo: string | undefined,
