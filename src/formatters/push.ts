@@ -43,26 +43,24 @@ export function formatPush(
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
+  const commitField = (c: (typeof commits)[number]): { name: string; value: string } => {
+    const shortId = c.id?.slice(0, 7) ?? "???????";
+    const msg = c.message?.split("\n")[0].slice(0, 72) ?? t("common.no_message");
+    const name =
+      repo && c.id
+        ? `[\`${shortId}\`](https://github.com/${repo}/commit/${c.id})`
+        : `\`${shortId}\``;
+    return { name, value: msg };
+  };
+
   if (count <= 5) {
     for (const c of commits) {
-      const shortId = c.id?.slice(0, 7) ?? "???????";
-      const msg = c.message?.split("\n")[0].slice(0, 72) ?? t("common.no_message");
-      fields.push({
-        name: `\`${shortId}\``,
-        value: msg,
-        inline: false,
-      });
+      fields.push({ ...commitField(c), inline: false });
     }
   } else {
     const first3 = commits.slice(0, 3);
     for (const c of first3) {
-      const shortId = c.id?.slice(0, 7) ?? "???????";
-      const msg = c.message?.split("\n")[0].slice(0, 72) ?? t("common.no_message");
-      fields.push({
-        name: `\`${shortId}\``,
-        value: msg,
-        inline: false,
-      });
+      fields.push({ ...commitField(c), inline: false });
     }
     fields.push({
       name: `\u200b`,
