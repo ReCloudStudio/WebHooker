@@ -38,6 +38,89 @@ export interface Me {
   groups: Group[];
 }
 
+export interface RouteTemplate {
+  id: string;
+  nameKey: string;
+  filters: Filter[];
+}
+
+export const ROUTE_TEMPLATES: RouteTemplate[] = [
+  {
+    id: "push-events",
+    nameKey: "templates.push",
+    filters: [{ type: "event", match: "push" }],
+  },
+  {
+    id: "pull-requests",
+    nameKey: "templates.pullRequest",
+    filters: [
+      { type: "event", match: "pull_request" },
+      { type: "action", match: ["opened", "synchronize", "reopened", "closed"] },
+    ],
+  },
+  {
+    id: "issues",
+    nameKey: "templates.issues",
+    filters: [
+      { type: "event", match: "issues" },
+      { type: "action", match: ["opened", "edited", "closed", "reopened"] },
+    ],
+  },
+  {
+    id: "releases",
+    nameKey: "templates.release",
+    filters: [
+      { type: "event", match: "release" },
+      { type: "action", match: ["published"] },
+    ],
+  },
+  {
+    id: "workflows",
+    nameKey: "templates.workflow",
+    filters: [{ type: "event", match: ["workflow_job", "workflow_run"] }],
+  },
+  {
+    id: "checks",
+    nameKey: "templates.checks",
+    filters: [{ type: "event", match: ["check_suite", "check_run"] }],
+  },
+  {
+    id: "deployments",
+    nameKey: "templates.deployment",
+    filters: [{ type: "event", match: "deployment" }],
+  },
+  {
+    id: "comments",
+    nameKey: "templates.comments",
+    filters: [{ type: "event", match: ["issue_comment", "pull_request_review_comment"] }],
+  },
+  {
+    id: "reviews",
+    nameKey: "templates.reviews",
+    filters: [{ type: "event", match: "pull_request_review" }],
+  },
+  {
+    id: "star-fork",
+    nameKey: "templates.starFork",
+    filters: [{ type: "event", match: ["star", "fork"] }],
+  },
+  {
+    id: "create-delete",
+    nameKey: "templates.createDelete",
+    filters: [{ type: "event", match: ["create", "delete"] }],
+  },
+  {
+    id: "members",
+    nameKey: "templates.member",
+    filters: [{ type: "event", match: "member" }],
+  },
+  {
+    id: "commit-comments",
+    nameKey: "templates.commitComment",
+    filters: [{ type: "event", match: "commit_comment" }],
+  },
+];
+
 export const FILTER_TYPES = ["event", "repo", "actor", "action", "branch", "keyword"] as const;
 
 export const FILTER_LABELS: Record<string, string> = {

@@ -10,6 +10,24 @@
           <button class="icon-btn" :title="t('routeEditor.close')" @click="close">✕</button>
         </div>
         <form class="editor-body" @submit.prevent="save">
+          <div v-if="!isEdit" class="field">
+            <label
+              >{{ t("routeEditor.templates") }}
+              <span class="lbl-note">{{ t("routeEditor.templatesNote") }}</span></label
+            >
+            <div class="templates">
+              <button
+                v-for="tmpl in ROUTE_TEMPLATES"
+                :key="tmpl.id"
+                type="button"
+                class="template-chip"
+                :class="{ active: form.id === tmpl.id }"
+                @click="applyTemplate(tmpl)"
+              >
+                {{ t(tmpl.nameKey) }}
+              </button>
+            </div>
+          </div>
           <div class="field">
             <label>{{ t("routeEditor.name") }}</label>
             <input
@@ -139,7 +157,7 @@
 <script setup lang="ts">
 import { reactive, watch } from "vue";
 import type { Filter, Route, RouteTarget } from "~/types";
-import { FILTER_TYPES, fmtMatch } from "~/types";
+import { FILTER_TYPES, ROUTE_TEMPLATES, fmtMatch } from "~/types";
 
 interface FilterForm extends Filter {
   matchText: string;
@@ -197,6 +215,19 @@ function blankFilter(): FilterForm {
 function addFilter(): void {
   form.filters.push(blankFilter());
   filterError.value = "";
+}
+
+function applyTemplate(tmpl: (typeof ROUTE_TEMPLATES)[number]): void {
+  form.id = tmpl.id;
+  form.name = t(tmpl.nameKey);
+  form.filters = tmpl.filters.map((f) => ({
+    ...f,
+    matchText: fmtMatch(f.match),
+  })) as FilterForm[];
+  form.targets = [blankTarget()];
+  filterError.value = "";
+  targetError.value = "";
+  formError.value = "";
 }
 
 function addTarget(): void {
