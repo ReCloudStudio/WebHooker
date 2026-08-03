@@ -10,7 +10,7 @@ WebHooker supports 23 GitHub webhook event types, each with a dedicated formatte
 | `pull_request`                | PR opened/closed/merged/edited | PR title, branch, diff stats, labels             |
 | `issues`                      | Issue opened/closed/edited     | Issue title, labels, assignees                   |
 | `issue_comment`               | Comment on issue or PR         | Comment body, issue reference                    |
-| `workflow_run`                | CI/CD workflow completed       | Workflow status, conclusion, duration            |
+| `workflow_run`                | CI/CD workflow phase updated   | Workflow status, conclusion, duration; phases update a single message in place |
 | `release`                     | Release published/edited       | Tag, body, assets, pre-release flag              |
 | `create`                      | Branch or tag created          | Ref name, ref type                               |
 | `delete`                      | Branch or tag deleted          | Ref name, ref type                               |
@@ -54,6 +54,10 @@ Any event type without a dedicated formatter falls through to the generic format
 - Actor login
 - Repository name
 - Raw payload as code block (truncated to 1000 chars)
+
+## In-Place Message Updates
+
+`workflow_run` events (queued → running → success/failure) are sent once and then **edited in place** for each subsequent phase instead of posting a new message. The original message's link preview, author, and field layout are preserved; only the status, conclusion emoji, duration, and title are refreshed. Supported on both Discord (`editMessage`) and Telegram (`editMessageText` / `editMessageCaption`).
 
 ## Filter Compatibility
 

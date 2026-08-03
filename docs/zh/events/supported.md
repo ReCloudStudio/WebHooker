@@ -10,7 +10,7 @@ WebHooker 支持 23 种 GitHub webhook 事件类型，每种都有专用的格�
 | `pull_request`                | PR 打开/关闭/合并/编辑 | PR 标题、分支、差异统计、标签          |
 | `issues`                      | 议题打开/关闭/编辑     | 议题标题、标签、指派人                 |
 | `issue_comment`               | 议题或 PR 的评论       | 评论内容、议题引用                     |
-| `workflow_run`                | CI/CD 工作流完成       | 工作流状态、结论、耗时                 |
+| `workflow_run`                | CI/CD 工作流阶段更新   | 工作流状态、结论、耗时；各阶段原地更新同一条消息 |
 | `release`                     | 发布创建/编辑          | 标签、内容、附件、预发布标记           |
 | `create`                      | 分支或标签已创建       | 引用名称、引用类型                     |
 | `delete`                      | 分支或标签已删除       | 引用名称、引用类型                     |
@@ -54,6 +54,10 @@ WebHooker 支持 23 种 GitHub webhook 事件类型，每种都有专用的格�
 - 发送者登录名
 - 仓库名称
 - 原始载荷作为代码块（截断到 1000 字符）
+
+## 原地消息更新
+
+`workflow_run` 事件（queued → running → success/failure）只发送一条消息，后续每个阶段会**原地编辑**该消息，而不是发送新消息。消息的链接预览、作者和字段布局保持不变，仅刷新状态、结论 emoji、耗时和标题。Discord（`editMessage`）和 Telegram（`editMessageText` / `editMessageCaption`）均支持。
 
 ## 过滤器兼容性
 
