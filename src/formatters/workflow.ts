@@ -184,8 +184,7 @@ export function formatWorkflowRun(
       url: workflow.html_url,
       color: GITHUB_COLORS[colorKey],
       fields,
-      updateKey:
-        repo && workflow.id != null ? `workflow_run:${repo}:${workflow.id}` : undefined,
+      updateKey: repo && workflow.id != null ? `workflow_run:${repo}:${workflow.id}` : undefined,
     },
     t,
     repo,
