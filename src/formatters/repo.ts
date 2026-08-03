@@ -19,7 +19,7 @@ export function formatStar(
       author,
       title: t("events.star.title", {
         repo: repo ?? t("common.repository"),
-        emoji: em(action === "created" ? "⭐" : "💫"),
+        emoji: em(action === "created" ? "⭐️" : "💫"),
         label: actionLabel,
       }),
       url: repoUrl,
