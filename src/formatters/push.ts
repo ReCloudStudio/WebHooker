@@ -46,7 +46,8 @@ export function formatPush(
   const commitField = (c: (typeof commits)[number]): { name: string; value: string } => {
     const shortId = c.id?.slice(0, 7) ?? "???????";
     const msg = c.message?.split("\n")[0].slice(0, 72) ?? t("common.no_message");
-    const name = repo && c.id ? `[${shortId}](https://github.com/${repo}/commit/${c.id})` : `\`${shortId}\``;
+    const name =
+      repo && c.id ? `[${shortId}](https://github.com/${repo}/commit/${c.id})` : `\`${shortId}\``;
     return { name, value: msg };
   };
 
