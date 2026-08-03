@@ -4,31 +4,31 @@ WebHooker supports 23 GitHub webhook event types, each with a dedicated formatte
 
 ## Events Table
 
-| Event                         | Description                    | Embed Highlights                                 |
-| ----------------------------- | ------------------------------ | ------------------------------------------------ |
-| `push`                        | Code pushed to a branch        | Commit list, branch, author, diff stats          |
-| `pull_request`                | PR opened/closed/merged/edited | PR title, branch, diff stats, labels             |
-| `issues`                      | Issue opened/closed/edited     | Issue title, labels, assignees                   |
-| `issue_comment`               | Comment on issue or PR         | Comment body, issue reference                    |
+| Event                         | Description                    | Embed Highlights                                                               |
+| ----------------------------- | ------------------------------ | ------------------------------------------------------------------------------ |
+| `push`                        | Code pushed to a branch        | Commit list, branch, author, diff stats                                        |
+| `pull_request`                | PR opened/closed/merged/edited | PR title, branch, diff stats, labels                                           |
+| `issues`                      | Issue opened/closed/edited     | Issue title, labels, assignees                                                 |
+| `issue_comment`               | Comment on issue or PR         | Comment body, issue reference                                                  |
 | `workflow_run`                | CI/CD workflow phase updated   | Workflow status, conclusion, duration; phases update a single message in place |
-| `release`                     | Release published/edited       | Tag, body, assets, pre-release flag              |
-| `create`                      | Branch or tag created          | Ref name, ref type                               |
-| `delete`                      | Branch or tag deleted          | Ref name, ref type                               |
-| `star`                        | Repository starred/unstarred   | Star count, action                               |
-| `fork`                        | Repository forked              | Source → target fork                             |
-| `check_run`                   | Check run completed            | Status, conclusion, details URL                  |
-| `pull_request_review`         | PR review submitted            | Review state (approved/changes/commented), body  |
-| `pull_request_review_comment` | Inline code review comment     | File path, line number, comment body             |
-| `commit_comment`              | Comment on a commit            | Commit SHA, comment body                         |
-| `deployment_status`           | Deployment status updated      | Environment, status, commit ref                  |
-| `member`                      | Collaborator added/removed     | Member login, action                             |
-| `label`                       | Label created/edited/deleted   | Label name, color, description                   |
-| `milestone`                   | Milestone opened/closed        | Progress bar, issue counts, due date             |
-| `discussion`                  | Discussion created/answered    | Title, category, action                          |
-| `discussion_comment`          | Comment on discussion          | Comment body, discussion reference               |
-| `repository`                  | Repo renamed/transferred       | Old → new name, changes                          |
-| `code_scanning_alert`         | Code scanning alert            | Severity, rule ID, file path                     |
-| `dependabot_alert`            | Dependabot alert               | Severity, package, vulnerable range, fix version |
+| `release`                     | Release published/edited       | Tag, body, assets, pre-release flag                                            |
+| `create`                      | Branch or tag created          | Ref name, ref type                                                             |
+| `delete`                      | Branch or tag deleted          | Ref name, ref type                                                             |
+| `star`                        | Repository starred/unstarred   | Star count, action                                                             |
+| `fork`                        | Repository forked              | Source → target fork                                                           |
+| `check_run`                   | Check run completed            | Status, conclusion, details URL                                                |
+| `pull_request_review`         | PR review submitted            | Review state (approved/changes/commented), body                                |
+| `pull_request_review_comment` | Inline code review comment     | File path, line number, comment body                                           |
+| `commit_comment`              | Comment on a commit            | Commit SHA, comment body                                                       |
+| `deployment_status`           | Deployment status updated      | Environment, status, commit ref                                                |
+| `member`                      | Collaborator added/removed     | Member login, action                                                           |
+| `label`                       | Label created/edited/deleted   | Label name, color, description                                                 |
+| `milestone`                   | Milestone opened/closed        | Progress bar, issue counts, due date                                           |
+| `discussion`                  | Discussion created/answered    | Title, category, action                                                        |
+| `discussion_comment`          | Comment on discussion          | Comment body, discussion reference                                             |
+| `repository`                  | Repo renamed/transferred       | Old → new name, changes                                                        |
+| `code_scanning_alert`         | Code scanning alert            | Severity, rule ID, file path                                                   |
+| `dependabot_alert`            | Dependabot alert               | Severity, package, vulnerable range, fix version                               |
 
 ## Color Coding
 
