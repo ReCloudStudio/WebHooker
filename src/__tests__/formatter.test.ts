@@ -164,10 +164,13 @@ describe("message title spec", () => {
       event("check_suite", { check_suite: suite, repository: repo, sender }),
     );
     expect(msg.title).toBe("acme/widget: Check suite success");
+    expect(msg.url).toBe("https://github.com/acme/widget/runs/2");
     expect(msg.fields![0].value).toBe("✅ success");
     expect(msg.fields![1].value).toBe("Cloudflare Pages");
     expect(msg.fields![2].value).toBe("main");
-    expect(msg.fields![3].value).toBe("abc123d");
+    expect(msg.fields![3].value).toBe(
+      "[abc123d](https://github.com/acme/widget/commit/abc123def456)",
+    );
   });
 
   it("workflow_job shows job status, workflow, branch and commit", () => {

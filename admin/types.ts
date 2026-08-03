@@ -82,7 +82,7 @@ export const ROUTE_TEMPLATES: RouteTemplate[] = [
   {
     id: "checks",
     nameKey: "templates.checks",
-    filters: [{ type: "event", match: ["check_suite", "check_run"] }],
+    filters: [{ type: "event", match: ["check_suite"] }],
   },
   {
     id: "deployments",

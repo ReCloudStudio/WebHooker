@@ -60,7 +60,10 @@ export function formatCheckSuite(
   if (suite.head_sha) {
     fields.push({
       name: t("fields.commit"),
-      value: suite.head_sha.slice(0, 7),
+      value:
+        repo && suite.head_sha
+          ? `[${suite.head_sha.slice(0, 7)}](https://github.com/${repo}/commit/${suite.head_sha})`
+          : `\`${suite.head_sha.slice(0, 7)}\``,
       inline: true,
     });
   }
@@ -72,7 +75,11 @@ export function formatCheckSuite(
         repo: repo ?? t("common.repository"),
         conclusion: status,
       }),
-      url: suite.html_url,
+      url:
+        suite.html_url ??
+        (repo && suite.head_sha
+          ? `https://github.com/${repo}/commit/${suite.head_sha}/checks`
+          : undefined),
       color: GITHUB_COLORS[colorKey],
       fields,
     },
