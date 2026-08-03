@@ -77,7 +77,7 @@ export const ROUTE_TEMPLATES: RouteTemplate[] = [
   {
     id: "workflows",
     nameKey: "templates.workflow",
-    filters: [{ type: "event", match: ["workflow_job", "workflow_run"] }],
+    filters: [{ type: "event", match: "workflow_run" }],
   },
   {
     id: "checks",
