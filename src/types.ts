@@ -124,6 +124,12 @@ export interface NeutralMessage {
   footer?: string;
   timestamp?: string;
   actions?: NeutralAction[];
+  /**
+   * Stable key identifying a message chain that should be updated in place
+   * (e.g. workflow run progress). When set, subsequent events edit the
+   * previously sent message instead of sending a new one.
+   */
+  updateKey?: string;
 }
 
 export interface FormattedMessage {

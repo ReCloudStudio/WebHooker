@@ -134,3 +134,56 @@ export async function sendPhoto(
   }
   return post(token, "sendPhoto", body, chatId);
 }
+
+export async function editMessageText(
+  token: string,
+  chatId: string,
+  messageId: string,
+  text: string,
+  topicId?: string,
+  linkPreviewUrl?: string,
+): Promise<SendResult> {
+  if (!token) {
+    return { ok: false, error: "TELEGRAM_TOKEN not configured", errorCode: "NO_TOKEN" };
+  }
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    message_id: messageId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: !linkPreviewUrl,
+  };
+  if (linkPreviewUrl) {
+    body.link_preview_options = {
+      url: linkPreviewUrl,
+      prefer_small_media: true,
+      show_above_text: true,
+    };
+  }
+  if (topicId) {
+    body.message_thread_id = Number(topicId);
+  }
+  return post(token, "editMessageText", body, chatId);
+}
+
+export async function editMessageCaption(
+  token: string,
+  chatId: string,
+  messageId: string,
+  caption: string,
+  topicId?: string,
+): Promise<SendResult> {
+  if (!token) {
+    return { ok: false, error: "TELEGRAM_TOKEN not configured", errorCode: "NO_TOKEN" };
+  }
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    message_id: messageId,
+    caption,
+    parse_mode: "HTML",
+  };
+  if (topicId) {
+    body.message_thread_id = Number(topicId);
+  }
+  return post(token, "editMessageCaption", body, chatId);
+}

@@ -100,6 +100,7 @@ export function formatWorkflowRun(
   showEmoji: boolean,
 ): NeutralMessage {
   const workflow = payload.workflow_run as {
+    id?: number;
     name?: string;
     conclusion?: string;
     html_url?: string;
@@ -183,6 +184,8 @@ export function formatWorkflowRun(
       url: workflow.html_url,
       color: GITHUB_COLORS[colorKey],
       fields,
+      updateKey:
+        repo && workflow.id != null ? `workflow_run:${repo}:${workflow.id}` : undefined,
     },
     t,
     repo,

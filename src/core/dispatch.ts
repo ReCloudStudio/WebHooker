@@ -6,6 +6,7 @@ import { loadTranslations, type Translations } from "../lib/i18n";
 import { recordSend } from "../lib/send-log";
 import { loadGroups, groupAcceptsOwners } from "../web/groups";
 import { getDriver } from "../drivers";
+import type { SendResult } from "../drivers/types";
 
 export async function dispatchEvent(config: Config, event: WebhookEvent, env: Env): Promise<void> {
   const langs = [...new Set(config.routes.map((r) => r.lang ?? "en"))];
@@ -78,7 +79,47 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
         const started = Date.now();
         try {
           const driver = getDriver(target);
-          const result = await driver.send(message, target, env);
+          let result: SendResult;
+          if (message.updateKey) {
+            const kvKey = `msg:${route.id}:${message.updateKey}:${targetStr}`;
+            const existingId = await env.KV.get(kvKey);
+            if (existingId) {
+              result = await driver.edit(message, target, env, existingId);
+              if (result.ok) {
+                await recordSend(env.DB, {
+                  ...base,
+                  ok: true,
+                  status: result.status,
+                  messageId: existingId,
+                  platform: driver.id,
+                  attempts: result.attempts,
+                  durationMs: Date.now() - started,
+                  errorCode: result.errorCode,
+                });
+                continue;
+              }
+              if (/not modified/i.test(result.error ?? "")) {
+                await recordSend(env.DB, {
+                  ...base,
+                  ok: true,
+                  status: result.status,
+                  messageId: existingId,
+                  platform: driver.id,
+                  attempts: result.attempts,
+                  durationMs: Date.now() - started,
+                  errorCode: result.errorCode,
+                });
+                continue;
+              }
+              await env.KV.delete(kvKey);
+            }
+            result = await driver.send(message, target, env);
+            if (result.ok && result.messageId) {
+              await env.KV.put(kvKey, result.messageId, { expirationTtl: 604800 });
+            }
+          } else {
+            result = await driver.send(message, target, env);
+          }
           const durationMs = Date.now() - started;
           if (!result.ok) throw new Error(result.error ?? "Send failed");
           await recordSend(env.DB, {

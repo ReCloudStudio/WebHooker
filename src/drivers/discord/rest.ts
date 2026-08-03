@@ -7,20 +7,17 @@ interface DiscordMessage {
   id?: string;
 }
 
-export async function sendMessage(
+async function request(
+  url: string,
+  method: string,
   token: string,
-  channelId: string,
   message: unknown,
-  threadId?: string,
+  channelId: string,
 ): Promise<SendResult> {
-  const url = threadId
-    ? `${DISCORD_API}/channels/${threadId}/messages`
-    : `${DISCORD_API}/channels/${channelId}/messages`;
-
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const res = await fetch(url, {
-        method: "POST",
+        method,
         headers: {
           Authorization: `Bot ${token}`,
           "Content-Type": "application/json",
@@ -79,4 +76,28 @@ export async function sendMessage(
   }
 
   return { ok: false, error: "Max retries exceeded", errorCode: "RETRIES", attempts: 3 };
+}
+
+export async function sendMessage(
+  token: string,
+  channelId: string,
+  message: unknown,
+  threadId?: string,
+): Promise<SendResult> {
+  const url = threadId
+    ? `${DISCORD_API}/channels/${threadId}/messages`
+    : `${DISCORD_API}/channels/${channelId}/messages`;
+  return request(url, "POST", token, message, channelId);
+}
+
+export async function editMessage(
+  token: string,
+  channelId: string,
+  messageId: string,
+  message: unknown,
+  threadId?: string,
+): Promise<SendResult> {
+  const base = threadId ?? channelId;
+  const url = `${DISCORD_API}/channels/${base}/messages/${messageId}`;
+  return request(url, "PATCH", token, message, channelId);
 }
