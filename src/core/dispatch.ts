@@ -33,7 +33,7 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
   const tasks = config.routes
     .filter((route) => {
       if (!accepted(route)) return false;
-      if (route.fallback) return !anyRegularMatched;
+      if (route.fallback) return !anyRegularMatched && matchRoute(route, event);
       return matchRoute(route, event);
     })
     .map(async (route) => {
