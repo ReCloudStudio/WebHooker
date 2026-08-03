@@ -19,6 +19,22 @@
         <span v-if="route.fallback" class="badge fallback">{{ t("route.fallback") }}</span>
       </div>
       <div class="card-actions">
+        <button
+          class="icon-btn"
+          :disabled="atFirst"
+          :title="t('route.moveUp')"
+          @click="$emit('move', route, -1)"
+        >
+          ↑
+        </button>
+        <button
+          class="icon-btn"
+          :disabled="atLast"
+          :title="t('route.moveDown')"
+          @click="$emit('move', route, 1)"
+        >
+          ↓
+        </button>
         <button class="icon-btn" :title="t('routeEditor.editTitle')" @click="$emit('edit', route)">
           ✎
         </button>
@@ -67,11 +83,12 @@ import { fmtMatch } from "~/types";
 
 const { t } = useI18n();
 
-const props = defineProps<{ route: Route }>();
+const props = defineProps<{ route: Route; atFirst?: boolean; atLast?: boolean }>();
 const emit = defineEmits<{
   (e: "toggle", route: Route): void;
   (e: "edit", route: Route): void;
   (e: "delete", route: Route): void;
+  (e: "move", route: Route, dir: -1 | 1): void;
 }>();
 
 function onToggle(event: Event): void {

@@ -56,10 +56,13 @@
               v-for="(r, i) in groupRoutes"
               :key="r.id"
               :route="r"
+              :at-first="i === 0"
+              :at-last="i === groupRoutes.length - 1"
               :style="{ animationDelay: i * 45 + 'ms' }"
               @toggle="onToggle"
               @edit="openEdit"
               @delete="onDelete"
+              @move="onMove"
             />
           </section>
 
@@ -268,6 +271,22 @@ async function onSave(route: Route): Promise<void> {
     push(t("toast.saveFailed", { msg: err instanceof Error ? err.message : String(err) }), "bad");
   } finally {
     saving.value = false;
+  }
+}
+
+async function onMove(route: Route, dir: -1 | 1): Promise<void> {
+  const group = selectedGroup.value;
+  if (!group) return;
+  const i = groupRoutes.value.findIndex((r) => r.id === route.id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= groupRoutes.value.length) return;
+  const next = [...groupRoutes.value];
+  [next[i], next[j]] = [next[j]!, next[i]!];
+  try {
+    await saveGroupRoutes(group.id, next);
+  } catch (err) {
+    push(t("toast.saveFailed", { msg: err instanceof Error ? err.message : String(err) }), "bad");
+    loadGroupRoutes(group.id);
   }
 }
 

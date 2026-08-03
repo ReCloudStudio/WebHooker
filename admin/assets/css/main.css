@@ -387,6 +387,17 @@ main {
   background: var(--accent-dim);
 }
 
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.icon-btn:disabled:hover {
+  color: var(--muted);
+  border-color: var(--border);
+  background: transparent;
+}
+
 .icon-btn.danger:hover {
   color: var(--bad);
   border-color: var(--bad);
