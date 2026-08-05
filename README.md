@@ -279,9 +279,7 @@ npx wrangler kv namespace create KV
 # Create D1 database and run migrations
 npx wrangler d1 create webhooker
 # Update wrangler.jsonc d1_databases with the database ID
-npx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
+npm run db:migrate:prod   # apply migrations to the remote D1 database
 
 # Deploy
 npx wrangler deploy

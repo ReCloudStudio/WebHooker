@@ -45,7 +45,47 @@ set them (no PKCS#8 conversion required).
 
 Discord interactions arrive via the HTTPS Interactions Endpoint, so set `DISCORD_PUBLIC_KEY` and point the **Interactions Endpoint URL** at `https://your-domain/discord/interactions`. See [Interactions Endpoint](#interactions-endpoint) below.
 
-### 3. Deploy
+### 3. Create D1 Database and Run Migrations
+
+```bash
+npx wrangler d1 create webhooker
+```
+
+Copy the returned database ID into `wrangler.jsonc`:
+
+```jsonc
+{
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "webhooker",
+      "database_id": "your-database-id",
+    },
+  ],
+}
+```
+
+Then apply the migrations:
+
+```bash
+npm run db:migrate:prod   # apply migrations to the remote D1 database
+npm run db:migrate        # apply migrations to the local (Miniflare) database
+```
+
+The `db:migrate` scripts run `wrangler d1 migrations apply webhooker` (see `package.json`), which applies each SQL file in `migrations/` and records applied versions in the `d1_migrations` table.
+
+::: tip Databases previously migrated with `d1 execute`
+If the database already has these tables/columns (e.g. previously migrated with `wrangler d1 execute --file`), the `d1_migrations` tracking table may be missing and `db:migrate:prod` will try to re-run every migration. The `ALTER TABLE ... ADD COLUMN` statements in `0002_log_detail.sql` then fail because the columns already exist. In that case run the files directly instead:
+
+```bash
+npx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
+npx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
+npx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
+```
+
+:::
+
+### 4. Deploy
 
 ```bash
 npx wrangler deploy
@@ -53,7 +93,7 @@ npx wrangler deploy
 
 Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
 
-### 4. Configure GitHub Webhook
+### 5. Configure GitHub Webhook
 
 1. Go to your GitHub App settings
 2. Set **Webhook URL** to `https://webhooker.<your-subdomain>.workers.dev/webhook`

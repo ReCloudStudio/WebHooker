@@ -278,9 +278,7 @@ npx wrangler kv namespace create KV
 # 创建 D1 数据库并执行迁移
 npx wrangler d1 create webhooker
 # 更新 wrangler.jsonc d1_databases 中的数据库 ID
-npx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
+npm run db:migrate:prod   # 将迁移应用到远端 D1 数据库
 
 # 部署
 npx wrangler deploy

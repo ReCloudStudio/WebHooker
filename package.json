@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply webhooker --local",
+    "db:migrate:prod": "wrangler d1 migrations apply webhooker --remote",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
     "lint:md": "markdownlint '**/*.md' --ignore node_modules --ignore dist",

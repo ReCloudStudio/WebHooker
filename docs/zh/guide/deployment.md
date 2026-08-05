@@ -44,7 +44,47 @@ npx wrangler secret put ADMIN_USER_IDS       # 逗号分隔的 GitHub ID/登录�
 
 Discord 交互通过 HTTPS Interactions Endpoint 送达，需要设置 `DISCORD_PUBLIC_KEY` 并把 **Interactions Endpoint URL** 指向 `https://your-domain/discord/interactions`。参见下方 [Interactions Endpoint](#interactions-endpoint)。
 
-### 3. 部署
+### 3. 创建 D1 数据库并执行迁移
+
+```bash
+npx wrangler d1 create webhooker
+```
+
+将返回的数据库 ID 填入 `wrangler.jsonc`：
+
+```jsonc
+{
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "webhooker",
+      "database_id": "your-database-id",
+    },
+  ],
+}
+```
+
+然后执行迁移：
+
+```bash
+npm run db:migrate:prod   # 将迁移应用到远端 D1 数据库
+npm run db:migrate        # 将迁移应用到本地（Miniflare）数据库
+```
+
+`db:migrate` 脚本执行 `wrangler d1 migrations apply webhooker`（见 `package.json`），逐一应用 `migrations/` 下的 SQL 文件，并在 `d1_migrations` 表中记录已应用的版本。
+
+::: tip 曾用 `d1 execute` 迁移过的数据库
+如果数据库已有这些表/列（例如之前用 `wrangler d1 execute --file` 迁移过），可能缺少 `d1_migrations` 追踪表，`db:migrate:prod` 会尝试重新执行所有迁移；`0002_log_detail.sql` 中的 `ALTER TABLE ... ADD COLUMN` 语句会因列已存在而失败。此时请直接执行文件：
+
+```bash
+npx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
+npx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
+npx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
+```
+
+:::
+
+### 4. 部署
 
 ```bash
 npx wrangler deploy
@@ -52,7 +92,7 @@ npx wrangler deploy
 
 Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问。
 
-### 4. 配置 GitHub Webhook
+### 5. 配置 GitHub Webhook
 
 1. 进入 GitHub App 设置页面
 2. 设置 **Webhook URL** 为 `https://webhooker.<your-subdomain>.workers.dev/webhook`
