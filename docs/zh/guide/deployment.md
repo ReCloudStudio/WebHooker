@@ -77,8 +77,8 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
    - **Webhook URL**: `https://your-domain/webhook`
    - **Webhook secret**: 生成并复制到 `GITHUB_WEBHOOK_SECRET`
 3. 设置权限：
-   - **Repository permissions**: Contents (read)、Issues (write)、Pull requests (write)、Metadata (read)
-   - **Organization permissions**: Members (read)——如果需要
+   - **Repository permissions**: Contents (read)、Issues (write)、Pull requests (write)、Metadata (read)、Checks (read)、Deployments (read)、Discussions (read)、Code scanning alerts (read)、Dependabot alerts (read)
+   - **Organization permissions**: Members (read) —— 如果需要
 4. 订阅事件（全部 23 种支持的事件）：
    - Push、Pull request、Issues、Issue comment、Workflow run、Release、Create、Delete、Star、Fork、Check run、Pull request review、Pull request review comment、Commit comment、Deployment status、Member、Label、Milestone、Discussion、Discussion comment、Repository、Code scanning alert、Dependabot alert
 5. 生成私钥 → 将内容保存到 `GITHUB_PRIVATE_KEY` 环境变量

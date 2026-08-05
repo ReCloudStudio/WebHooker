@@ -77,7 +77,7 @@ Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
    - **Webhook URL**: `https://your-domain/webhook`
    - **Webhook secret**: generate and copy to `GITHUB_WEBHOOK_SECRET`
 3. Set permissions:
-   - **Repository permissions**: Contents (read), Issues (write), Pull requests (write), Metadata (read)
+   - **Repository permissions**: Contents (read), Issues (write), Pull requests (write), Metadata (read), Checks (read), Deployments (read), Discussions (read), Code scanning alerts (read), Dependabot alerts (read)
    - **Organization permissions**: Members (read) — if needed
 4. Subscribe to events (all 23 supported):
    - Push, Pull request, Issues, Issue comment, Workflow run, Release, Create, Delete, Star, Fork, Check run, Pull request review, Pull request review comment, Commit comment, Deployment status, Member, Label, Milestone, Discussion, Discussion comment, Repository, Code scanning alert, Dependabot alert
