@@ -9,12 +9,15 @@ WebHooker 需要多个密钥才能运行。本地开发时存储在 `.dev.vars` 
 | 变量                    | 说明                                                     |
 | ----------------------- | -------------------------------------------------------- |
 | `GITHUB_WEBHOOK_SECRET` | GitHub App 设置中的 Webhook 密钥                         |
-| `GITHUB_APP_ID`         | GitHub App 的数字 ID                                     |
-| `GITHUB_PRIVATE_KEY`    | App 私钥（PEM 格式，用 `\n` 转义）                       |
 | `GITHUB_CLIENT_ID`      | App 设置中的 OAuth 客户端 ID                             |
 | `GITHUB_CLIENT_SECRET`  | App 设置中的 OAuth 客户端密钥                            |
 | `DISCORD_TOKEN`         | Discord Bot Token                                        |
 | `TELEGRAM_TOKEN`        | Telegram Bot Token（BotFather 获取）—— Telegram 路由必需 |
+
+> [!NOTE]
+> `GITHUB_APP_ID` 与 `GITHUB_PRIVATE_KEY` 当前未被代码使用——OAuth 流程只需要
+> `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`。为兼容性保留在模式中，以备日后启用
+> GitHub App 认证。
 
 ### 可选密钥
 
@@ -52,6 +55,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 | `GET /admin/api/groups/:id/routes` | 列出某分组的路由             |
 | `PUT /admin/api/groups/:id/routes` | 替换某分组的路由             |
 | `GET /admin/api/logs`              | 发送日志（按可访问路由过滤） |
+| `GET /admin/api/logs/:id`          | 单条发送日志（按权限过滤）   |
 
 控制台支持新增、编辑、删除和开关路由。保存后立即写入 KV `config:routes` 并使配置缓存失效，下一次 webhook 处理即会生效。
 
@@ -140,6 +144,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 | `name`     | string   | 是   | 可读的分组名称                                        |
 | `adminIds` | string[] | 是   | 可管理该分组路由的 GitHub 用户 ID 或登录名            |
 | `owners`   | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制   |
+| `emoji`    | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）           |
 
 ### 权限模型
 
@@ -167,7 +172,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 - 在任何过滤器上设置 `"exclude": true` 可反转匹配逻辑（NOT 逻辑）
 - 非 keyword 过滤器为**精确、不区分大小写**的匹配——不支持通配符（`repo: "org/*"` 不会匹配任何内容）
 - `keyword` 过滤器支持正则表达式——正则有误或超过 200 个字符时回退到子串匹配
-- `branch` 过滤器适用于 push、pull_request、pull_request_review、pull_request_review_comment、create/delete、workflow_run 和 code_scanning_alert 事件
+- `branch` 过滤器适用于 push、pull_request、pull_request_review、pull_request_review_comment、create/delete、workflow_run、workflow_job、check_suite、deployment 和 code_scanning_alert 事件
 
 ### 匹配值
 
@@ -180,17 +185,27 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 ## KV 存储布局
 
-| 键模式                   | 值                                                  | TTL                |
-| ------------------------ | --------------------------------------------------- | ------------------ |
-| `config:routes`          | JSON 路由数组                                       | 永久               |
-| `config:groups`          | JSON 分组数组                                       | 永久               |
-| `session:{id}`           | 管理员会话 `{ userId, login }`                      | 7 天               |
-| `token:{userId}`         | `{ userId, accessToken, expiresAt, refreshToken? }` | 0.9 × Token 有效期 |
-| `token-reverse:{sha256}` | 用于按 Token 反查的用户 id                          | 0.9 × Token 有效期 |
-| `discord-link:{userId}`  | 与 Discord 用户绑定的 GitHub 用户 id                | 永久               |
-| `state:{hex}`            | `{ redirectTo, expiresAt, discordUserId? }`         | 600 秒             |
-| `delivery:{id}`          | Webhook 投递 id（去重标记）                         | 300 秒             |
-| `logs:send:{ts}-{hex}`   | 发送记录                                            | 1 小时             |
-| `cmd:guild:{id}`         | 已注册命令的服务器 id（去重标记）                   | 永久               |
-| `cmd:registered:global`  | 全局命令已注册标记（24h 去重）                      | 1 天               |
-| `config:discord-app-id`  | Discord 应用 id 缓存                                | 永久               |
+| 键模式                         | 值                                                                            | TTL                |
+| ------------------------------ | ----------------------------------------------------------------------------- | ------------------ |
+| `config:routes`                | JSON 路由数组                                                                 | 永久               |
+| `config:groups`                | JSON 分组数组                                                                 | 永久               |
+| `session:{id}`                 | 管理员会话 `{ userId, login }`                                                | 7 天               |
+| `token:{userId}`               | `{ userId, accessToken, expiresAt, refreshToken? }`                           | 0.9 × Token 有效期 |
+| `token-reverse:{sha256}`       | 用于按 Token 反查的用户 id                                                    | 0.9 × Token 有效期 |
+| `state:{hex}`                  | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 秒             |
+| `delivery:{id}`                | Webhook 投递 id（去重标记）                                                   | 300 秒             |
+| `msg:{routeId}:{key}:{target}` | 原地更新用消息 id 追踪（如 `workflow_run`）                                   | 7 天               |
+| `cmd:guild:{id}`               | 已注册命令的服务器 id（去重标记）                                             | 永久               |
+| `cmd:registered:global`        | 全局命令已注册标记（24h 去重）                                                | 1 天               |
+| `config:discord-app-id`        | Discord 应用 id 缓存                                                          | 永久               |
+| `i18n:{lang}`                  | 翻译覆盖，合并到英文之上                                                      | 永久               |
+
+## D1 存储布局
+
+D1 数据库（`DB` 绑定，数据库 `webhooker`）包含三张表：
+
+| 表               | 用途                                                                   |
+| ---------------- | ---------------------------------------------------------------------- |
+| `send_logs`      | 每次分发尝试一行（路由 id、事件、目标、成功/失败、耗时、错误码、详情） |
+| `discord_links`  | 映射 `discord_user_id` → `github_user_id`，用于 Discord `/gh` 命令     |
+| `telegram_links` | 映射 `telegram_user_id` → `github_user_id`，用于 Telegram `/gh` 命令   |

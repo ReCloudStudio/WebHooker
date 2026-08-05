@@ -9,12 +9,15 @@ WebHooker requires several secrets to function. For local development, store the
 | Variable                | Description                                                        |
 | ----------------------- | ------------------------------------------------------------------ |
 | `GITHUB_WEBHOOK_SECRET` | Webhook secret from your GitHub App settings                       |
-| `GITHUB_APP_ID`         | Numeric ID of your GitHub App                                      |
-| `GITHUB_PRIVATE_KEY`    | App private key (PEM format, with `\n` escapes)                    |
 | `GITHUB_CLIENT_ID`      | OAuth client ID from App settings                                  |
 | `GITHUB_CLIENT_SECRET`  | OAuth client secret from App settings                              |
 | `DISCORD_TOKEN`         | Discord bot token                                                  |
 | `TELEGRAM_TOKEN`        | Telegram bot token (from BotFather) — required for Telegram routes |
+
+> [!NOTE]
+> `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` are not currently used by the code — the
+> OAuth flow only needs `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`. They are kept
+> in the schema for compatibility in case GitHub App authentication is added later.
 
 ### Optional Secrets
 
@@ -52,6 +55,7 @@ WebHooker ships with a built-in config console at `/admin` for managing routes i
 | `GET /admin/api/groups/:id/routes` | List a group's routes                   |
 | `PUT /admin/api/groups/:id/routes` | Replace a group's routes                |
 | `GET /admin/api/logs`              | Send logs (scoped to accessible routes) |
+| `GET /admin/api/logs/:id`          | Single send-log entry (scoped)          |
 
 The console lets you add, edit, delete, and toggle routes. Saved routes are written to KV `config:routes` immediately and the config cache is invalidated so the webhook pipeline picks them up on the next run.
 
@@ -140,6 +144,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 | `name`     | string   | Yes      | Human-readable group name                                              |
 | `adminIds` | string[] | Yes      | GitHub user IDs or logins who may manage this group's routes           |
 | `owners`   | string[] | No       | Org/user logins whose events are accepted into this group; empty = all |
+| `emoji`    | boolean  | No       | Whether to include emoji in this group's messages (default `true`)     |
 
 ### Access Model
 
@@ -167,7 +172,7 @@ See the [Filter Tutorial](./filters) for a hands-on guide with worked examples.
 - Set `"exclude": true` on any filter to invert it (NOT logic)
 - Non-keyword filters are **exact, case-insensitive matches** — no wildcards (`repo: "org/*"` does not match anything)
 - `keyword` filter supports regex patterns — falls back to substring match if regex is invalid or longer than 200 characters
-- `branch` filter works for push, pull_request, pull_request_review, pull_request_review_comment, create/delete, workflow_run, and code_scanning_alert events
+- `branch` filter works for push, pull_request, pull_request_review, pull_request_review_comment, create/delete, workflow_run, workflow_job, check_suite, deployment, and code_scanning_alert events
 
 ### Match Values
 
@@ -180,17 +185,27 @@ Filters accept either a single string or an array of strings:
 
 ## KV Storage Layout
 
-| Key Pattern              | Value                                               | TTL                |
-| ------------------------ | --------------------------------------------------- | ------------------ |
-| `config:routes`          | JSON array of routes                                | Permanent          |
-| `config:groups`          | JSON array of groups                                | Permanent          |
-| `session:{id}`           | Admin session `{ userId, login }`                   | 7 days             |
-| `token:{userId}`         | `{ userId, accessToken, expiresAt, refreshToken? }` | 0.9 × token expiry |
-| `token-reverse:{sha256}` | User id for reverse lookup by token                 | 0.9 × token expiry |
-| `discord-link:{userId}`  | GitHub user id linked to a Discord user             | Permanent          |
-| `state:{hex}`            | `{ redirectTo, expiresAt, discordUserId? }`         | 600 seconds        |
-| `delivery:{id}`          | Webhook delivery id (dedup marker)                  | 300 seconds        |
-| `cmd:guild:{id}`         | Guild id whose commands were registered (dedup)     | Permanent          |
-| `cmd:registered:global`  | Global command registration marker (dedup)          | 1 day              |
-| `config:discord-app-id`  | Cached Discord application id                       | Permanent          |
-| `logs:send:{ts}-{hex}`   | Send record                                         | 1 hour             |
+| Key Pattern                    | Value                                                                         | TTL                |
+| ------------------------------ | ----------------------------------------------------------------------------- | ------------------ |
+| `config:routes`                | JSON array of routes                                                          | Permanent          |
+| `config:groups`                | JSON array of groups                                                          | Permanent          |
+| `session:{id}`                 | Admin session `{ userId, login }`                                             | 7 days             |
+| `token:{userId}`               | `{ userId, accessToken, expiresAt, refreshToken? }`                           | 0.9 × token expiry |
+| `token-reverse:{sha256}`       | User id for reverse lookup by token                                           | 0.9 × token expiry |
+| `state:{hex}`                  | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 seconds        |
+| `delivery:{id}`                | Webhook delivery id (dedup marker)                                            | 300 seconds        |
+| `msg:{routeId}:{key}:{target}` | Message id tracking for in-place updates (e.g. `workflow_run`)                | 7 days             |
+| `cmd:guild:{id}`               | Guild id whose commands were registered (dedup)                               | Permanent          |
+| `cmd:registered:global`        | Global command registration marker (dedup)                                    | 1 day              |
+| `config:discord-app-id`        | Cached Discord application id                                                 | Permanent          |
+| `i18n:{lang}`                  | Translation overrides merged on top of English                                | Permanent          |
+
+## D1 Storage Layout
+
+The D1 database (`DB` binding, database `webhooker`) holds three tables:
+
+| Table            | Purpose                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| `send_logs`      | One row per dispatch attempt (route id, event, target, ok/error, duration, error code, detail) |
+| `discord_links`  | Maps `discord_user_id` → `github_user_id` for `/gh` Discord commands                           |
+| `telegram_links` | Maps `telegram_user_id` → `github_user_id` for `/gh` Telegram commands                         |

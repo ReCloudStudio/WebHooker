@@ -47,6 +47,7 @@ GitHub redirects here after authorization. Exchanges the code for an access toke
 - **Browser flow** (`Accept: text/html`): sets an admin session cookie, then redirects to the `redirect` target. Users without admin access are redirected to `/admin?error=forbidden`.
 - **JSON flow**: returns `{ "userId": "...", "login": "...", "redirectTo": "..." }`.
 - **Discord link flow** (started with a pending `discordUserId`): links the Discord user to this GitHub account, returning `{ "ok": true, "discordUserId": "...", "login": "..." }` — or a success page in the browser.
+- **Telegram link flow** (started with a pending `telegramUserId`): links the Telegram user to this GitHub account, returns `{ "ok": true, "telegramUserId": "...", "login": "..." }`, and sends a confirmation message to the pending `telegramChatId`.
 
 ### Revoke Token
 
@@ -77,7 +78,7 @@ Tokens are stored in KV with key pattern `token:{userId}`:
 }
 ```
 
-`expiresAt` is a Unix timestamp in milliseconds. KV entries expire at 90% of the token's lifetime (minimum 60 seconds). A reverse index `token-reverse:{sha256 of token}` maps the access token back to its user id so Bearer-authenticated endpoints can resolve the caller. Discord users linked to a GitHub account are stored in the D1 `discord_links` table.
+`expiresAt` is a Unix timestamp in milliseconds. KV entries expire at 90% of the token's lifetime (minimum 60 seconds). A reverse index `token-reverse:{sha256 of token}` maps the access token back to its user id so Bearer-authenticated endpoints can resolve the caller. Discord users linked to a GitHub account are stored in the D1 `discord_links` table; Telegram users in the D1 `telegram_links` table.
 
 ## Using Tokens
 

@@ -33,6 +33,7 @@ https://your-worker.workers.dev
 | `PUT`    | `/admin/api/groups/:id/routes` | 管理员会话   | 替换某分组的路由                                 |
 | `GET`    | `/admin/api/me`                | 管理员会话   | 当前会话信息                                     |
 | `GET`    | `/admin/api/logs`              | 管理员会话   | 发送日志（按权限过滤）                           |
+| `GET`    | `/admin/api/logs/:id`          | 管理员会话   | 单条发送日志（按权限过滤）                       |
 
 ## 管理控制台
 
@@ -40,7 +41,7 @@ https://your-worker.workers.dev
 
 - `GET /admin` — 提供配置控制台 HTML
 - `GET /admin/api/routes` — 返回 `{ "routes": Route[] }`
-- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、唯一 id、name、enabled、groupId、过滤器、平台感知的 target：Discord 需 `target.channelId`，Telegram 需 `target.chatId`）并持久化到 KV `config:routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }`。
+- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、唯一 id、name、enabled、groupId、过滤器、平台感知的 targets：Discord 需 `target.channelId`，Telegram 需 `target.chatId`）并持久化到 KV `config:routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }` / `403 { error }`。
 
 ## 健康检查
 
@@ -66,11 +67,11 @@ POST /webhook
 
 **请求头：**
 
-| 头部                  | 必需 | 说明             |
-| --------------------- | ---- | ---------------- |
-| `X-Hub-Signature-256` | 是   | HMAC-SHA256 签名 |
-| `X-GitHub-Event`      | 是   | 事件类型名称     |
-| `X-GitHub-Delivery`   | 是   | 唯一投递 ID      |
+| 头部                  | 必需 | 说明                          |
+| --------------------- | ---- | ----------------------------- |
+| `X-Hub-Signature-256` | 是   | HMAC-SHA256 签名              |
+| `X-GitHub-Event`      | 是   | 事件类型名称                  |
+| `X-GitHub-Delivery`   | 否   | 唯一投递 ID（存在时用于去重） |
 
 **请求体：** GitHub webhook JSON 载荷（最大 1MB）。
 
@@ -81,6 +82,8 @@ POST /webhook
   "ok": true
 }
 ```
+
+当 `X-GitHub-Delivery` 存在且同一投递在最近 5 分钟内已被处理时，Worker 返回 `200 { "ok": true, "duplicate": true }`，不再重复分发。
 
 **错误响应：**
 

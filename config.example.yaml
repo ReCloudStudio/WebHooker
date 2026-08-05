@@ -1,34 +1,63 @@
 # Routes
-# Each route defines a filter chain and target Discord channel
+# Each route defines a filter chain and one or more target destinations
+# (Discord channel/thread and/or Telegram chat/topic). See docs/guide/configuration.md.
+
+# Groups scope admin access and can restrict which org/user events flow in.
+groups:
+  - id: default
+    name: "Default"
+    adminIds: ["your-github-id"]
+    # owners: ["myorg"]            # restrict events to this org/user (optional)
+    # emoji: true                  # include emoji in messages (default true)
 
 routes:
   - id: all-push
     name: "All Push Events"
     enabled: true
+    groupId: default
     filters:
       - type: event
         match: push
-    target:
-      channelId: "CHANNEL_ID_HERE"
+    targets:
+      - platform: discord
+        channelId: "CHANNEL_ID_HERE"
 
   # - id: specific-repo
   #   name: "Specific Repo"
   #   enabled: true
+  #   groupId: default
   #   filters:
   #     - type: repo
   #       match: "org/repo"
   #     - type: event
   #       match: [pull_request, issues]
-  #   target:
-  #     channelId: "CHANNEL_ID_HERE"
-  #     threadId: "THREAD_ID_HERE"
+  #   targets:
+  #     - platform: discord
+  #       channelId: "CHANNEL_ID_HERE"
+  #       threadId: "THREAD_ID_HERE"
+  #     - platform: telegram
+  #       chatId: "-1001234567890"
+  #       topicId: "9876543210"
 
   # - id: exclude-bot
   #   name: "Exclude Bot Actions"
   #   enabled: true
+  #   groupId: default
   #   filters:
   #     - type: actor
   #       match: "[bot]"
   #       exclude: true
-  #   target:
-  #     channelId: "CHANNEL_ID_HERE"
+  #   targets:
+  #     - platform: discord
+  #       channelId: "CHANNEL_ID_HERE"
+
+  # Fallback routes only fire when no other (non-fallback) route matched.
+  # - id: fallback-all
+  #   name: "Fallback: everything else"
+  #   enabled: true
+  #   groupId: default
+  #   fallback: true
+  #   filters: []
+  #   targets:
+  #     - platform: telegram
+  #       chatId: "-1001234567890"

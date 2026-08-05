@@ -25,8 +25,6 @@ This outputs a namespace ID. Update `wrangler.jsonc` with the ID:
 
 ```bash
 npx wrangler secret put GITHUB_WEBHOOK_SECRET
-npx wrangler secret put GITHUB_APP_ID
-npx wrangler secret put GITHUB_PRIVATE_KEY   # PKCS#8 PEM (BEGIN PRIVATE KEY)
 npx wrangler secret put GITHUB_CLIENT_ID
 npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler secret put DISCORD_TOKEN
@@ -39,15 +37,10 @@ npx wrangler secret put ADMIN_USER_IDS       # comma-separated GitHub IDs/logins
 There is no global channel secret. Each route in the [Web UI](/guide/configuration#web-ui) declares its own target channel (and optional thread), so `DISCORD_CHANNEL_ID` is not needed.
 :::
 
-::: warning GitHub App private key must be PKCS#8
-GitHub issues private keys in PKCS#1 format (`BEGIN RSA PRIVATE KEY`). Cloudflare Workers' JWT signing requires PKCS#8. Convert first:
-
-```bash
-openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
-  -in your-app.private-key.pem -out gh_pk_pkcs8.pem
-```
-
-Then upload `gh_pk_pkcs8.pem` as `GITHUB_PRIVATE_KEY`.
+::: tip GitHub App ID / private key are unused
+`GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` are not currently used by the code — the
+OAuth flow only needs `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`. You do not need to
+set them (no PKCS#8 conversion required).
 :::
 
 Discord interactions arrive via the HTTPS Interactions Endpoint, so set `DISCORD_PUBLIC_KEY` and point the **Interactions Endpoint URL** at `https://your-domain/discord/interactions`. See [Interactions Endpoint](#interactions-endpoint) below.
@@ -79,8 +72,8 @@ Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
 3. Set permissions:
    - **Repository permissions**: Contents (read), Issues (write), Pull requests (write), Metadata (read), Checks (read), Deployments (read), Discussions (read), Code scanning alerts (read), Dependabot alerts (read)
    - **Organization permissions**: Members (read) — if needed
-4. Subscribe to events (all 23 supported):
-   - Push, Pull request, Issues, Issue comment, Workflow run, Release, Create, Delete, Star, Fork, Check run, Pull request review, Pull request review comment, Commit comment, Deployment status, Member, Label, Milestone, Discussion, Discussion comment, Repository, Code scanning alert, Dependabot alert
+4. Subscribe to events (all 28 supported):
+   - Push, Pull request, Issues, Issue comment, Workflow run, Workflow job, Status, Deployment, Deployment status, Ping, Release, Create, Delete, Star, Fork, Check run, Check suite, Pull request review, Pull request review comment, Commit comment, Member, Label, Milestone, Discussion, Discussion comment, Repository, Code scanning alert, Dependabot alert
 5. Generate private key → save contents to `GITHUB_PRIVATE_KEY` env var
 
 ### 2. Install App
@@ -120,6 +113,22 @@ The `/gh` slash command and the `GitHub: 添加/编辑/删除评论` message com
 
 Users run `/gh login` to link their GitHub account and can then comment on issues/PRs as themselves. See the [README](https://github.com/ReCloudStudio/WebHooker#bot-commands-comment-on-github-as-yourself) for the full command reference.
 
+## Telegram Bot Setup
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) and copy its token to `TELEGRAM_TOKEN`.
+2. (Optional) Set `TELEGRAM_WEBHOOK_SECRET`; the webhook registration passes it to Telegram as `secret_token`, and `POST /telegram/webhook` verifies it with a timing-safe compare.
+3. The worker syncs the webhook from the scheduled trigger (`setWebhook` to `{BASE_URL}/telegram/webhook`), so no manual `setWebhook` call is needed — just make sure `BASE_URL` is set.
+4. Add the bot to a group (or enable topics) and route events to `chatId` / `topicId` in the route config.
+
+In Telegram, `/gh` commands work by replying to a notification message:
+
+- `/gh login` — link your GitHub account (returns an OAuth link)
+- `/gh logout` — unlink
+- `/gh comment <text>` — reply to an issue/PR notification to comment as yourself
+- `/gh merge` / `/gh close` — reply to a PR notification to merge/close it
+
+Avatars are rendered as a link-preview card using the built-in `GET /api/richheader` (overridable with `TELEGRAM_RICH_HEADER_HOST`).
+
 ## Custom Domain (Optional)
 
 To use a custom domain instead of `*.workers.dev`:
@@ -128,13 +137,5 @@ To use a custom domain instead of `*.workers.dev`:
 2. Add a custom domain or route
 3. Update `BASE_URL` to match
 
-## Docker
-
-A Dockerfile is provided for containerized deployments (e.g., behind a reverse proxy):
-
-```bash
-docker build -t webhooker .
-docker run -p 8787:8787 --env-file .env webhooker
-```
-
-Note: Docker mode runs without KV and other Cloudflare storage. Use Cloudflare deployment for full functionality.
+> [!NOTE]
+> This project is a Cloudflare Worker. It requires the KV and D1 bindings declared in `wrangler.jsonc`, so it cannot run as a standalone Node/container process.

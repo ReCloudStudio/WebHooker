@@ -90,6 +90,9 @@ Matches the branch involved in the event. What counts as "the branch" depends on
 | `pull_request` (and review) | The pull request's **head** (source) branch |
 | `create` / `delete`         | The created/deleted branch or tag           |
 | `workflow_run`              | The `head_branch` the workflow ran on       |
+| `workflow_job`              | The `head_branch` the job ran on            |
+| `check_suite`               | The `head_branch` of the check suite        |
+| `deployment`                | The deployment ref (strips `refs/heads/`)   |
 | `code_scanning_alert`       | The branch the alert belongs to             |
 
 ```json

@@ -29,8 +29,6 @@ Edit `.dev.vars` with your actual values:
 
 ```bash
 GITHUB_WEBHOOK_SECRET=your-webhook-secret
-GITHUB_APP_ID=your-app-id
-GITHUB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 GITHUB_CLIENT_ID=your-client-id
 GITHUB_CLIENT_SECRET=your-client-secret
 DISCORD_TOKEN=your-bot-token
@@ -40,7 +38,7 @@ BASE_URL=http://localhost:8787
 ```
 
 ::: tip
-`GITHUB_PRIVATE_KEY` must be in **PKCS#8** format (`BEGIN PRIVATE KEY`). Convert a GitHub-issued PKCS#1 key with `openssl pkcs8 -nocrypt -in app.pem -out pkcs8.pem`. Target channels are set per route in the Web UI, so no `DISCORD_CHANNEL_ID` is needed. To enable `/gh` commands locally, copy the **Public Key** from the Developer Portal into `DISCORD_PUBLIC_KEY` and set the Interactions Endpoint URL to `http://localhost:8787/discord/interactions`.
+`GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` are not used by the code (the OAuth flow only needs the client ID/secret), so you can omit them. Target channels are set per route in the Web UI, so no `DISCORD_CHANNEL_ID` is needed. To enable `/gh` commands locally, copy the **Public Key** from the Developer Portal into `DISCORD_PUBLIC_KEY` and set the Interactions Endpoint URL to `http://localhost:8787/discord/interactions`.
 :::
 
 ::: warning

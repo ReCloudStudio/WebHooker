@@ -47,6 +47,7 @@ GitHub 授权后重定向到此地址。将 code 交换为访问令牌并存储�
 - **浏览器流程**（`Accept: text/html`）：设置管理员会话 Cookie，然后重定向到 `redirect` 目标；无管理权限的用户被重定向到 `/admin?error=forbidden`。
 - **JSON 流程**：返回 `{ "userId": "...", "login": "...", "redirectTo": "..." }`。
 - **Discord 绑定流程**（以未决的 `discordUserId` 启动时）：将 Discord 用户绑定到此 GitHub 账号，返回 `{ "ok": true, "discordUserId": "...", "login": "..." }`——浏览器中则显示成功页面。
+- **Telegram 绑定流程**（以未决的 `telegramUserId` 启动时）：将 Telegram 用户绑定到此 GitHub 账号，返回 `{ "ok": true, "telegramUserId": "...", "login": "..." }`，并向未决的 `telegramChatId` 发送确认消息。
 
 ### 撤销 Token
 
@@ -77,7 +78,7 @@ Token 以键模式 `token:{userId}` 存储在 KV 中：
 }
 ```
 
-`expiresAt` 是毫秒级 Unix 时间戳。KV 条目在 Token 有效期的 90% 时过期（至少 60 秒）。反向索引 `token-reverse:{sha256 of token}` 将访问令牌映射回用户 id，使 Bearer 鉴权的端点能解析调用者。与 GitHub 账号绑定的 Discord 用户存储在 D1 的 `discord_links` 表中。
+`expiresAt` 是毫秒级 Unix 时间戳。KV 条目在 Token 有效期的 90% 时过期（至少 60 秒）。反向索引 `token-reverse:{sha256 of token}` 将访问令牌映射回用户 id，使 Bearer 鉴权的端点能解析调用者。与 GitHub 账号绑定的 Discord 用户存储在 D1 的 `discord_links` 表中；Telegram 用户存储在 D1 的 `telegram_links` 表中。
 
 ## 使用 Token
 

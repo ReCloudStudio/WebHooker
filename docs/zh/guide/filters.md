@@ -84,13 +84,16 @@
 
 匹配事件涉及的分支。何种字段算作「分支」取决于事件类型：
 
-| 事件                        | 提取的分支                     |
-| --------------------------- | ------------------------------ |
-| `push`                      | 推送到的目标分支               |
-| `pull_request`（及 review） | 拉取请求的 **head**（源）分支  |
-| `create` / `delete`         | 创建/删除的分支或标签          |
-| `workflow_run`              | 工作流运行所在的 `head_branch` |
-| `code_scanning_alert`       | 告警所属的分支                 |
+| 事件                        | 提取的分支                          |
+| --------------------------- | ----------------------------------- |
+| `push`                      | 推送到的目标分支                    |
+| `pull_request`（及 review） | 拉取请求的 **head**（源）分支       |
+| `create` / `delete`         | 创建/删除的分支或标签               |
+| `workflow_run`              | 工作流运行所在的 `head_branch`      |
+| `workflow_job`              | 作业运行所在的 `head_branch`        |
+| `check_suite`               | 检查套件的 `head_branch`            |
+| `deployment`                | 部署引用（去除 `refs/heads/` 前缀） |
+| `code_scanning_alert`       | 告警所属的分支                      |
 
 ```json
 {

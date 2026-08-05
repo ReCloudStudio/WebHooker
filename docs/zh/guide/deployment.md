@@ -25,8 +25,6 @@ npx wrangler kv namespace create KV
 
 ```bash
 npx wrangler secret put GITHUB_WEBHOOK_SECRET
-npx wrangler secret put GITHUB_APP_ID
-npx wrangler secret put GITHUB_PRIVATE_KEY   # PKCS#8 PEM（BEGIN PRIVATE KEY）
 npx wrangler secret put GITHUB_CLIENT_ID
 npx wrangler secret put GITHUB_CLIENT_SECRET
 npx wrangler secret put DISCORD_TOKEN
@@ -39,15 +37,9 @@ npx wrangler secret put ADMIN_USER_IDS       # 逗号分隔的 GitHub ID/登录�
 不存在全局频道密钥。每条路由在 [Web 控制台](/zh/guide/configuration#web-控制台) 中声明各自的目标频道（及可选的子区/thread），因此不需要 `DISCORD_CHANNEL_ID`。
 :::
 
-::: warning GitHub App 私钥必须是 PKCS#8
-GitHub 下发的私钥为 PKCS#1 格式（`BEGIN RSA PRIVATE KEY`）。Cloudflare Workers 的 JWT 签名要求 PKCS#8，需先转换：
-
-```bash
-openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
-  -in your-app.private-key.pem -out gh_pk_pkcs8.pem
-```
-
-然后将 `gh_pk_pkcs8.pem` 作为 `GITHUB_PRIVATE_KEY` 上传。
+::: tip GitHub App ID / 私钥未使用
+`GITHUB_APP_ID` 与 `GITHUB_PRIVATE_KEY` 当前未被代码使用——OAuth 流程只需要
+`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`。无需设置（也无需进行 PKCS#8 转换）。
 :::
 
 Discord 交互通过 HTTPS Interactions Endpoint 送达，需要设置 `DISCORD_PUBLIC_KEY` 并把 **Interactions Endpoint URL** 指向 `https://your-domain/discord/interactions`。参见下方 [Interactions Endpoint](#interactions-endpoint)。
@@ -79,8 +71,8 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
 3. 设置权限：
    - **Repository permissions**: Contents (read)、Issues (write)、Pull requests (write)、Metadata (read)、Checks (read)、Deployments (read)、Discussions (read)、Code scanning alerts (read)、Dependabot alerts (read)
    - **Organization permissions**: Members (read) —— 如果需要
-4. 订阅事件（全部 23 种支持的事件）：
-   - Push、Pull request、Issues、Issue comment、Workflow run、Release、Create、Delete、Star、Fork、Check run、Pull request review、Pull request review comment、Commit comment、Deployment status、Member、Label、Milestone、Discussion、Discussion comment、Repository、Code scanning alert、Dependabot alert
+4. 订阅事件（全部 28 种支持的事件）：
+   - Push、Pull request、Issues、Issue comment、Workflow run、Workflow job、Status、Deployment、Deployment status、Ping、Release、Create、Delete、Star、Fork、Check run、Check suite、Pull request review、Pull request review comment、Commit comment、Member、Label、Milestone、Discussion、Discussion comment、Repository、Code scanning alert、Dependabot alert
 5. 生成私钥 → 将内容保存到 `GITHUB_PRIVATE_KEY` 环境变量
 
 ### 2. 安装 App
@@ -120,6 +112,22 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
 
 用户运行 `/gh login` 绑定自己的 GitHub 账号，即可以本人身份评论 issue/PR。完整命令说明见 [README](https://github.com/ReCloudStudio/WebHooker#bot-commands-comment-on-github-as-yourself)。
 
+## Telegram 机器人配置
+
+1. 用 [@BotFather](https://t.me/BotFather) 创建机器人，将 Token 复制到 `TELEGRAM_TOKEN`。
+2. （可选）设置 `TELEGRAM_WEBHOOK_SECRET`；webhook 注册时会作为 `secret_token` 传给 Telegram，`POST /telegram/webhook` 使用时间安全比较校验。
+3. Worker 会在定时任务中自动同步 webhook（`setWebhook` 指向 `{BASE_URL}/telegram/webhook`），因此无需手动调用 `setWebhook`——只需确保 `BASE_URL` 已设置。
+4. 将机器人加入群组（或启用话题），在路由配置中用 `chatId` / `topicId` 指定目标。
+
+在 Telegram 中，`/gh` 命令通过在通知消息上**回复**来使用：
+
+- `/gh login` — 绑定你的 GitHub 账号（返回 OAuth 链接）
+- `/gh logout` — 解除绑定
+- `/gh comment <内容>` — 回复一条 issue/PR 通知，以本人身份评论
+- `/gh merge` / `/gh close` — 回复一条 PR 通知，合并/关闭该 PR
+
+头像使用内置 `GET /api/richheader` 渲染为链接预览卡片（可用 `TELEGRAM_RICH_HEADER_HOST` 覆盖）。
+
 ## 自定义域名（可选）
 
 要使用自定义域名替代 `*.workers.dev`：
@@ -128,13 +136,5 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
 2. 添加自定义域名或路由
 3. 更新 `BASE_URL` 以匹配
 
-## Docker
-
-提供 Dockerfile 用于容器化部署（例如在反向代理后面）：
-
-```bash
-docker build -t webhooker .
-docker run -p 8787:8787 --env-file .env webhooker
-```
-
-注意：Docker 模式下不包含 KV 等 Cloudflare 存储。完整功能请使用 Cloudflare 部署。
+> [!NOTE]
+> 本项目是一个 Cloudflare Worker，依赖 `wrangler.jsonc` 中声明的 KV 与 D1 绑定，无法作为独立的 Node/容器进程运行。

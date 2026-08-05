@@ -33,6 +33,7 @@ https://your-worker.workers.dev
 | `PUT`    | `/admin/api/groups/:id/routes` | Admin session     | Replace a group's routes                                  |
 | `GET`    | `/admin/api/me`                | Admin session     | Current session info                                      |
 | `GET`    | `/admin/api/logs`              | Admin session     | Send logs (scoped)                                        |
+| `GET`    | `/admin/api/logs/:id`          | Admin session     | Single send-log entry (scoped)                            |
 
 ## Admin Console
 
@@ -40,7 +41,7 @@ See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup. Admi
 
 - `GET /admin` — Serves the config console HTML
 - `GET /admin/api/routes` — Returns `{ "routes": Route[] }`
-- `PUT /admin/api/routes` — Body `{ "routes": Route[] }`; validates each route (id pattern, unique id, name, enabled, `groupId`, filters — empty only allowed for `fallback` routes — and platform-aware target: `target.channelId` for Discord, `target.chatId` for Telegram) and persists to KV `config:routes`. Returns `200 { ok, count }` or `400 { error }` / `401 { error }`.
+- `PUT /admin/api/routes` — Body `{ "routes": Route[] }`; validates each route (id pattern, unique id, name, enabled, `groupId`, filters — empty only allowed for `fallback` routes — and platform-aware targets: `target.channelId` for Discord, `target.chatId` for Telegram) and persists to KV `config:routes`. Returns `200 { ok, count }` or `400 { error }` / `401 { error }` / `403 { error }`.
 
 ## Health Check
 
@@ -66,11 +67,11 @@ Accepts GitHub webhook payloads. Requires valid `X-Hub-Signature-256` header.
 
 **Headers:**
 
-| Header                | Required | Description           |
-| --------------------- | -------- | --------------------- |
-| `X-Hub-Signature-256` | Yes      | HMAC-SHA256 signature |
-| `X-GitHub-Event`      | Yes      | Event type name       |
-| `X-GitHub-Delivery`   | Yes      | Unique delivery ID    |
+| Header                | Required | Description                                      |
+| --------------------- | -------- | ------------------------------------------------ |
+| `X-Hub-Signature-256` | Yes      | HMAC-SHA256 signature                            |
+| `X-GitHub-Event`      | Yes      | Event type name                                  |
+| `X-GitHub-Delivery`   | No       | Unique delivery ID (used for dedup when present) |
 
 **Request Body:** GitHub webhook JSON payload (max 1MB).
 
@@ -81,6 +82,8 @@ Accepts GitHub webhook payloads. Requires valid `X-Hub-Signature-256` header.
   "ok": true
 }
 ```
+
+When `X-GitHub-Delivery` is present and the same delivery was already processed within the last 5 minutes, the worker responds `200 { "ok": true, "duplicate": true }` without re-dispatching.
 
 **Error Responses:**
 
