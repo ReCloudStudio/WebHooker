@@ -58,6 +58,12 @@ export interface Route {
    * least one regular route matches. Its own filters are ignored.
    */
   fallback?: boolean;
+  /**
+   * Stop: when true and this route matches, no further routes are evaluated
+   * for this event. Useful for exclusive routing where a match should prevent
+   * fallthrough to subsequent routes.
+   */
+  stop?: boolean;
 }
 
 export interface Group {

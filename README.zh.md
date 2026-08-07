@@ -79,6 +79,7 @@ npx wrangler dev     # 启动本地开发服务器
     "enabled": true,
     "groupId": "default",
     "filters": [{ "type": "event", "match": "push" }],
+    "stop": true,
     "targets": [
       { "platform": "discord", "channelId": "频道ID" },
       { "platform": "telegram", "chatId": "-1001234567890" }

@@ -78,6 +78,9 @@ function validateRoutes(
     if (r.fallback !== undefined && typeof r.fallback !== "boolean") {
       return { ok: false, error: `route "${r.id}".fallback must be a boolean` };
     }
+    if (r.stop !== undefined && typeof r.stop !== "boolean") {
+      return { ok: false, error: `route "${r.id}".stop must be a boolean` };
+    }
     if (!Array.isArray(r.filters)) {
       return { ok: false, error: `route "${r.id}".filters must be an array` };
     }

@@ -74,6 +74,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
   "enabled": true,
   "groupId": "my-group",
   "fallback": false,
+  "stop": false,
   "filters": [
     { "type": "event", "match": "push" },
     { "type": "repo", "match": "org/repo", "exclude": false }
@@ -96,6 +97,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 | ---------- | ------- | ---- | ---------------------------------------------------------------------- |
 | `groupId`  | string  | 是   | 该路由所属[分组](#分组)的 id                                           |
 | `fallback` | boolean | 否   | 为 `true` 时，仅当没有其它路由匹配该事件时才发送，其自身过滤器会被忽略 |
+| `stop`     | boolean | 否   | 为 `true` 且该路由匹配时，停止评估后续路由                             |
 | `lang`     | string  | 否   | 该路由的消息语言覆盖（如 `en`、`zh`），默认跟随全局设置                |
 
 ### 自定义路由示例

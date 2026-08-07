@@ -61,3 +61,16 @@ routes:
   #   targets:
   #     - platform: telegram
   #       chatId: "-1001234567890"
+
+  # Stop routes stop processing further routes when matched.
+  # - id: exclusive-push
+  #   name: "Exclusive Push"
+  #   enabled: true
+  #   groupId: default
+  #   stop: true
+  #   filters:
+  #     - type: event
+  #       match: push
+  #   targets:
+  #     - platform: discord
+  #       channelId: "CHANNEL_ID_HERE"

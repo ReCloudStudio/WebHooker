@@ -79,6 +79,7 @@ Routes are stored in KV (`config:routes` as JSON). There are **no default routes
     "enabled": true,
     "groupId": "default",
     "filters": [{ "type": "event", "match": "push" }],
+    "stop": true,
     "targets": [
       { "platform": "discord", "channelId": "CHANNEL_ID" },
       { "platform": "telegram", "chatId": "-1001234567890" }

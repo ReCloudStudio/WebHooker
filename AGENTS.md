@@ -80,7 +80,7 @@ src/__tests__/            # bun test unit tests (webhook, formatter, discord, te
 - Verify Discord interactions (Web Crypto Ed25519, X-Signature-Ed25519 over timestamp + body)
 - Verify Telegram webhook calls (X-Telegram-Bot-Api-Secret-Token when configured)
 - Filter events by: event type, repo name, actor, action, branch, keyword (regex supported)
-- Filter routes by group owner restriction (`Group.owners`) and skip fallback routes whenever a regular route matched
+- Filter routes by group owner restriction (`Group.owners`) and skip fallback routes whenever a regular route matched; stop evaluating further routes when a matched route has `stop: true`
 - Format 28 event types as platform-neutral messages (Discord embeds + Telegram HTML)
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
 - Edit already-sent messages in place for `workflow_run` progress (stable `updateKey`, KV `msg:*` tracking)

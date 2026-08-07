@@ -74,6 +74,7 @@ There are **no default routes** — each route must define its own target. If no
   "enabled": true,
   "groupId": "my-group",
   "fallback": false,
+  "stop": false,
   "filters": [
     { "type": "event", "match": "push" },
     { "type": "repo", "match": "org/repo", "exclude": false }
@@ -96,6 +97,7 @@ Other route fields:
 | ---------- | ------- | -------- | ----------------------------------------------------------------------------------------------- |
 | `groupId`  | string  | Yes      | Id of the [group](#groups) this route belongs to                                                |
 | `fallback` | boolean | No       | When `true`, fires only if no non-fallback route matched the event; its own filters are ignored |
+| `stop`     | boolean | No       | When `true` and this route matches, no further routes are evaluated for this event              |
 | `lang`     | string  | No       | Message language override for this route (e.g. `en`, `zh`); defaults to the global setting      |
 
 ### Custom Route Example
