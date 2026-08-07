@@ -21,6 +21,7 @@ export interface Route {
   lang?: string;
   groupId?: string;
   fallback?: boolean;
+  stop?: boolean;
 }
 
 export interface Group {

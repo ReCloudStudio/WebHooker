@@ -17,6 +17,7 @@
           >{{ tg.platform === "telegram" ? "Telegram" : "Discord" }}</span
         >
         <span v-if="route.fallback" class="badge fallback">{{ t("route.fallback") }}</span>
+        <span v-if="route.stop" class="badge stop">{{ t("route.stop") }}</span>
       </div>
       <div class="card-actions">
         <button

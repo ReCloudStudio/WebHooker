@@ -361,6 +361,12 @@ main {
   border: 1px solid transparent;
 }
 
+.badge.stop {
+  background: var(--bad-dim);
+  color: var(--bad);
+  border: 1px solid transparent;
+}
+
 .card-actions {
   display: flex;
   gap: 6px;

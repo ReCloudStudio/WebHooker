@@ -64,6 +64,13 @@
               <span class="lbl-note">{{ t("routeEditor.fallbackHint") }}</span></span
             >
           </div>
+          <div class="field inline">
+            <input v-model="form.stop" type="checkbox" />
+            <span
+              >{{ t("routeEditor.stop") }}
+              <span class="lbl-note">{{ t("routeEditor.stopHint") }}</span></span
+            >
+          </div>
           <div class="field">
             <label
               >{{ t("routeEditor.filters") }}
@@ -195,6 +202,7 @@ const form = reactive({
   lang: "",
   enabled: true,
   fallback: false,
+  stop: false,
   targets: [] as TargetForm[],
   filters: [] as FilterForm[],
 });
@@ -245,6 +253,7 @@ watch(
     form.lang = r?.lang ?? "";
     form.enabled = r?.enabled ?? true;
     form.fallback = r?.fallback ?? false;
+    form.stop = r?.stop ?? false;
     form.targets =
       r && r.targets.length
         ? r.targets.map((tg) => ({ ...blankTarget(), ...tg }))
@@ -311,6 +320,7 @@ function collect(): Route | null {
     name: form.name.trim(),
     enabled: form.enabled,
     fallback: form.fallback || undefined,
+    stop: form.stop || undefined,
     lang: form.lang.trim() || undefined,
     filters,
     targets,
