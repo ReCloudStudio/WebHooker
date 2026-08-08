@@ -4,6 +4,7 @@ export interface SendRecord {
   id?: number;
   ts: number;
   routeId: string;
+  groupId?: string;
   event: string;
   repo?: string;
   target: string;
@@ -22,12 +23,13 @@ export interface SendRecord {
 }
 
 const COLUMNS =
-  "id, ts, route_id, event, repo, target, ok, error, status, message_id, delivery_id, platform, actor, action, duration_ms, error_code, attempts, detail";
+  "id, ts, route_id, group_id, event, repo, target, ok, error, status, message_id, delivery_id, platform, actor, action, duration_ms, error_code, attempts, detail";
 
 interface LogRow {
   id: number;
   ts: number;
   route_id: string;
+  group_id: string | null;
   event: string;
   repo: string | null;
   target: string;
@@ -50,6 +52,7 @@ function toRecord(r: LogRow): SendRecord {
     id: r.id,
     ts: r.ts,
     routeId: r.route_id,
+    groupId: r.group_id ?? undefined,
     event: r.event,
     repo: r.repo ?? undefined,
     target: r.target,
@@ -72,12 +75,13 @@ export async function recordSend(db: D1Database, record: SendRecord): Promise<vo
   try {
     await db
       .prepare(
-        `INSERT INTO send_logs (ts, route_id, event, repo, target, ok, error, status, message_id, delivery_id, platform, actor, action, duration_ms, error_code, attempts, detail)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO send_logs (ts, route_id, group_id, event, repo, target, ok, error, status, message_id, delivery_id, platform, actor, action, duration_ms, error_code, attempts, detail)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         record.ts,
         record.routeId,
+        record.groupId ?? null,
         record.event,
         record.repo ?? null,
         record.target,

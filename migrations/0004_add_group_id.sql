@@ -1,0 +1,1 @@
+ALTER TABLE send_logs ADD COLUMN group_id TEXT;

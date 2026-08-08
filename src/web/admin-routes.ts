@@ -52,15 +52,23 @@ function validateRoutes(
   if (!Array.isArray(routes)) return { ok: false, error: "routes must be an array" };
   if (routes.length > 200) return { ok: false, error: "too many routes" };
 
-  const seen = new Set<string>();
+  const seenByGroup = new Map<string, Set<string>>();
   for (let i = 0; i < routes.length; i++) {
     const r = routes[i] as Record<string, unknown>;
     if (!r || typeof r !== "object") return { ok: false, error: `route[${i}] is not an object` };
     if (typeof r.id !== "string" || !ID_RE.test(r.id)) {
       return { ok: false, error: `route[${i}].id is invalid` };
     }
-    if (seen.has(r.id)) return { ok: false, error: `duplicate route id "${r.id}"` };
-    seen.add(r.id);
+    const gid = (r.groupId as string) ?? "__nogroup__";
+    let groupSeen = seenByGroup.get(gid);
+    if (!groupSeen) {
+      groupSeen = new Set();
+      seenByGroup.set(gid, groupSeen);
+    }
+    if (groupSeen.has(r.id)) {
+      return { ok: false, error: `duplicate route id "${r.id}" in group "${gid}"` };
+    }
+    groupSeen.add(r.id);
     // Skip full validation for routes that are unchanged from what is stored.
     const prev = unchanged?.get(r.id);
     if (prev && deepEqual(r, prev)) continue;
@@ -282,12 +290,8 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     if (s.scope.isSuper) {
       return c.json({ logs: await getSendLog(c.env.DB, limit) });
     }
-    const all = await loadRoutes(c.env.KV);
-    const allowed = new Set(
-      all.filter((r) => r.groupId != null && s.scope.groupIds.has(r.groupId)).map((r) => r.id),
-    );
     const logs = (await getSendLog(c.env.DB, 200))
-      .filter((l) => allowed.has(l.routeId))
+      .filter((l) => l.groupId != null && s.scope.groupIds.has(l.groupId))
       .slice(0, limit);
     return c.json({ logs });
   });
@@ -300,9 +304,7 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     const entry = await getSendLogById(c.env.DB, id);
     if (!entry) return c.json({ error: "Log entry not found" }, 404);
     if (!s.scope.isSuper) {
-      const all = await loadRoutes(c.env.KV);
-      const route = all.find((r) => r.id === entry.routeId);
-      if (!route?.groupId || !s.scope.groupIds.has(route.groupId)) {
+      if (!entry.groupId || !s.scope.groupIds.has(entry.groupId)) {
         return c.json({ error: "Forbidden" }, 403);
       }
     }
@@ -342,13 +344,6 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
         ...existing.filter((r) => !(r.groupId != null && writable.has(r.groupId))),
         ...result.routes,
       ];
-    }
-
-    // Guard against duplicate ids across the merged set.
-    const ids = new Set<string>();
-    for (const r of nextAll) {
-      if (ids.has(r.id)) return c.json({ error: `duplicate route id "${r.id}"` }, 400);
-      ids.add(r.id);
     }
 
     try {
@@ -421,13 +416,6 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     // Replace only this group's routes; every other group is preserved untouched.
     const others = existing.filter((r) => r.groupId !== groupId);
     const nextAll = [...others, ...result.routes];
-
-    // Guard against ids colliding with routes in other groups.
-    const ids = new Set<string>();
-    for (const r of nextAll) {
-      if (ids.has(r.id)) return c.json({ error: `duplicate route id "${r.id}"` }, 400);
-      ids.add(r.id);
-    }
 
     try {
       await saveRoutes(c.env.KV, nextAll);

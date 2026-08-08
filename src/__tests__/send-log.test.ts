@@ -6,6 +6,7 @@ function createMockDB(): D1Database {
   const insertCols = [
     "ts",
     "route_id",
+    "group_id",
     "event",
     "repo",
     "target",

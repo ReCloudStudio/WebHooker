@@ -69,6 +69,7 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
       const base: {
         ts: number;
         routeId: string;
+        groupId: string | undefined;
         event: string;
         repo: string | undefined;
         target: string;
@@ -78,6 +79,7 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
       } = {
         ts: Date.now(),
         routeId: route.id,
+        groupId: route.groupId,
         event: event.event,
         repo: (event.payload.repository as { full_name?: string } | undefined)?.full_name,
         target: targetStr,
@@ -91,7 +93,8 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
         const driver = getDriver(target);
         let result: SendResult;
         if (message.updateKey) {
-          const kvKey = `msg:${route.id}:${message.updateKey}:${targetStr}`;
+          const groupPrefix = route.groupId ? `${route.groupId}:` : "";
+          const kvKey = `msg:${groupPrefix}${route.id}:${message.updateKey}:${targetStr}`;
           const existingId = await env.KV.get(kvKey);
           if (existingId) {
             result = await driver.edit(message, target, env, existingId);
