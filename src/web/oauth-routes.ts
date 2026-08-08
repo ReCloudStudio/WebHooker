@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { getOAuthURL, handleOAuthCallback } from "../github/oauth";
 import { removeToken, saveDiscordLink, saveTelegramLink } from "../github/store";
-import { createAdminSession, adminCookie } from "./session";
+import { createAdminSession, adminCookie, getAdminSession } from "./session";
 import { loadGroups, resolveScope, hasAnyAccess } from "./groups";
 import { sendMessage } from "../drivers/telegram/rest";
 import type { Env } from "../types";
@@ -127,6 +127,8 @@ export function createOAuthRoutes(): Hono<{ Bindings: Env }> {
   });
 
   app.delete("/token/:userId", async (c) => {
+    const session = await getAdminSession(c.env.KV, c.req.header("Cookie"));
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
     await removeToken(c.env.KV, c.req.param("userId"));
     return c.json({ ok: true });
   });

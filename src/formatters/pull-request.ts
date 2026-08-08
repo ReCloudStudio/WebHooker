@@ -84,11 +84,12 @@ export function formatPullRequest(
     });
   }
 
-  const actionable = pr.state === "open" && !!repo && pr.number != null;
+  const [repoOwner, repoName] = (repo ?? "/").split("/", 2);
+  const actionable = pr.state === "open" && !!repoOwner && !!repoName && pr.number != null;
   const actions: NeutralAction[] | undefined = actionable
     ? [
-        { id: `ghpr|merge|${repo}|${pr.number}`, label: "合并", style: "primary" },
-        { id: `ghpr|close|${repo}|${pr.number}`, label: "关闭", style: "danger" },
+        { id: `ghpr|merge|${repoOwner}|${repoName}|${pr.number}`, label: "合并", style: "primary" },
+        { id: `ghpr|close|${repoOwner}|${repoName}|${pr.number}`, label: "关闭", style: "danger" },
       ]
     : undefined;
 

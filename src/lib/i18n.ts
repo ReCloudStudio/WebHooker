@@ -1,4 +1,5 @@
 import { en } from "./locales/en";
+import { zh } from "./locales/zh";
 
 type NestedStrings = { [key: string]: string | NestedStrings };
 export type Translations = NestedStrings;
@@ -26,6 +27,7 @@ export async function loadTranslations(
   kv?: { get<T>(key: string, type: "json"): Promise<T | null> },
 ): Promise<Translations> {
   if (lang === "en") return en;
+  if (lang === "zh") return zh;
 
   const cached = cache.get(lang);
   if (cached) return cached;
