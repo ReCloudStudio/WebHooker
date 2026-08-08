@@ -287,13 +287,15 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     const s = await loadScope(c);
     if (!s) return c.json({ error: "Unauthorized" }, 401);
     const limit = Math.min(Math.max(Number(c.req.query("limit") ?? 50), 1), 100);
-    if (s.scope.isSuper) {
-      return c.json({ logs: await getSendLog(c.env.DB, limit) });
-    }
-    const logs = (await getSendLog(c.env.DB, 200))
-      .filter((l) => l.groupId != null && s.scope.groupIds.has(l.groupId))
-      .slice(0, limit);
-    return c.json({ logs });
+    const filterGroupId = c.req.query("groupId") || undefined;
+    const allLogs = await getSendLog(c.env.DB, 200);
+    const allowed = s.scope.isSuper
+      ? allLogs
+      : allLogs.filter((l) => l.groupId != null && s.scope.groupIds.has(l.groupId));
+    const logs = filterGroupId
+      ? allowed.filter((l) => l.groupId === filterGroupId)
+      : allowed;
+    return c.json({ logs: logs.slice(0, limit) });
   });
 
   app.get("/api/logs/:id", async (c) => {

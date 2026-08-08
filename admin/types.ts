@@ -142,6 +142,7 @@ export interface SendRecord {
   id?: number;
   ts: number;
   routeId: string;
+  groupId?: string;
   event: string;
   repo?: string;
   target: string;

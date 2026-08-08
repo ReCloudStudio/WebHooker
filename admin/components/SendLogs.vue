@@ -2,6 +2,20 @@
   <div>
     <div class="log-toolbar">
       <span class="kpi-label">{{ t("logs.lastSends", { n: logs.length }) }}</span>
+      <div class="log-filters">
+        <label class="filter-label">{{ t("logs.filterGroup") }}</label>
+        <select
+          class="filter-select"
+          :value="selectedGroupId"
+          :disabled="loading"
+          @change="onGroupFilter"
+        >
+          <option value="">{{ t("logs.allGroups") }}</option>
+          <option v-for="g in groups" :key="g.id" :value="g.id">
+            {{ g.name || g.id }}
+          </option>
+        </select>
+      </div>
       <button class="btn btn-ghost btn-sm" :disabled="loading" @click="refresh">
         {{ t("logs.refresh") }}
       </button>
@@ -68,13 +82,22 @@
 </template>
 
 <script setup lang="ts">
-import type { SendRecord } from "~/types";
+import type { Group, SendRecord } from "~/types";
 
 const { t } = useI18n();
 const { loadById } = useSendLogs();
 
-const props = defineProps<{ logs: SendRecord[]; loading: boolean }>();
-const emit = defineEmits<{ (e: "refresh"): void }>();
+const props = defineProps<{
+  logs: SendRecord[];
+  loading: boolean;
+  groups: Group[];
+  selectedGroupId: string;
+}>();
+const emit = defineEmits<{
+  (e: "refresh"): void;
+  (e: "filter"): void;
+  (e: "update:selectedGroupId", value: string): void;
+}>();
 
 const detailOpen = ref(false);
 const detail = ref<SendRecord | null>(null);
@@ -119,6 +142,11 @@ function fmtTime(ts: number): string {
 
 function refresh(): void {
   emit("refresh");
+}
+
+function onGroupFilter(e: Event): void {
+  emit("update:selectedGroupId", (e.target as HTMLSelectElement).value);
+  emit("filter");
 }
 
 async function openDetail(l: SendRecord): Promise<void> {

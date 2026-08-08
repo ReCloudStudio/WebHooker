@@ -6,12 +6,14 @@ export function useSendLogs() {
   const needLogin = ref(false);
   const error = ref("");
 
-  async function load(limit = 50): Promise<void> {
+  async function load(limit = 50, groupId?: string): Promise<void> {
     loading.value = true;
     error.value = "";
     needLogin.value = false;
     try {
-      const res = await fetch(`/admin/api/logs?limit=${limit}`, {
+      let url = `/admin/api/logs?limit=${limit}`;
+      if (groupId) url += `&groupId=${encodeURIComponent(groupId)}`;
+      const res = await fetch(url, {
         headers: { accept: "application/json" },
         credentials: "same-origin",
       });

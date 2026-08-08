@@ -156,7 +156,15 @@
                 <span>{{ logsLoading ? t("status.loading") : t("status.connected") }}</span>
               </div>
             </section>
-            <SendLogs :logs="logs" :loading="logsLoading" @refresh="loadLogs" />
+            <SendLogs
+              :logs="logs"
+              :loading="logsLoading"
+              :groups="groups"
+              :selected-group-id="logFilterGroup"
+              @refresh="loadLogs"
+              @filter="loadLogs"
+              @update:selected-group-id="logFilterGroup = $event"
+            />
           </template>
         </template>
       </template>
@@ -214,19 +222,21 @@ const groupEditorOpen = ref(false);
 const editingGroup = ref<Group | null>(null);
 const savingGroup = ref(false);
 
+const logFilterGroup = ref("");
+
 onMounted(() => {
   if (typeof window !== "undefined") {
     const params = new URLSearchParams(window.location.search);
     forbidden.value = params.get("error") === "forbidden";
   }
   loadGroups();
-  loadLogs();
+  loadLogs(50, logFilterGroup.value || undefined);
 });
 
 function switchView(next: "groups" | "logs"): void {
   view.value = next;
   if (next === "groups") loadGroups();
-  if (next === "logs") loadLogs();
+  if (next === "logs") loadLogs(50, logFilterGroup.value || undefined);
 }
 
 function enterGroup(group: Group): void {
