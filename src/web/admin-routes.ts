@@ -292,9 +292,7 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     const allowed = s.scope.isSuper
       ? allLogs
       : allLogs.filter((l) => l.groupId != null && s.scope.groupIds.has(l.groupId));
-    const logs = filterGroupId
-      ? allowed.filter((l) => l.groupId === filterGroupId)
-      : allowed;
+    const logs = filterGroupId ? allowed.filter((l) => l.groupId === filterGroupId) : allowed;
     return c.json({ logs: logs.slice(0, limit) });
   });
 
