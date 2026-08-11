@@ -138,7 +138,6 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 | `groupId`        | string   | 是   | 该路由所属[分组](#分组)的 id                                           |
 | `fallback`       | boolean  | 否   | 为 `true` 时，仅当没有其它路由匹配该事件时才发送，其自身过滤器会被忽略 |
 | `stop`           | boolean  | 否   | 为 `true` 且该路由匹配时，停止评估后续路由                             |
-| `lang`           | string   | 否   | 该路由的消息语言覆盖（如 `en`、`zh`），默认跟随全局设置                |
 | `discordRoleIds` | string[] | 否   | 该路由触发时要在 Discord 目标中 @提醒的身份组 id                       |
 
 ### 自定义路由示例
@@ -195,6 +194,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 | `owners`    | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制                |
 | `providers` | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部        |
 | `emoji`     | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                        |
+| `lang`      | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——默认 `en` |
 
 ### 角色
 

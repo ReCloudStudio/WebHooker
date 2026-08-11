@@ -18,7 +18,6 @@ export interface Route {
   enabled: boolean;
   filters: Filter[];
   targets: RouteTarget[];
-  lang?: string;
   groupId?: string;
   fallback?: boolean;
   stop?: boolean;
@@ -40,6 +39,7 @@ export interface Group {
   owners?: string[];
   providers?: ("github" | "gitea" | "gitlab")[];
   emoji?: boolean;
+  lang?: string;
 }
 
 export interface GroupInvite {

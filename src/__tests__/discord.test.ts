@@ -259,4 +259,62 @@ describe("dispatchEvent fallback routing", () => {
     expect(sent.filter((u) => u.includes("/222/"))).toHaveLength(1);
     expect(sent.filter((u) => u.includes("/111/"))).toHaveLength(0);
   });
+
+  it("uses the group's message language (not the route's)", async () => {
+    const bodies: string[] = [];
+    mockFetch((url, init) => {
+      bodies.push(String(init?.body ?? ""));
+      return new Response("{}", { status: 200 });
+    });
+    const kv = createMockKV();
+    await kv.put(
+      "config:groups",
+      JSON.stringify([
+        { id: "zh-group", name: "中文组", adminIds: [], lang: "zh" },
+        { id: "en-group", name: "English", adminIds: [] },
+      ]),
+    );
+    const env = createEnv({ KV: kv, DB: createMockDB() });
+    const routes: Route[] = [
+      {
+        id: "zh-push",
+        name: "ZH",
+        enabled: true,
+        groupId: "zh-group",
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "111" }],
+      },
+      {
+        id: "en-push",
+        name: "EN",
+        enabled: true,
+        groupId: "en-group",
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "222" }],
+      },
+    ];
+
+    await dispatchEvent(
+      { ...baseConfig, routes },
+      {
+        event: "push",
+        payload: {
+          repository: { full_name: "owner/repo" },
+          commits: [{ id: "abc", message: "fix", author: { name: "a" } }],
+          ref: "refs/heads/main",
+          compare: "https://example.com/compare",
+        },
+      },
+      env,
+    );
+
+    expect(bodies).toHaveLength(2);
+    const titles = bodies.map((b) => {
+      const parsed = JSON.parse(b) as { embeds?: Array<{ title?: string }> };
+      return parsed.embeds?.[0]?.title ?? "";
+    });
+    expect(titles.sort()).toEqual(
+      ["owner/repo: 推送了 1 个提交", "owner/repo: Pushed 1 commit"].sort(),
+    );
+  });
 });

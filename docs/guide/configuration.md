@@ -138,7 +138,6 @@ Other route fields:
 | `groupId`        | string   | Yes      | Id of the [group](#groups) this route belongs to                                                |
 | `fallback`       | boolean  | No       | When `true`, fires only if no non-fallback route matched the event; its own filters are ignored |
 | `stop`           | boolean  | No       | When `true` and this route matches, no further routes are evaluated for this event              |
-| `lang`           | string   | No       | Message language override for this route (e.g. `en`, `zh`); defaults to the global setting      |
 | `discordRoleIds` | string[] | No       | Discord role ids to ping when this route fires; applied to Discord targets only                 |
 
 ### Custom Route Example
@@ -195,6 +194,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 | `owners`    | string[] | No       | Org/user logins whose events are accepted into this group; empty = all       |
 | `providers` | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all    |
 | `emoji`     | boolean  | No       | Whether to include emoji in this group's messages (default `true`)           |
+| `lang`      | string   | No       | Message language for every route in this group (e.g. `en`, `zh`; custom via KV `i18n:<lang>`) — defaults to `en` |
 
 ### Roles
 

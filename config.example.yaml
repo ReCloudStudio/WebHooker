@@ -13,6 +13,7 @@ groups:
     # owners: ["myorg"]            # restrict events to this org/user (optional)
     # providers: ["github", "gitea"]  # restrict to source platforms (optional; empty = all)
     # emoji: true                  # include emoji in messages (default true)
+    # lang: "en"                   # message language for this group's routes (en/zh, default en)
 
 routes:
   - id: all-push

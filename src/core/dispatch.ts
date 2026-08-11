@@ -9,7 +9,11 @@ import { getDriver } from "../drivers";
 import type { SendResult } from "../drivers/types";
 
 export async function dispatchEvent(config: Config, event: WebhookEvent, env: Env): Promise<void> {
-  const langs = [...new Set(config.routes.map((r) => r.lang ?? "en"))];
+  const groups = await loadGroups(env.KV);
+  const groupById = new Map(groups.map((g) => [g.id, g]));
+
+  // Message language is configured per group (Group.lang), not per route.
+  const langs = [...new Set(groups.map((g) => g.lang ?? "en"))];
   const trMap = new Map<string, Translations>();
   await Promise.all(
     langs.map(async (lang) => {
@@ -17,8 +21,6 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
     }),
   );
 
-  const groups = await loadGroups(env.KV);
-  const groupById = new Map(groups.map((g) => [g.id, g]));
   const owners = eventOwners(event);
 
   const accepted = (route: Route): boolean => {
@@ -53,8 +55,8 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
     const targets = route.targets && route.targets.length > 0 ? route.targets : [];
     if (targets.length === 0) return;
 
-    const tr = trMap.get(route.lang ?? "en")!;
     const group = route.groupId ? groupById.get(route.groupId) : undefined;
+    const tr = trMap.get(group?.lang ?? "en")!;
     const showEmoji = group?.emoji !== false;
     const message = formatEvent(route, event, tr, showEmoji);
     if (route.discordRoleIds?.length) {

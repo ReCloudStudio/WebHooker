@@ -9,7 +9,6 @@
         <span v-if="readonly" class="dot" :class="route.enabled ? 'ok' : 'bad'"></span>
         <span class="route-name">{{ route.name || t("route.untitled") }}</span>
         <span class="route-id">{{ route.id }}</span>
-        <span v-if="route.lang" class="badge lang">{{ route.lang }}</span>
         <span
           v-for="(tg, i) in route.targets"
           :key="i"

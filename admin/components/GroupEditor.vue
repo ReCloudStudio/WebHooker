@@ -32,6 +32,27 @@
               <div class="hint">{{ t("groupEditor.idHint") }}</div>
             </div>
           </div>
+          <div class="row2">
+            <div class="field">
+              <label>{{ t("groupEditor.language") }}</label>
+              <input
+                v-model="form.lang"
+                type="text"
+                :placeholder="t('groupEditor.langPlaceholder')"
+              />
+              <div class="hint">{{ t("groupEditor.langHint") }}</div>
+            </div>
+            <div class="field">
+              <label
+                >{{ t("groupEditor.emoji") }}
+                <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
+              >
+              <label class="inline">
+                <input v-model="form.emoji" type="checkbox" />
+                <span>{{ t("groupEditor.emojiLabel") }}</span>
+              </label>
+            </div>
+          </div>
           <div class="field">
             <label
               >{{ t("groupEditor.membersNote") }}
@@ -85,10 +106,6 @@
             </div>
             <div class="hint">{{ t("groupEditor.providersHint") }}</div>
           </div>
-          <label class="inline">
-            <input v-model="form.emoji" type="checkbox" />
-            <span>{{ t("groupEditor.emoji") }}</span>
-          </label>
           <div class="err">{{ formError }}</div>
         </form>
         <div class="editor-foot">
@@ -126,6 +143,7 @@ const form = reactive({
   owners: "",
   providers: [] as ("github" | "gitea")[],
   emoji: true,
+  lang: "",
 });
 
 function splitList(text: string): string[] {
@@ -154,6 +172,7 @@ watch(
       (p): p is "github" | "gitea" => p === "github" || p === "gitea",
     );
     form.emoji = g?.emoji ?? true;
+    form.lang = g?.lang ?? "";
     formError.value = "";
   },
 );
@@ -188,6 +207,7 @@ function save(): void {
     owners: props.superAdmin ? (owners.length ? owners : undefined) : props.group?.owners,
     providers: form.providers.length ? form.providers : undefined,
     emoji: form.emoji,
+    lang: form.lang.trim() || undefined,
   });
 }
 </script>

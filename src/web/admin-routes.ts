@@ -87,9 +87,6 @@ function validateRoutes(
     }
     if (typeof r.enabled !== "boolean")
       return { ok: false, error: `route "${r.id}".enabled must be boolean` };
-    if (r.lang !== undefined && typeof r.lang !== "string") {
-      return { ok: false, error: `route "${r.id}".lang must be a string` };
-    }
     if (r.fallback !== undefined && typeof r.fallback !== "boolean") {
       return { ok: false, error: `route "${r.id}".fallback must be a boolean` };
     }
@@ -282,6 +279,9 @@ function validateGroups(
     }
     if (g.emoji !== undefined && typeof g.emoji !== "boolean") {
       return { ok: false, error: `group "${g.id}".emoji must be a boolean` };
+    }
+    if (g.lang !== undefined && typeof g.lang !== "string") {
+      return { ok: false, error: `group "${g.id}".lang must be a string` };
     }
   }
   return { ok: true, groups: groups as Group[] };

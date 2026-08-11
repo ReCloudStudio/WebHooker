@@ -37,21 +37,10 @@
               required
             />
           </div>
-          <div class="row2">
-            <div class="field">
-              <label>{{ t("routeEditor.id") }}</label>
-              <input v-model="form.id" type="text" placeholder="my-route" required />
-              <div class="hint">{{ t("routeEditor.idHint") }}</div>
-            </div>
-            <div class="field">
-              <label>{{ t("routeEditor.language") }}</label>
-              <input
-                v-model="form.lang"
-                type="text"
-                :placeholder="t('routeEditor.langPlaceholder')"
-              />
-              <div class="hint">{{ t("routeEditor.langHint") }}</div>
-            </div>
+          <div class="field">
+            <label>{{ t("routeEditor.id") }}</label>
+            <input v-model="form.id" type="text" placeholder="my-route" required />
+            <div class="hint">{{ t("routeEditor.idHint") }}</div>
           </div>
           <div class="field inline">
             <input v-model="form.enabled" type="checkbox" />
@@ -211,7 +200,6 @@ function blankTarget(): TargetForm {
 const form = reactive({
   id: "",
   name: "",
-  lang: "",
   enabled: true,
   fallback: false,
   stop: false,
@@ -263,7 +251,6 @@ watch(
     const r = props.route;
     form.id = r?.id ?? "";
     form.name = r?.name ?? "";
-    form.lang = r?.lang ?? "";
     form.enabled = r?.enabled ?? true;
     form.fallback = r?.fallback ?? false;
     form.stop = r?.stop ?? false;
@@ -340,7 +327,6 @@ function collect(): Route | null {
     enabled: form.enabled,
     fallback: form.fallback || undefined,
     stop: form.stop || undefined,
-    lang: form.lang.trim() || undefined,
     discordRoleIds: discordRoles.length ? discordRoles : undefined,
     filters,
     targets,

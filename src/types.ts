@@ -58,7 +58,6 @@ export interface Route {
   enabled: boolean;
   filters: Filter[];
   targets: RouteTarget[];
-  lang?: string;
   groupId?: string;
   /**
    * Fallback route: only fires when no other (non-fallback) route matched the
@@ -120,6 +119,11 @@ export interface Group {
    * Defaults to true when omitted.
    */
   emoji?: boolean;
+  /**
+   * Message language for every route in this group (e.g. "en", "zh"; custom
+   * via KV i18n:<lang>). Defaults to "en" when omitted.
+   */
+  lang?: string;
 }
 
 export interface Filter {
