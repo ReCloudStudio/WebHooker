@@ -75,6 +75,7 @@ There are **no default routes** — each route must define its own target. If no
   "groupId": "my-group",
   "fallback": false,
   "stop": false,
+  "discordRoleIds": ["111111111111111111"],
   "filters": [
     { "type": "event", "match": "push" },
     { "type": "repo", "match": "org/repo", "exclude": false }
@@ -91,14 +92,33 @@ There are **no default routes** — each route must define its own target. If no
 
 Each entry of `targets` is a push destination, so one route can forward to several channels at once (e.g. a Discord channel **and** a Telegram group). `target.platform` selects the platform: `discord` (default) or `telegram`. For **Discord**, `target.channelId` is required (a thread in `target.threadId` is optional). For **Telegram**, `target.chatId` (the group/supergroup chat id, e.g. `-1001234567890`) is required and `target.topicId` (the `message_thread_id` of a topic, equivalent of a Discord thread) is optional. There is no fallback to a default channel.
 
+### Discord Role Mentions
+
+Set `discordRoleIds` on a route to ping one or more Discord roles (身份组) whenever that route fires. The mention (`<@&roleId>`) is prepended to the message content of every **Discord** target of the route; Telegram targets ignore this field. Mentions only trigger notifications when the bot has the `Mention Everyone` permission (or the role is marked mentionable), and the bot must be able to see the role.
+
+```json
+{
+  "id": "release-notify",
+  "name": "Notify on Release",
+  "enabled": true,
+  "groupId": "default",
+  "discordRoleIds": ["111111111111111111", "222222222222222222"],
+  "filters": [{ "type": "event", "match": "release" }],
+  "targets": [{ "platform": "discord", "channelId": "REQUIRED_CHANNEL_ID" }]
+}
+```
+
+You can add role ids in the admin console under _Discord role mentions_.
+
 Other route fields:
 
-| Field      | Type    | Required | Description                                                                                     |
-| ---------- | ------- | -------- | ----------------------------------------------------------------------------------------------- |
-| `groupId`  | string  | Yes      | Id of the [group](#groups) this route belongs to                                                |
-| `fallback` | boolean | No       | When `true`, fires only if no non-fallback route matched the event; its own filters are ignored |
-| `stop`     | boolean | No       | When `true` and this route matches, no further routes are evaluated for this event              |
-| `lang`     | string  | No       | Message language override for this route (e.g. `en`, `zh`); defaults to the global setting      |
+| Field            | Type     | Required | Description                                                                                     |
+| ---------------- | -------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `groupId`        | string   | Yes      | Id of the [group](#groups) this route belongs to                                                |
+| `fallback`       | boolean  | No       | When `true`, fires only if no non-fallback route matched the event; its own filters are ignored |
+| `stop`           | boolean  | No       | When `true` and this route matches, no further routes are evaluated for this event              |
+| `lang`           | string   | No       | Message language override for this route (e.g. `en`, `zh`); defaults to the global setting      |
+| `discordRoleIds` | string[] | No       | Discord role ids to ping when this route fires; applied to Discord targets only                 |
 
 ### Custom Route Example
 

@@ -73,6 +73,18 @@
           </div>
           <div class="field">
             <label
+              >{{ t("routeEditor.discordRoles") }}
+              <span class="lbl-note">{{ t("routeEditor.discordRolesNote") }}</span></label
+            >
+            <input
+              v-model="form.discordRolesText"
+              type="text"
+              :placeholder="t('routeEditor.discordRolesPlaceholder')"
+            />
+            <div class="hint">{{ t("routeEditor.discordRolesHint") }}</div>
+          </div>
+          <div class="field">
+            <label
               >{{ t("routeEditor.filters") }}
               <span class="lbl-note">{{ t("routeEditor.filtersNote") }}</span></label
             >
@@ -203,6 +215,7 @@ const form = reactive({
   enabled: true,
   fallback: false,
   stop: false,
+  discordRolesText: "",
   targets: [] as TargetForm[],
   filters: [] as FilterForm[],
 });
@@ -254,6 +267,7 @@ watch(
     form.enabled = r?.enabled ?? true;
     form.fallback = r?.fallback ?? false;
     form.stop = r?.stop ?? false;
+    form.discordRolesText = r?.discordRoleIds?.length ? r.discordRoleIds.join(", ") : "";
     form.targets =
       r && r.targets.length
         ? r.targets.map((tg) => ({ ...blankTarget(), ...tg }))
@@ -315,6 +329,11 @@ function collect(): Route | null {
   }
   targetError.value = "";
 
+  const discordRoles = form.discordRolesText
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   return {
     id: form.id.trim(),
     name: form.name.trim(),
@@ -322,6 +341,7 @@ function collect(): Route | null {
     fallback: form.fallback || undefined,
     stop: form.stop || undefined,
     lang: form.lang.trim() || undefined,
+    discordRoleIds: discordRoles.length ? discordRoles : undefined,
     filters,
     targets,
   };

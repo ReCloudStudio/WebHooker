@@ -89,6 +89,13 @@ function validateRoutes(
     if (r.stop !== undefined && typeof r.stop !== "boolean") {
       return { ok: false, error: `route "${r.id}".stop must be a boolean` };
     }
+    if (
+      r.discordRoleIds !== undefined &&
+      (!Array.isArray(r.discordRoleIds) ||
+        !r.discordRoleIds.every((d) => typeof d === "string" && d.trim().length > 0))
+    ) {
+      return { ok: false, error: `route "${r.id}".discordRoleIds must be a list of strings` };
+    }
     if (!Array.isArray(r.filters)) {
       return { ok: false, error: `route "${r.id}".filters must be an array` };
     }

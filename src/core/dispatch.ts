@@ -55,6 +55,9 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
     const group = route.groupId ? groupById.get(route.groupId) : undefined;
     const showEmoji = group?.emoji !== false;
     const message = formatEvent(route, event, tr, showEmoji);
+    if (route.discordRoleIds?.length) {
+      message.mentionRoleIds = route.discordRoleIds;
+    }
 
     for (const target of targets) {
       const targetStr =

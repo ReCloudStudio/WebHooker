@@ -75,6 +75,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
   "groupId": "my-group",
   "fallback": false,
   "stop": false,
+  "discordRoleIds": ["111111111111111111"],
   "filters": [
     { "type": "event", "match": "push" },
     { "type": "repo", "match": "org/repo", "exclude": false }
@@ -91,14 +92,33 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 `targets` 数组的每一项是一个推送目标，因此一条路由可同时转发到多个频道（例如同时发到 Discord 频道 **和** Telegram 群组）。`target.platform` 选择推送目标：`discord`（默认）或 `telegram`。**Discord** 需 `target.channelId`（`target.threadId` 可选的子区）；**Telegram** 需 `target.chatId`（群组/超级群组聊天 id，如 `-1001234567890`），`target.topicId`（话题的 `message_thread_id`，相当于 Discord 的子区）可选。不存在默认频道回退。
 
+### Discord 身份组提醒
+
+在路由上设置 `discordRoleIds`，当该路由触发时会 @提醒（ping）一个或多个 Discord 身份组。`<@&roleId>` 形式的提醒会拼接到该路由所有 **Discord** 目标的消息正文开头；Telegram 目标会忽略此字段。只有在机器人拥有 `Mention Everyone` 权限（或该身份组被标记为可被提及 mentionable）且机器人能看到该身份组时，提醒才会真正触发通知。
+
+```json
+{
+  "id": "release-notify",
+  "name": "发布时提醒",
+  "enabled": true,
+  "groupId": "default",
+  "discordRoleIds": ["111111111111111111", "222222222222222222"],
+  "filters": [{ "type": "event", "match": "release" }],
+  "targets": [{ "platform": "discord", "channelId": "必填频道ID" }]
+}
+```
+
+也可以在管理控制台的“Discord 身份组提醒”中配置。
+
 其他路由字段：
 
-| 字段       | 类型    | 必需 | 说明                                                                   |
-| ---------- | ------- | ---- | ---------------------------------------------------------------------- |
-| `groupId`  | string  | 是   | 该路由所属[分组](#分组)的 id                                           |
-| `fallback` | boolean | 否   | 为 `true` 时，仅当没有其它路由匹配该事件时才发送，其自身过滤器会被忽略 |
-| `stop`     | boolean | 否   | 为 `true` 且该路由匹配时，停止评估后续路由                             |
-| `lang`     | string  | 否   | 该路由的消息语言覆盖（如 `en`、`zh`），默认跟随全局设置                |
+| 字段             | 类型     | 必需 | 说明                                                                   |
+| ---------------- | -------- | ---- | ---------------------------------------------------------------------- |
+| `groupId`        | string   | 是   | 该路由所属[分组](#分组)的 id                                           |
+| `fallback`       | boolean  | 否   | 为 `true` 时，仅当没有其它路由匹配该事件时才发送，其自身过滤器会被忽略 |
+| `stop`           | boolean  | 否   | 为 `true` 且该路由匹配时，停止评估后续路由                             |
+| `lang`           | string   | 否   | 该路由的消息语言覆盖（如 `en`、`zh`），默认跟随全局设置                |
+| `discordRoleIds` | string[] | 否   | 该路由触发时要在 Discord 目标中 @提醒的身份组 id                       |
 
 ### 自定义路由示例
 

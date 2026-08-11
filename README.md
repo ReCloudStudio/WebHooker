@@ -90,6 +90,20 @@ Routes are stored in KV (`config:routes` as JSON). There are **no default routes
 
 `target.platform` selects the push target: `discord` (default) or `telegram`. Discord targets require `target.channelId` (optional `threadId` for a thread); Telegram targets require `target.chatId` (optional `topicId` for a topic). The legacy singular `target` field is still migrated automatically. There is no fallback to a default channel.
 
+Set `discordRoleIds` on a route to ping Discord roles (身份组) whenever it fires:
+
+```json
+{
+  "id": "release-notify",
+  "name": "Notify on Release",
+  "enabled": true,
+  "groupId": "default",
+  "discordRoleIds": ["111111111111111111"],
+  "filters": [{ "type": "event", "match": "release" }],
+  "targets": [{ "platform": "discord", "channelId": "CHANNEL_ID" }]
+}
+```
+
 Routes belong to **groups** (KV `config:groups`) that scope admin access and can restrict which org/user events flow in. See `config.example.yaml` and `docs/guide/configuration.md` for the full schema.
 
 ### Web UI (`/admin`)

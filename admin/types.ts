@@ -22,6 +22,7 @@ export interface Route {
   groupId?: string;
   fallback?: boolean;
   stop?: boolean;
+  discordRoleIds?: string[];
 }
 
 export interface Group {

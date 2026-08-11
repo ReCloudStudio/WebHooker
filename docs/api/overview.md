@@ -41,7 +41,7 @@ See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup. Admi
 
 - `GET /admin` — Serves the config console HTML
 - `GET /admin/api/routes` — Returns `{ "routes": Route[] }`
-- `PUT /admin/api/routes` — Body `{ "routes": Route[] }`; validates each route (id pattern, unique id, name, enabled, `groupId`, filters — empty only allowed for `fallback` routes — and platform-aware targets: `target.channelId` for Discord, `target.chatId` for Telegram) and persists to KV `config:routes`. Returns `200 { ok, count }` or `400 { error }` / `401 { error }` / `403 { error }`.
+- `PUT /admin/api/routes` — Body `{ "routes": Route[] }`; validates each route (id pattern, unique id, name, enabled, `groupId`, filters — empty only allowed for `fallback` routes — optional `discordRoleIds` (list of role id strings), and platform-aware targets: `target.channelId` for Discord, `target.chatId` for Telegram) and persists to KV `config:routes`. Returns `200 { ok, count }` or `400 { error }` / `401 { error }` / `403 { error }`.
 
 ## Health Check
 

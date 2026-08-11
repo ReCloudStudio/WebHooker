@@ -41,7 +41,7 @@ https://your-worker.workers.dev
 
 - `GET /admin` — 提供配置控制台 HTML
 - `GET /admin/api/routes` — 返回 `{ "routes": Route[] }`
-- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、唯一 id、name、enabled、groupId、过滤器、平台感知的 targets：Discord 需 `target.channelId`，Telegram 需 `target.chatId`）并持久化到 KV `config:routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }` / `403 { error }`。
+- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、唯一 id、name、enabled、groupId、过滤器、可选的 `discordRoleIds`（身份组 id 字符串列表）、平台感知的 targets：Discord 需 `target.channelId`，Telegram 需 `target.chatId`）并持久化到 KV `config:routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }` / `403 { error }`。
 
 ## 健康检查
 

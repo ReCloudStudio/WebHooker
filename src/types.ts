@@ -64,6 +64,11 @@ export interface Route {
    * fallthrough to subsequent routes.
    */
   stop?: boolean;
+  /**
+   * Discord role (身份组) ids to mention/notify when this route fires. Roles
+   * are only mentioned in Discord targets; Telegram targets ignore this field.
+   */
+  discordRoleIds?: string[];
 }
 
 export interface Group {
@@ -136,9 +141,15 @@ export interface NeutralMessage {
    * previously sent message instead of sending a new one.
    */
   updateKey?: string;
+  /**
+   * Discord role ids to mention in the message content (set by dispatch from
+   * the route's `discordRoleIds`). Only used by the Discord driver.
+   */
+  mentionRoleIds?: string[];
 }
 
 export interface FormattedMessage {
+  content?: string;
   embeds?: Array<{
     title?: string;
     description?: string;

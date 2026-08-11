@@ -51,6 +51,22 @@ routes:
   #     - platform: discord
   #       channelId: "CHANNEL_ID_HERE"
 
+  # Discord role mentions: when this route fires, the listed role ids are
+  # pinged in every Discord target (Telegram targets ignore this field).
+  # - id: mention-on-release
+  #   name: "Mention Roles on Release"
+  #   enabled: true
+  #   groupId: default
+  #   discordRoleIds: ["111111111111111111", "222222222222222222"]
+  #   filters:
+  #     - type: event
+  #       match: release
+  #     - type: action
+  #       match: published
+  #   targets:
+  #     - platform: discord
+  #       channelId: "CHANNEL_ID_HERE"
+
   # Fallback routes only fire when no other (non-fallback) route matched.
   # - id: fallback-all
   #   name: "Fallback: everything else"

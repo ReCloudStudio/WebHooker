@@ -18,6 +18,7 @@
         >
         <span v-if="route.fallback" class="badge fallback">{{ t("route.fallback") }}</span>
         <span v-if="route.stop" class="badge stop">{{ t("route.stop") }}</span>
+        <span v-if="route.discordRoleIds?.length" class="badge lang">@roles</span>
       </div>
       <div class="card-actions">
         <button

@@ -12,7 +12,11 @@ function toStyle(style: NeutralActionStyle): number {
 }
 
 export function renderNeutralMessage(message: NeutralMessage): FormattedMessage {
+  const content = message.mentionRoleIds?.length
+    ? message.mentionRoleIds.map((id) => `<@&${id}>`).join(" ")
+    : undefined;
   return {
+    content,
     embeds: [
       {
         title: message.title,

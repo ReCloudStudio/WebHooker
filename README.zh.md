@@ -90,6 +90,20 @@ npx wrangler dev     # 启动本地开发服务器
 
 `target.platform` 选择推送目标：`discord`（默认）或 `telegram`。Discord 目标需 `target.channelId`（可选 `threadId` 指向子区）；Telegram 目标需 `target.chatId`（可选 `topicId` 指向话题）。旧的单数 `target` 字段仍会被自动迁移。不存在默认频道回退。
 
+在路由上设置 `discordRoleIds`，可在该路由触发时 @提醒 Discord 身份组：
+
+```json
+{
+  "id": "release-notify",
+  "name": "发布时提醒",
+  "enabled": true,
+  "groupId": "default",
+  "discordRoleIds": ["111111111111111111"],
+  "filters": [{ "type": "event", "match": "release" }],
+  "targets": [{ "platform": "discord", "channelId": "频道ID" }]
+}
+```
+
 路由隶属于**分组**（KV `config:groups`），分组用于限定管理权限，并可限制哪些组织/用户的事件流入。完整模式见 `config.example.yaml` 与 `docs/zh/guide/configuration.md`。
 
 ### Web 控制台（`/admin`）

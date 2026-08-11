@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { sendMessage } from "../drivers/discord/rest";
+import { renderNeutralMessage } from "../drivers/discord/render";
 import { dispatchEvent } from "../core/dispatch";
 import type { Env, Route } from "../types";
 
@@ -65,6 +66,22 @@ describe("discord-rest sendMessage", () => {
     const result = await sendMessage("t", "111", {});
     expect(result.ok).toBe(false);
     expect(result.error).toContain("Missing Permissions");
+  });
+});
+
+describe("discord role mentions", () => {
+  it("renders mentionRoleIds into the message content", () => {
+    const out = renderNeutralMessage({
+      title: "T",
+      mentionRoleIds: ["111", "222"],
+    });
+    expect(out.content).toBe("<@&111> <@&222>");
+    expect(out.embeds?.[0]?.title).toBe("T");
+  });
+
+  it("omits content when no roles are mentioned", () => {
+    const out = renderNeutralMessage({ title: "T" });
+    expect(out.content).toBeUndefined();
   });
 });
 
@@ -168,5 +185,34 @@ describe("dispatchEvent fallback routing", () => {
     );
     expect(sent.filter((u) => u.includes("/111/"))).toHaveLength(0);
     expect(sent.filter((u) => u.includes("/222/"))).toHaveLength(1);
+  });
+
+  it("prepends role mentions to the Discord message content", async () => {
+    const bodies: string[] = [];
+    mockFetch((url, init) => {
+      bodies.push(String(init?.body ?? ""));
+      return new Response("{}", { status: 200 });
+    });
+    const env = createEnv({ KV: createMockKV(), DB: createMockDB() });
+    const routes: Route[] = [
+      {
+        id: "mention-push",
+        name: "Mention Push",
+        enabled: true,
+        discordRoleIds: ["111", "222"],
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "333" }],
+      },
+    ];
+
+    await dispatchEvent({ ...baseConfig, routes }, { event: "push", payload: {} }, env);
+
+    expect(bodies).toHaveLength(1);
+    const parsed = JSON.parse(bodies[0]!) as {
+      content?: string;
+      embeds?: Array<{ title?: string }>;
+    };
+    expect(parsed.content).toBe("<@&111> <@&222>");
+    expect(parsed.embeds?.[0]).toBeDefined();
   });
 });
