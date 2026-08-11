@@ -262,6 +262,7 @@ Filters accept either a single string or an array of strings:
 | `token-reverse:{sha256}`       | User id for reverse lookup by token                                           | 0.9 × token expiry |
 | `state:{hex}`                  | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 seconds        |
 | `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 days             |
+| `invite:group:{id}`            | Token index per group (keeps invite listing consistent)                       | Permanent          |
 | `delivery:{id}`                | Webhook delivery id (dedup marker)                                            | 300 seconds        |
 | `msg:{routeId}:{key}:{target}` | Message id tracking for in-place updates (e.g. `workflow_run`)                | 7 days             |
 | `cmd:guild:{id}`               | Guild id whose commands were registered (dedup)                               | Permanent          |

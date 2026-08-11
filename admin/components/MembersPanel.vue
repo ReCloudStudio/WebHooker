@@ -162,9 +162,25 @@ async function createInvite(): Promise<void> {
   formError.value = "";
   try {
     const url = await invitesApi.create(props.group.id, inviteRole.value);
+    const token = url.split("token=")[1] ?? "";
+    if (token) {
+      invites.value = [
+        {
+          token,
+          groupId: props.group.id,
+          role: inviteRole.value,
+          expiresAt: Date.now() + 7 * 86400_000,
+          createdBy: "",
+        },
+        ...invites.value,
+      ];
+    }
+    copyText(`${window.location.origin}${url}`);
+    copiedToken.value = token;
+    window.setTimeout(() => {
+      copiedToken.value = "";
+    }, 2000);
     await loadInvites();
-    copyText(url);
-    copiedToken.value = "";
   } catch (err) {
     formError.value = err instanceof Error ? err.message : String(err);
   } finally {

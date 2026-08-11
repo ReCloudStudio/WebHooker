@@ -262,6 +262,7 @@ owner（及超级管理员）可在分组的「成员」面板创建一次性邀
 | `token-reverse:{sha256}`       | 用于按 Token 反查的用户 id                                                    | 0.9 × Token 有效期 |
 | `state:{hex}`                  | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 秒             |
 | `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 天               |
+| `invite:group:{id}`            | 每组的 Token 索引（保证邀请列表一致性）                                        | 永久               |
 | `delivery:{id}`                | Webhook 投递 id（去重标记）                                                   | 300 秒             |
 | `msg:{routeId}:{key}:{target}` | 原地更新用消息 id 追踪（如 `workflow_run`）                                   | 7 天               |
 | `cmd:guild:{id}`               | 已注册命令的服务器 id（去重标记）                                             | 永久               |

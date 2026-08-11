@@ -24,9 +24,40 @@ function inviteKey(token: string): string {
   return `invite:${token}`;
 }
 
+/**
+ * Per-group index of invite tokens. Listing pending invites reads this key
+ * instead of `kv.list({ prefix })`, which is eventually consistent and can
+ * lag behind a fresh write by minutes — the index keeps listing reliable.
+ */
+function indexKey(groupId: string): string {
+  return `invite:group:${groupId}`;
+}
+
+async function readIndex(kv: KVNamespace, groupId: string): Promise<string[]> {
+  try {
+    const raw = await kv.get<string[]>(indexKey(groupId), "json");
+    return Array.isArray(raw) ? raw : [];
+  } catch (err) {
+    log.warn({ err, groupId }, "Failed to read invite index");
+    return [];
+  }
+}
+
+async function writeIndex(kv: KVNamespace, groupId: string, tokens: string[]): Promise<void> {
+  await kv.put(indexKey(groupId), JSON.stringify(tokens));
+}
+
+async function removeFromIndex(kv: KVNamespace, groupId: string, token: string): Promise<void> {
+  const tokens = (await readIndex(kv, groupId)).filter((t) => t !== token);
+  await writeIndex(kv, groupId, tokens);
+}
+
 export async function createInvite(kv: KVNamespace, invite: Invite): Promise<string> {
   const token = generateInviteToken();
   await kv.put(inviteKey(token), JSON.stringify(invite), { expirationTtl: INVITE_TTL });
+  const tokens = await readIndex(kv, invite.groupId);
+  tokens.push(token);
+  await writeIndex(kv, invite.groupId, tokens);
   return token;
 }
 
@@ -36,6 +67,7 @@ export async function getInvite(kv: KVNamespace, token: string): Promise<Invite 
     if (!raw) return null;
     if (Date.now() > raw.expiresAt) {
       await kv.delete(inviteKey(token));
+      await removeFromIndex(kv, raw.groupId, token);
       return null;
     }
     return raw;
@@ -46,18 +78,34 @@ export async function getInvite(kv: KVNamespace, token: string): Promise<Invite 
 }
 
 export async function consumeInvite(kv: KVNamespace, token: string): Promise<void> {
+  const raw = await kv.get<Invite>(inviteKey(token), "json");
   await kv.delete(inviteKey(token));
+  if (raw) await removeFromIndex(kv, raw.groupId, token);
 }
 
-/** All pending (unexpired) invites of a group. */
-export async function listInvites(kv: KVNamespace, groupId: string): Promise<Array<Invite & { token: string }>> {
+/** All pending (unexpired) invites of a group, via the per-group index. */
+export async function listInvites(
+  kv: KVNamespace,
+  groupId: string,
+): Promise<Array<Invite & { token: string }>> {
   try {
-    const { keys } = await kv.list({ prefix: "invite:" });
+    const tokens = await readIndex(kv, groupId);
     const out: Array<Invite & { token: string }> = [];
-    for (const key of keys) {
-      const token = key.name.slice("invite:".length);
+    const stale: string[] = [];
+    for (const token of tokens) {
       const invite = await getInvite(kv, token);
-      if (invite && invite.groupId === groupId) out.push({ ...invite, token });
+      if (invite && invite.groupId === groupId) {
+        out.push({ ...invite, token });
+      } else {
+        stale.push(token);
+      }
+    }
+    if (stale.length > 0) {
+      await writeIndex(
+        kv,
+        groupId,
+        tokens.filter((t) => !stale.includes(t)),
+      );
     }
     return out;
   } catch (err) {
@@ -67,7 +115,9 @@ export async function listInvites(kv: KVNamespace, groupId: string): Promise<Arr
 }
 
 export async function revokeInvite(kv: KVNamespace, token: string): Promise<void> {
+  const raw = await kv.get<Invite>(inviteKey(token), "json");
   await kv.delete(inviteKey(token));
+  if (raw) await removeFromIndex(kv, raw.groupId, token);
 }
 
 /**
