@@ -56,6 +56,8 @@ WebHooker ships with a built-in config console at `/admin` for managing routes i
 
 ### Endpoints
 
+The console is served as an SPA at `/admin`; its tabs are deep-linkable via the URL path (`/admin/groups`, `/admin/logs`, `/admin/audit`). URLs outside `/admin` that do not match an endpoint below return a plain `404` instead of the console.
+
 | Endpoint                                  | Description                                  |
 | ----------------------------------------- | -------------------------------------------- |
 | `GET /admin`                              | Config console UI                            |

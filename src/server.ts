@@ -79,7 +79,18 @@ export function createServer(): Hono<{ Bindings: Env }> {
 
   app.notFound((c) => {
     if (c.env.ASSETS) {
-      return c.env.ASSETS.fetch(c.req.raw);
+      // The console SPA (and its _nuxt chunks) lives under /admin; the worker
+      // already owns /admin/api, /admin/login|logout|invite. Serve the SPA
+      // only for admin-scoped paths — every other unknown URL is a plain 404
+      // instead of being swallowed into the console.
+      const pathname = new URL(c.req.url).pathname;
+      if (
+        pathname === "/admin" ||
+        pathname.startsWith("/admin/") ||
+        pathname.startsWith("/_nuxt/")
+      ) {
+        return c.env.ASSETS.fetch(c.req.raw);
+      }
     }
     return c.json({ error: "Not found" }, 404);
   });
