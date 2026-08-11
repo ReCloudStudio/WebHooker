@@ -25,13 +25,43 @@ export interface Route {
   discordRoleIds?: string[];
 }
 
+export type GroupRole = "owner" | "admin" | "viewer";
+
+export interface GroupMember {
+  login: string;
+  role: GroupRole;
+}
+
 export interface Group {
   id: string;
   name: string;
   adminIds: string[];
+  members?: GroupMember[];
   owners?: string[];
   providers?: ("github" | "gitea" | "gitlab")[];
   emoji?: boolean;
+}
+
+export interface GroupInvite {
+  token: string;
+  groupId: string;
+  role: "admin" | "viewer";
+  expiresAt: number;
+  createdBy: string;
+  note?: string;
+}
+
+export interface AuditEntry {
+  id?: number;
+  ts: number;
+  actorId?: string;
+  actorLogin?: string;
+  action: string;
+  targetType?: string;
+  targetId?: string;
+  groupId?: string;
+  detail?: Record<string, unknown>;
+  ip?: string;
 }
 
 export interface RouteTemplate {

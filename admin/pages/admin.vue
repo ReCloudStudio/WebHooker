@@ -10,7 +10,11 @@
       </div>
       <div class="head-actions">
         <button class="btn btn-ghost btn-sm" @click="toggle">{{ t("app.langToggle") }}</button>
-        <button v-if="!needLogin && selectedGroup" class="btn btn-accent" @click="openNew">
+        <button
+          v-if="!needLogin && selectedGroup && canEditRoutes(selectedGroup.id)"
+          class="btn btn-accent"
+          @click="openNew"
+        >
           {{ t("app.newRoute") }}
         </button>
         <button
@@ -58,6 +62,7 @@
               :route="r"
               :at-first="i === 0"
               :at-last="i === groupRoutes.length - 1"
+              :readonly="!canEditRoutes(selectedGroup.id)"
               :style="{ animationDelay: i * 45 + 'ms' }"
               @toggle="onToggle"
               @edit="openEdit"
@@ -68,8 +73,21 @@
 
           <section v-if="!groupRoutesLoading && !groupRoutes.length" class="empty">
             <p>{{ t("routes.emptyGroup") }}</p>
-            <button class="btn btn-accent" @click="openNew">{{ t("routes.createFirst") }}</button>
+            <button
+              v-if="canEditRoutes(selectedGroup.id)"
+              class="btn btn-accent"
+              @click="openNew"
+            >
+              {{ t("routes.createFirst") }}
+            </button>
           </section>
+
+          <MembersPanel
+            :group="selectedGroup"
+            :can-edit="canEditGroup(selectedGroup.id)"
+            :saving="savingGroup"
+            @save="onSaveGroupFromPanel"
+          />
         </template>
 
         <!-- Top-level views -->
@@ -84,6 +102,9 @@
             </button>
             <button class="tab" :class="{ active: view === 'logs' }" @click="switchView('logs')">
               {{ t("tab.logs") }}
+            </button>
+            <button class="tab" :class="{ active: view === 'audit' }" @click="switchView('audit')">
+              {{ t("tab.audit") }}
             </button>
           </nav>
 
@@ -113,8 +134,9 @@
                   <div class="card-title">
                     <span class="route-name">{{ g.name || t("route.untitled") }}</span>
                     <span class="route-id">{{ g.id }}</span>
+                    <span v-if="roleOf(g.id)" class="badge lang">{{ t("role.badge", { role: t("roles." + roleOf(g.id)) }) }}</span>
                   </div>
-                  <div v-if="isSuper" class="card-actions" @click.stop>
+                  <div v-if="canEditGroup(g.id)" class="card-actions" @click.stop>
                     <button
                       class="icon-btn"
                       :title="t('groupEditor.editTitle')"
@@ -127,8 +149,8 @@
                 </div>
                 <div class="target">
                   <span
-                    ><b>{{ t("groups.admins") }}</b
-                    ><code>{{ g.adminIds.length ? g.adminIds.join(", ") : "—" }}</code></span
+                    ><b>{{ t("groups.members") }}</b
+                    ><code>{{ (g.members ?? []).length || (g.adminIds || []).length || "—" }}</code></span
                   >
                   <span
                     ><b>{{ t("groups.owners") }}</b
@@ -149,7 +171,7 @@
             </section>
           </template>
 
-          <template v-else>
+          <template v-else-if="view === 'logs'">
             <section class="toolbar">
               <div class="status">
                 <span class="dot" :class="logsLoading ? '' : 'ok'"></span>
@@ -164,6 +186,19 @@
               @refresh="loadLogs(50, logFilterGroup || undefined)"
               @filter="loadLogs(50, logFilterGroup || undefined)"
               @update:selected-group-id="logFilterGroup = $event"
+            />
+          </template>
+
+          <template v-else-if="view === 'audit'">
+            <AuditLog
+              :entries="auditEntries"
+              :loading="auditLoading"
+              :error="auditError"
+              :groups="groups"
+              :selected-group-id="auditFilterGroup"
+              @refresh="loadAudit(50, auditFilterGroup || undefined)"
+              @filter="loadAudit(50, auditFilterGroup || undefined)"
+              @update:selected-group-id="auditFilterGroup = $event"
             />
           </template>
         </template>
@@ -182,6 +217,7 @@
       :open="groupEditorOpen"
       :group="editingGroup"
       :saving="savingGroup"
+      :super-admin="isSuper"
       @close="groupEditorOpen = false"
       @save="onSaveGroup"
     />
@@ -190,13 +226,19 @@
 
 <script setup lang="ts">
 import type { Group, Route } from "~/types";
+import { useAuditApi } from "~/composables/useAudit";
 
 const { t, toggle } = useI18n();
 const { push } = useToasts();
 const { logs, loading: logsLoading, load: loadLogs } = useSendLogs();
+const { entries: auditEntries, loading: auditLoading, error: auditError, load: loadAudit } = useAuditApi();
 const {
   groups,
   isSuper,
+  roles,
+  roleOf,
+  canEditGroup,
+  canEditRoutes,
   loading: groupsLoading,
   needLogin,
   error: groupsError,
@@ -215,7 +257,7 @@ const editorOpen = ref(false);
 const editing = ref<Route | null>(null);
 const saving = ref(false);
 const forbidden = ref(false);
-const view = ref<"groups" | "logs">("groups");
+const view = ref<"groups" | "logs" | "audit">("groups");
 const selectedGroup = ref<Group | null>(null);
 
 const groupEditorOpen = ref(false);
@@ -223,20 +265,25 @@ const editingGroup = ref<Group | null>(null);
 const savingGroup = ref(false);
 
 const logFilterGroup = ref("");
+const auditFilterGroup = ref("");
 
 onMounted(() => {
   if (typeof window !== "undefined") {
     const params = new URLSearchParams(window.location.search);
     forbidden.value = params.get("error") === "forbidden";
+    const invite = params.get("invite");
+    if (invite === "ok") push(t("members.inviteOk"));
+    else if (invite != null && invite !== "ok") push(t("members.inviteBad"), "bad");
   }
   loadGroups();
   loadLogs(50, logFilterGroup.value || undefined);
 });
 
-function switchView(next: "groups" | "logs"): void {
+function switchView(next: "groups" | "logs" | "audit"): void {
   view.value = next;
   if (next === "groups") loadGroups();
   if (next === "logs") loadLogs(50, logFilterGroup.value || undefined);
+  if (next === "audit") loadAudit(50, auditFilterGroup.value || undefined);
 }
 
 function enterGroup(group: Group): void {
@@ -337,6 +384,23 @@ function openNewGroup(): void {
 function openEditGroup(group: Group): void {
   editingGroup.value = group;
   groupEditorOpen.value = true;
+}
+
+async function onSaveGroupFromPanel(group: Group): Promise<void> {
+  savingGroup.value = true;
+  try {
+    const next = groups.value.map((g) => (g.id === group.id ? group : g));
+    await saveGroups(next);
+    selectedGroup.value = group;
+    push(t("toast.groupSaved"));
+  } catch (err) {
+    push(t("toast.saveFailed", { msg: err instanceof Error ? err.message : String(err) }), "bad");
+    if (selectedGroup.value) {
+      loadGroups();
+    }
+  } finally {
+    savingGroup.value = false;
+  }
 }
 
 async function onSaveGroup(group: Group): Promise<void> {

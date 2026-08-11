@@ -2,10 +2,11 @@
   <article class="card" :class="{ disabled: !route.enabled }">
     <div class="card-head">
       <div class="card-title">
-        <label class="switch">
+        <label v-if="!readonly" class="switch">
           <input type="checkbox" :checked="route.enabled" @change="onToggle" />
           <span class="track"></span>
         </label>
+        <span v-if="readonly" class="dot" :class="route.enabled ? 'ok' : 'bad'"></span>
         <span class="route-name">{{ route.name || t("route.untitled") }}</span>
         <span class="route-id">{{ route.id }}</span>
         <span v-if="route.lang" class="badge lang">{{ route.lang }}</span>
@@ -21,32 +22,34 @@
         <span v-if="route.discordRoleIds?.length" class="badge lang">@roles</span>
       </div>
       <div class="card-actions">
-        <button
-          class="icon-btn"
-          :disabled="atFirst"
-          :title="t('route.moveUp')"
-          @click="$emit('move', route, -1)"
-        >
-          ↑
-        </button>
-        <button
-          class="icon-btn"
-          :disabled="atLast"
-          :title="t('route.moveDown')"
-          @click="$emit('move', route, 1)"
-        >
-          ↓
-        </button>
-        <button class="icon-btn" :title="t('routeEditor.editTitle')" @click="$emit('edit', route)">
-          ✎
-        </button>
-        <button
-          class="icon-btn danger"
-          :title="t('routeEditor.close')"
-          @click="$emit('delete', route)"
-        >
-          ✕
-        </button>
+        <template v-if="!readonly">
+          <button
+            class="icon-btn"
+            :disabled="atFirst"
+            :title="t('route.moveUp')"
+            @click="$emit('move', route, -1)"
+          >
+            ↑
+          </button>
+          <button
+            class="icon-btn"
+            :disabled="atLast"
+            :title="t('route.moveDown')"
+            @click="$emit('move', route, 1)"
+          >
+            ↓
+          </button>
+          <button class="icon-btn" :title="t('routeEditor.editTitle')" @click="$emit('edit', route)">
+            ✎
+          </button>
+          <button
+            class="icon-btn danger"
+            :title="t('routeEditor.close')"
+            @click="$emit('delete', route)"
+          >
+            ✕
+          </button>
+        </template>
       </div>
     </div>
     <div class="chips">
@@ -85,7 +88,7 @@ import { fmtMatch } from "~/types";
 
 const { t } = useI18n();
 
-const props = defineProps<{ route: Route; atFirst?: boolean; atLast?: boolean }>();
+const props = defineProps<{ route: Route; atFirst?: boolean; atLast?: boolean; readonly?: boolean }>();
 const emit = defineEmits<{
   (e: "toggle", route: Route): void;
   (e: "edit", route: Route): void;

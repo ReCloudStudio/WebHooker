@@ -34,17 +34,14 @@
           </div>
           <div class="field">
             <label
-              >{{ t("groupEditor.admins") }}
-              <span class="lbl-note">{{ t("groupEditor.adminsNote") }}</span></label
+              >{{ t("groupEditor.membersNote") }}
+              <span class="lbl-note">{{ t("groupEditor.membersHint") }}</span></label
             >
-            <input
-              v-model="form.adminIds"
-              type="text"
-              :placeholder="t('groupEditor.adminsPlaceholder')"
-            />
-            <div class="hint">{{ t("groupEditor.adminsHint") }}</div>
+            <p class="hint">
+              {{ t("groupEditor.membersGoPanel") }}
+            </p>
           </div>
-          <div class="field">
+          <div v-if="superAdmin" class="field">
             <label
               >{{ t("groupEditor.owners") }}
               <span class="lbl-note">{{ t("groupEditor.ownersNote") }}</span></label
@@ -55,6 +52,13 @@
               :placeholder="t('groupEditor.ownersPlaceholder')"
             />
             <div class="hint">{{ t("groupEditor.ownersHint") }}</div>
+          </div>
+          <div v-else class="field">
+            <label
+              >{{ t("groupEditor.owners") }}
+              <span class="lbl-note">{{ t("groupEditor.ownersSuperOnly") }}</span></label
+            >
+            <input v-model="ownersReadonly" type="text" disabled />
           </div>
           <div class="field">
             <label
@@ -106,7 +110,7 @@ import type { Group } from "~/types";
 
 const { t } = useI18n();
 
-const props = defineProps<{ open: boolean; group: Group | null; saving: boolean }>();
+const props = defineProps<{ open: boolean; group: Group | null; saving: boolean; superAdmin?: boolean }>();
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "save", group: Group): void;
@@ -114,11 +118,11 @@ const emit = defineEmits<{
 
 const isEdit = computed(() => props.group != null);
 const formError = ref("");
+const ownersReadonly = computed(() => (props.group?.owners ?? []).join(", "));
 
 const form = reactive({
   id: "",
   name: "",
-  adminIds: "",
   owners: "",
   providers: [] as ("github" | "gitea")[],
   emoji: true,
@@ -145,7 +149,6 @@ watch(
     const g = props.group;
     form.id = g?.id ?? "";
     form.name = g?.name ?? "";
-    form.adminIds = (g?.adminIds ?? []).join(", ");
     form.owners = (g?.owners ?? []).join(", ");
     form.providers = (g?.providers ?? []).filter(
       (p): p is "github" | "gitea" => p === "github" || p === "gitea",
@@ -172,11 +175,17 @@ function save(): void {
     return;
   }
   const owners = splitList(form.owners);
+  const members = props.group?.members
+    ? props.group.members.map((m) => ({ ...m }))
+    : props.group?.adminIds?.length
+      ? props.group.adminIds.map((login) => ({ login, role: "owner" as const }))
+      : [];
   emit("save", {
     id,
     name,
-    adminIds: splitList(form.adminIds),
-    owners: owners.length ? owners : undefined,
+    members,
+    adminIds: members.filter((m) => m.role === "owner").map((m) => m.login),
+    owners: props.superAdmin ? (owners.length ? owners : undefined) : props.group?.owners,
     providers: form.providers.length ? form.providers : undefined,
     emoji: form.emoji,
   });
