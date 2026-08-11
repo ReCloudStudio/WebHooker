@@ -58,25 +58,25 @@ WebHooker ships with a built-in config console at `/admin` for managing routes i
 
 The console is served as an SPA at `/admin`; its tabs are deep-linkable via the URL path (`/admin/groups`, `/admin/logs`, `/admin/audit`). URLs outside `/admin` that do not match an endpoint below return a plain `404` instead of the console.
 
-| Endpoint                                  | Description                                  |
-| ----------------------------------------- | -------------------------------------------- |
-| `GET /admin`                              | Config console UI                            |
-| `GET /admin/login`                        | Start GitHub OAuth sign-in                   |
-| `GET /admin/logout`                       | Destroy session                              |
-| `GET /admin/invite?token=…`               | Accept a group invite (browser page)         |
-| `GET /admin/api/me`                       | Current session, scope, groups, and roles    |
-| `GET /admin/api/routes`                   | List routes (scoped to access)               |
-| `PUT /admin/api/routes`                   | Replace routes (owner/admin per group)       |
-| `GET /admin/api/groups`                   | List groups + the signed-in user's role each |
-| `PUT /admin/api/groups`                   | Replace groups (super: all; owner: own only) |
-| `GET /admin/api/groups/:id/routes`        | List a group's routes                        |
-| `PUT /admin/api/groups/:id/routes`        | Replace a group's routes (owner/admin)       |
-| `GET /admin/api/logs`                     | Send logs (scoped to accessible routes)      |
-| `GET /admin/api/logs/:id`                 | Single send-log entry (scoped)               |
-| `POST /admin/api/groups/:id/invites`      | Create an invite link (owner)                |
-| `GET /admin/api/groups/:id/invites`       | List pending invites (owner)                 |
-| `DELETE /admin/api/invites/:token`        | Revoke an invite (owner)                     |
-| `GET /admin/api/audit`                    | Audit log (scoped to accessible groups)      |
+| Endpoint                             | Description                                  |
+| ------------------------------------ | -------------------------------------------- |
+| `GET /admin`                         | Config console UI                            |
+| `GET /admin/login`                   | Start GitHub OAuth sign-in                   |
+| `GET /admin/logout`                  | Destroy session                              |
+| `GET /admin/invite?token=…`          | Accept a group invite (browser page)         |
+| `GET /admin/api/me`                  | Current session, scope, groups, and roles    |
+| `GET /admin/api/routes`              | List routes (scoped to access)               |
+| `PUT /admin/api/routes`              | Replace routes (owner/admin per group)       |
+| `GET /admin/api/groups`              | List groups + the signed-in user's role each |
+| `PUT /admin/api/groups`              | Replace groups (super: all; owner: own only) |
+| `GET /admin/api/groups/:id/routes`   | List a group's routes                        |
+| `PUT /admin/api/groups/:id/routes`   | Replace a group's routes (owner/admin)       |
+| `GET /admin/api/logs`                | Send logs (scoped to accessible routes)      |
+| `GET /admin/api/logs/:id`            | Single send-log entry (scoped)               |
+| `POST /admin/api/groups/:id/invites` | Create an invite link (owner)                |
+| `GET /admin/api/groups/:id/invites`  | List pending invites (owner)                 |
+| `DELETE /admin/api/invites/:token`   | Revoke an invite (owner)                     |
+| `GET /admin/api/audit`               | Audit log (scoped to accessible groups)      |
 
 The console lets you add, edit, delete, and toggle routes. Saved routes are written to KV `config:routes` immediately and the config cache is invalidated so the webhook pipeline picks them up on the next run.
 

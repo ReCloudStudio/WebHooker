@@ -127,7 +127,12 @@ import type { Group } from "~/types";
 
 const { t } = useI18n();
 
-const props = defineProps<{ open: boolean; group: Group | null; saving: boolean; superAdmin?: boolean }>();
+const props = defineProps<{
+  open: boolean;
+  group: Group | null;
+  saving: boolean;
+  superAdmin?: boolean;
+}>();
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "save", group: Group): void;

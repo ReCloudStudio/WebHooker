@@ -65,7 +65,7 @@ npx wrangler dev     # 启动本地开发服务器
 | `TELEGRAM_RICH_HEADER_HOST` | 可选；覆盖内置 `GET /api/richheader` 的 Telegram 头像卡片地址               |
 | `BASE_URL`                  | 公网地址（用于 OAuth 回调与 Telegram webhook 同步）                         |
 | `ADMIN_USER_IDS`            | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                   |
-| `ALLOW_SELF_SIGNUP`         | 设为 `1` 时，无权限的 GitHub 用户首次登录自动获得个人分组（默认关闭）        |
+| `ALLOW_SELF_SIGNUP`         | 设为 `1` 时，无权限的 GitHub 用户首次登录自动获得个人分组（默认关闭）       |
 | `AUDIT_RETENTION_DAYS`      | 定时清理时审计日志的保留天数（默认 90）                                     |
 | `DOCS_URL`                  | 可选；落地页使用的文档站点 URL                                              |
 | `GITHUB_REPO_URL`           | 可选；落地页使用的 GitHub 仓库 URL                                          |

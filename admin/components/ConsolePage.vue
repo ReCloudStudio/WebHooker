@@ -73,11 +73,7 @@
 
           <section v-if="!groupRoutesLoading && !groupRoutes.length" class="empty">
             <p>{{ t("routes.emptyGroup") }}</p>
-            <button
-              v-if="canEditRoutes(selectedGroup.id)"
-              class="btn btn-accent"
-              @click="openNew"
-            >
+            <button v-if="canEditRoutes(selectedGroup.id)" class="btn btn-accent" @click="openNew">
               {{ t("routes.createFirst") }}
             </button>
           </section>
@@ -134,7 +130,9 @@
                   <div class="card-title">
                     <span class="route-name">{{ g.name || t("route.untitled") }}</span>
                     <span class="route-id">{{ g.id }}</span>
-                    <span v-if="roleOf(g.id)" class="badge lang">{{ t("role.badge", { role: t("roles." + roleOf(g.id)) }) }}</span>
+                    <span v-if="roleOf(g.id)" class="badge lang">{{
+                      t("role.badge", { role: t("roles." + roleOf(g.id)) })
+                    }}</span>
                   </div>
                   <div v-if="canEditGroup(g.id)" class="card-actions" @click.stop>
                     <button
@@ -150,7 +148,9 @@
                 <div class="target">
                   <span
                     ><b>{{ t("groups.members") }}</b
-                    ><code>{{ (g.members ?? []).length || (g.adminIds || []).length || "—" }}</code></span
+                    ><code>{{
+                      (g.members ?? []).length || (g.adminIds || []).length || "—"
+                    }}</code></span
                   >
                   <span
                     ><b>{{ t("groups.owners") }}</b
@@ -249,7 +249,12 @@ if (view.value === null) {
 }
 
 const { logs, loading: logsLoading, load: loadLogs } = useSendLogs();
-const { entries: auditEntries, loading: auditLoading, error: auditError, load: loadAudit } = useAuditApi();
+const {
+  entries: auditEntries,
+  loading: auditLoading,
+  error: auditError,
+  load: loadAudit,
+} = useAuditApi();
 const {
   groups,
   isSuper,
