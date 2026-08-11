@@ -54,6 +54,16 @@ describe("telegram renderNeutralMessage", () => {
     expect(out).toContain("<b>Status</b>: <b>ok</b> and <code>done</code>");
   });
 
+  it("renders a code-formatted commit hash inside a link", () => {
+    const out = renderNeutralMessage({
+      title: "acme/widget: Pushed 1 commit",
+      fields: [{ name: "\u200b", value: "[`abcd123`](https://github.com/acme/widget/commit/abcd1234ef) fix stuff" }],
+    });
+    expect(out).toContain(
+      '<a href="https://github.com/acme/widget/commit/abcd1234ef"><code>abcd123</code></a> fix stuff',
+    );
+  });
+
   it("formats ISO timestamps into a readable UTC string", () => {
     const out = renderNeutralMessage({
       title: "acme/widget: t",

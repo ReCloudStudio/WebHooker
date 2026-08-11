@@ -4,7 +4,7 @@
 	"compatibility_date": "2025-01-01",
 	"compatibility_flags": [],
 	"build": {
-		"command": "cd admin && bun install --frozen-lockfile && bun run generate"
+		"command": "cd admin && bun install --frozen-lockfile && node node_modules/nuxt/bin/nuxt.mjs generate"
 	},
 	"assets": {
 		"directory": "./admin/.output/public",

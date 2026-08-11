@@ -47,7 +47,8 @@ export function formatPush(
     const shortId = c.id?.slice(0, 7) ?? "???????";
     const msg = c.message?.split("\n")[0].slice(0, 72) ?? t("common.no_message");
     const url = repo && c.id ? `https://github.com/${repo}/commit/${c.id}` : null;
-    return { name: `\`${shortId}\``, value: url ? `[${msg}](${url})` : msg };
+    const hash = url ? `[\`${shortId}\`](${url})` : `\`${shortId}\``;
+    return { name: `\u200b`, value: `${hash} ${msg}` };
   };
 
   if (count <= 5) {

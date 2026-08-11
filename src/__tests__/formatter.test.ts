@@ -279,6 +279,25 @@ describe("group emoji toggle", () => {
     expect(msg.description).not.toContain("🔗");
   });
 
+  it("push commit renders linked short hash with plain-text message", () => {
+    const msg = formatEvent(
+      route,
+      event("push", {
+        ref: "refs/heads/main",
+        compare: "https://github.com/acme/widget/compare/abc...def",
+        created: false,
+        forced: false,
+        commits: [{ id: "abcd1234ef", message: "fix stuff", added: [], removed: [], modified: [] }],
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(msg.fields![0].name).toBe("\u200b");
+    expect(msg.fields![0].value).toBe(
+      "[`abcd123`](https://github.com/acme/widget/commit/abcd1234ef) fix stuff",
+    );
+  });
+
   it("strips emoji from push description when disabled", () => {
     const msg = formatEvent(
       route,
