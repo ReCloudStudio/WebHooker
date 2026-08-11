@@ -6,7 +6,10 @@
 groups:
   - id: default
     name: "Default"
-    adminIds: ["your-github-id"]
+    # Members with roles (owner / admin / viewer); legacy adminIds still work and are treated as owners.
+    members:
+      - login: "your-github-id"
+        role: owner
     # owners: ["myorg"]            # restrict events to this org/user (optional)
     # providers: ["github", "gitea"]  # restrict to source platforms (optional; empty = all)
     # emoji: true                  # include emoji in messages (default true)

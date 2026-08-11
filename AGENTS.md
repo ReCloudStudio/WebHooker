@@ -16,6 +16,9 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Webhook providers: pluggable forge adapters under `src/providers/` (github, gitea) — each verifies its own signature format and normalizes its payload to a GitHub-shaped `WebhookEvent`; GitLab etc. can be added later
 - GitHub OAuth: octokit (token is stored hashed for reverse lookup)
 - Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist
+- Access control: every group has role-based members (`owner` / `admin` / `viewer`); super admins bypass; legacy `adminIds` are read as owners (backward compatible); owners manage members + invites; `owners` field stays super-only
+- Invites: single-use 7-day links (`invite:{token}`) for joining a group as admin/viewer; `ALLOW_SELF_SIGNUP=1` gives access-less users a personal group on first login (self-service SaaS entry)
+- Audit log: every admin operation (logins, group/route/member/invite changes) recorded in D1 `audit_logs`; pruned by the scheduled trigger after `AUDIT_RETENTION_DAYS` (default 90)
 - Local dev: wrangler + Miniflare
 
 ## Architecture
@@ -66,21 +69,24 @@ src/
 │   ├── oauth.ts          # OAuth URL, callback token exchange, getUserOctokit, comment/getComment/editComment/deleteComment/merge/close actions
 │   └── store.ts          # KV token CRUD + D1 discord-link/telegram-link mapping (was token-store.ts)
 ├── web/                  # HTTP UI/API routes
-│   ├── oauth-routes.ts   # GET /auth/github, callback (admin session / discord-link / telegram-link), DELETE /token/:userId
-│   ├── action-routes.ts  # POST /api/comment|merge|close|react (Bearer token auth via KV lookup)
-│   ├── admin-routes.ts   # /admin UI + GET/PUT /admin/api/routes|groups|me|logs (session + scope auth, validation)
+│   ├── oauth-routes.ts   # GET /auth/github, callback (admin session / invite accept / self-signup / discord-link / telegram-link), DELETE /token/:userId
+│   ├── action-routes.ts  # POST /api/comment|merge|close|react (Bearer token auth via shared middleware)
+│   ├── admin-routes.ts   # /admin UI + GET/PUT /admin/api/routes|groups|me|logs|invites|audit (auth middleware + role guards, validation)
+│   ├── auth.ts           # Shared auth middleware + guards: sessionMiddleware, requireAnyAccess, requireGroup(Role), bearerAuthMiddleware, clientIp
+│   ├── invites.ts        # Invite CRUD (KV invite:{token}, 7d TTL) + acceptInvite (join group as admin/viewer)
 │   ├── session.ts        # Session CRUD (KV session:{id}), isAdminUser, cookie helpers
-│   ├── groups.ts         # Group CRUD (config:groups), resolveScope, hasAnyAccess, groupAcceptsOwners
+│   ├── groups.ts         # Group CRUD (config:groups), member roles (normalizeGroupMembers/memberRole), resolveScope + role helpers (roleAt/canEditRoutes/canEditGroup)
 │   ├── home-routes.ts    # landing page (zh/en)
 │   ├── legal-routes.ts   # /terms + /privacy pages (zh/en)
 │   └── richheader-routes.ts # GET /api/richheader: Open Graph page for Telegram avatar link-preview card
 └── lib/                  # shared infra
     ├── i18n.ts           # loadTranslations (KV i18n:{lang} overrides), t() with param interpolation
     ├── send-log.ts       # SendRecord, recordSend/getSendLog/getSendLogById (D1 send_logs)
+    ├── audit.ts          # recordAudit/getAuditLog/pruneAuditLogs (D1 audit_logs, best-effort writes)
     ├── log.ts            # JSON console logger (info/warn/error/fatal)
     └── locales/          # en.ts, zh.ts translation dictionaries
 
-src/__tests__/            # bun test unit tests (webhook, formatter, discord, telegram, admin, send-log, token-store)
+src/__tests__/            # bun test unit tests (webhook, formatter, discord, telegram, admin, groups, invites, audit, send-log, token-store)
 ```
 
 ## Responsibilities
@@ -92,6 +98,9 @@ src/__tests__/            # bun test unit tests (webhook, formatter, discord, te
 - Verify Telegram webhook calls (X-Telegram-Bot-Api-Secret-Token when configured)
 - Filter events by: event type, repo name, actor, action, branch, keyword (regex supported)
 - Filter routes by group owner restriction (`Group.owners`), group source-platform restriction (`Group.providers`: github/gitea), and skip fallback routes whenever a regular route matched; stop evaluating further routes when a matched route has `stop: true`
+- Enforce role-based access on every admin API: super admins bypass, `owner` manages the group (routes/members/invites/settings), `admin` edits routes, `viewer` is read-only; legacy `adminIds` groups resolve to `owner` members
+- Issue single-use 7-day group invite links (`invite:{token}`); accepting joins as admin/viewer (never owner); `ALLOW_SELF_SIGNUP=1` creates a deterministic personal group (`u-{userId}`) on first login
+- Record every admin operation (login/logout, group/route/member/invite changes) to D1 `audit_logs`; the scheduled trigger prunes entries past `AUDIT_RETENTION_DAYS`
 - Mention Discord roles on route trigger: route-level `discordRoleIds` are rendered as `<@&id>` into the Discord message `content` (Telegram targets ignore the field)
 - Format 28 event types as platform-neutral messages (Discord embeds + Telegram HTML)
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
@@ -143,7 +152,8 @@ Rule: no functional change ships without its documentation; docs and code must n
 - **Production**: `wrangler secret put <NAME>` for each secret
 - **Routes**: KV key `config:routes` (JSON array, empty until configured)
 - **KV namespace**: Required binding for token/state/config/session storage
-- **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `discord_links` + `telegram_links` tables
+- **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `audit_logs` + `discord_links` + `telegram_links` tables
+- **Access control**: `ADMIN_USER_IDS` (super admins), `ALLOW_SELF_SIGNUP` (optional personal group on first login), `AUDIT_RETENTION_DAYS` (default 90) — all plain env vars, not secrets
 - **Discord**: `DISCORD_PUBLIC_KEY` (Interactions Endpoint signature verification, from Discord Developer Portal) and `DISCORD_APPLICATION_ID` (optional, auto-resolved via `GET /oauth2/applications/@me` when omitted) are required for interactions
 - **Telegram**: `TELEGRAM_TOKEN` (Bot API token from BotFather) required for Telegram routes; `TELEGRAM_WEBHOOK_SECRET` (optional secret token for `POST /telegram/webhook` verification); avatars are sent as a link-preview card via the built-in `GET /api/richheader` (overridable with `TELEGRAM_RICH_HEADER_HOST`)
 - **Webhook providers**: `GITEA_WEBHOOK_SECRET` (required to receive Gitea webhooks; Gitea signs `X-Gitea-Signature` with the hex HMAC-SHA256 of the body)
@@ -158,7 +168,7 @@ npx wrangler kv namespace create KV
 # Update wrangler.jsonc with KV ID
 npx wrangler d1 create webhooker
 # Update wrangler.jsonc d1_databases with the database ID
-npm run db:migrate:prod   # wrangler d1 migrations apply webhooker --remote (migrations/0001..0003)
+npm run db:migrate:prod   # wrangler d1 migrations apply webhooker --remote (migrations/0001..0005)
 npx wrangler deploy
 ```
 

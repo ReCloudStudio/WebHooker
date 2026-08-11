@@ -81,6 +81,8 @@ If the database already has these tables/columns (e.g. previously migrated with 
 npx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
 npx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
 npx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
+npx wrangler d1 execute webhooker --remote --file ./migrations/0004_add_group_id.sql
+npx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.sql
 ```
 
 :::

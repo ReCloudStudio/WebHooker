@@ -80,6 +80,8 @@ npm run db:migrate        # 将迁移应用到本地（Miniflare）数据库
 npx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
 npx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
 npx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
+npx wrangler d1 execute webhooker --remote --file ./migrations/0004_add_group_id.sql
+npx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.sql
 ```
 
 :::

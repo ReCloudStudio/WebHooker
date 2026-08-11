@@ -65,6 +65,8 @@ npx wrangler dev     # Start local dev server
 | `TELEGRAM_RICH_HEADER_HOST` | Optional base URL overriding the built-in `GET /api/richheader` for Telegram avatar cards      |
 | `BASE_URL`                  | Public URL for OAuth callbacks and the Telegram webhook sync                                   |
 | `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access `/admin`                         |
+| `ALLOW_SELF_SIGNUP`         | `1` to give access-less GitHub users a personal group on first login (default off)             |
+| `AUDIT_RETENTION_DAYS`      | Audit-log retention in days for the scheduled cleanup (default 90)                             |
 | `DOCS_URL`                  | Optional docs site URL used by the landing page                                                |
 | `GITHUB_REPO_URL`           | Optional GitHub repo URL used by the landing page                                              |
 | `LEGAL_CONTACT`             | Optional contact shown on `/terms` and `/privacy`                                              |
@@ -110,13 +112,15 @@ Routes belong to **groups** (KV `config:groups`) that scope admin access and can
 
 ### Web UI (`/admin`)
 
-The built-in config console lets you manage routes and groups in the browser (add / edit / delete / toggle / reorder), and inspect send logs — no KV access needed:
+The built-in config console lets you manage routes and groups in the browser (add / edit / delete / toggle / reorder), inspect send logs, manage group members and invite links, and read the audit log — no KV access needed:
 
 1. Set `ADMIN_USER_IDS` to the GitHub user IDs (or logins) allowed to manage the console, e.g. `ADMIN_USER_IDS=12345,RhenCloud`.
-2. Visit `/admin` and sign in with GitHub. Only users in the whitelist get access.
+2. Visit `/admin` and sign in with GitHub. Users with no access get `403` — unless `ALLOW_SELF_SIGNUP=1` (they receive a personal group) or they follow a group invite link.
 3. Changes are written to KV immediately and picked up by the webhook pipeline.
 
 Sign out at `/admin/logout`.
+
+**Access model.** Every group has `members` with a role: `owner` (manage group, members, invites; edit routes), `admin` (edit routes, view logs), or `viewer` (read-only). Super admins (`ADMIN_USER_IDS`) bypass everything. Legacy `adminIds` are read as owners. Owners generate single-use, 7-day invite links from the group page; group admins and viewers can browse, admins edit, owners administer. All admin operations (logins, group/route/member/invite changes) are recorded in the D1 `audit_logs` table, pruned after `AUDIT_RETENTION_DAYS` (default 90).
 
 See `config.example.yaml` for full syntax examples.
 
@@ -157,13 +161,18 @@ Set `exclude: true` to invert any filter.
 - `GET /admin` — Config console UI
 - `GET /admin/login` — Start admin sign-in (GitHub OAuth)
 - `GET /admin/logout` — Sign out
+- `GET /admin/invite?token=…` — Accept a group invite (browser page)
 - `GET /admin/api/routes` — List routes
-- `PUT /admin/api/routes` — Replace routes
-- `GET /admin/api/groups` — List groups (scoped)
-- `PUT /admin/api/groups` — Replace groups (super admin only)
+- `PUT /admin/api/routes` — Replace routes (owner/admin per group)
+- `GET /admin/api/groups` — List groups + your role in each
+- `PUT /admin/api/groups` — Replace groups (super: all; owner: own groups only)
 - `GET /admin/api/groups/:groupId/routes` — List a group's routes
 - `PUT /admin/api/groups/:groupId/routes` — Replace a group's routes
-- `GET /admin/api/me` — Current session / scope
+- `POST /admin/api/groups/:groupId/invites` — Create invite link (owner)
+- `GET /admin/api/groups/:groupId/invites` — List pending invites (owner)
+- `DELETE /admin/api/invites/:token` — Revoke an invite (owner)
+- `GET /admin/api/audit` — Audit log (scoped)
+- `GET /admin/api/me` — Current session / scope / roles
 - `GET /admin/api/logs` — Send logs (scoped)
 - `GET /admin/api/logs/:id` — Single send-log entry
 

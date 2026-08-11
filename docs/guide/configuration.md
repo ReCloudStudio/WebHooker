@@ -30,6 +30,8 @@ WebHooker requires several secrets to function. For local development, store the
 | `TELEGRAM_RICH_HEADER_HOST` | Base URL of an external rich-header service; when unset, the built-in `GET /api/richheader` serves the Telegram avatar card | Built-in `/api/richheader`        |
 | `BASE_URL`                  | Public URL for OAuth callbacks                                                                                              | `http://localhost:8787`           |
 | `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                                                    | Disabled                          |
+| `ALLOW_SELF_SIGNUP`         | When enabled (`1`/`true`), GitHub users without any group access get a personal group on first login instead of `403`       | Disabled                          |
+| `AUDIT_RETENTION_DAYS`      | Audit-log retention in days for the scheduled cleanup                                                                       | `90`                              |
 
 ## Webhook Providers
 
@@ -48,26 +50,31 @@ WebHooker ships with a built-in config console at `/admin` for managing routes i
 
 ### Setup
 
-1. Configure `ADMIN_USER_IDS` with the GitHub user IDs allowed to manage routes. Logins are also accepted, e.g. `ADMIN_USER_IDS=12345,RhenCloud`. If unset, the console is disabled.
+1. Configure `ADMIN_USER_IDS` with the GitHub user IDs allowed to manage everything. Logins are also accepted, e.g. `ADMIN_USER_IDS=12345,RhenCloud`. If unset, the console is disabled (unless `ALLOW_SELF_SIGNUP` is enabled).
 2. Open `/admin` and sign in with GitHub.
-3. Only users in the whitelist receive a session cookie; everyone else gets `403`.
+3. Users without any access get `403`, except when `ALLOW_SELF_SIGNUP=1` (they receive a personal group) or when they follow a group [invite link](#invites).
 
 ### Endpoints
 
-| Endpoint                           | Description                             |
-| ---------------------------------- | --------------------------------------- |
-| `GET /admin`                       | Config console UI                       |
-| `GET /admin/login`                 | Start GitHub OAuth sign-in              |
-| `GET /admin/logout`                | Destroy session                         |
-| `GET /admin/api/me`                | Current session, scope, and groups      |
-| `GET /admin/api/routes`            | List routes (admin only)                |
-| `PUT /admin/api/routes`            | Replace routes (admin only)             |
-| `GET /admin/api/groups`            | List groups (scoped to access)          |
-| `PUT /admin/api/groups`            | Replace groups (super admin only)       |
-| `GET /admin/api/groups/:id/routes` | List a group's routes                   |
-| `PUT /admin/api/groups/:id/routes` | Replace a group's routes                |
-| `GET /admin/api/logs`              | Send logs (scoped to accessible routes) |
-| `GET /admin/api/logs/:id`          | Single send-log entry (scoped)          |
+| Endpoint                                  | Description                                  |
+| ----------------------------------------- | -------------------------------------------- |
+| `GET /admin`                              | Config console UI                            |
+| `GET /admin/login`                        | Start GitHub OAuth sign-in                   |
+| `GET /admin/logout`                       | Destroy session                              |
+| `GET /admin/invite?token=…`               | Accept a group invite (browser page)         |
+| `GET /admin/api/me`                       | Current session, scope, groups, and roles    |
+| `GET /admin/api/routes`                   | List routes (scoped to access)               |
+| `PUT /admin/api/routes`                   | Replace routes (owner/admin per group)       |
+| `GET /admin/api/groups`                   | List groups + the signed-in user's role each |
+| `PUT /admin/api/groups`                   | Replace groups (super: all; owner: own only) |
+| `GET /admin/api/groups/:id/routes`        | List a group's routes                        |
+| `PUT /admin/api/groups/:id/routes`        | Replace a group's routes (owner/admin)       |
+| `GET /admin/api/logs`                     | Send logs (scoped to accessible routes)      |
+| `GET /admin/api/logs/:id`                 | Single send-log entry (scoped)               |
+| `POST /admin/api/groups/:id/invites`      | Create an invite link (owner)                |
+| `GET /admin/api/groups/:id/invites`       | List pending invites (owner)                 |
+| `DELETE /admin/api/invites/:token`        | Revoke an invite (owner)                     |
+| `GET /admin/api/audit`                    | Audit log (scoped to accessible groups)      |
 
 The console lets you add, edit, delete, and toggle routes. Saved routes are written to KV `config:routes` immediately and the config cache is invalidated so the webhook pipeline picks them up on the next run.
 
@@ -167,28 +174,52 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 {
   "id": "backend-team",
   "name": "Backend Team",
-  "adminIds": ["rhencloud"],
+  "members": [
+    { "login": "rhencloud", "role": "owner" },
+    { "login": "octobot", "role": "admin" },
+    { "login": "reader", "role": "viewer" }
+  ],
   "owners": ["myorg"],
   "providers": ["github", "gitea"]
 }
 ```
 
-| Field       | Type     | Required | Description                                                               |
-| ----------- | -------- | -------- | ------------------------------------------------------------------------- |
-| `id`        | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`        |
-| `name`      | string   | Yes      | Human-readable group name                                                 |
-| `adminIds`  | string[] | Yes      | GitHub user IDs or logins who may manage this group's routes              |
-| `owners`    | string[] | No       | Org/user logins whose events are accepted into this group; empty = all    |
-| `providers` | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all |
-| `emoji`     | boolean  | No       | Whether to include emoji in this group's messages (default `true`)        |
+| Field       | Type     | Required | Description                                                                  |
+| ----------- | -------- | -------- | ---------------------------------------------------------------------------- |
+| `id`        | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`           |
+| `name`      | string   | Yes      | Human-readable group name                                                    |
+| `members`   | object[] | No       | `{ login, role }` entries; role is `owner`, `admin`, or `viewer`             |
+| `adminIds`  | string[] | No       | Deprecated legacy field; treated as `members` with role `owner` when present |
+| `owners`    | string[] | No       | Org/user logins whose events are accepted into this group; empty = all       |
+| `providers` | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all    |
+| `emoji`     | boolean  | No       | Whether to include emoji in this group's messages (default `true`)           |
+
+### Roles
+
+Every group member has one of three roles. Super admins (`ADMIN_USER_IDS`) always bypass them.
+
+| Role     | View routes/logs | Edit routes | Manage members & invites | Edit group settings |
+| -------- | ---------------- | ----------- | ------------------------ | ------------------- |
+| `owner`  | ✓                | ✓           | ✓                        | ✓ (except `owners`) |
+| `admin`  | ✓                | ✓           | ✗                        | ✗                   |
+| `viewer` | ✓ (read-only)    | ✗           | ✗                        | ✗                   |
 
 ### Access Model
 
-- **Super admins** (`ADMIN_USER_IDS`) see and edit every group and all routes.
-- **Group admins** (`adminIds`) only see and edit the groups they manage; submitting a route outside their groups returns `403`.
+- **Super admins** (`ADMIN_USER_IDS`) see and edit every group and all routes; only they can edit a group's `owners` list.
+- **Owners** manage their group's routes, members, invites, name, `emoji`, and `providers`. They cannot remove the last owner or demote themselves when no other owner remains.
+- **Admins** edit routes inside their groups and view logs; **viewers** get a read-only console.
 - Group admin endpoints operate on a single group at a time via `/admin/api/groups/:id/routes`; `groupId` is forced from the path parameter.
 - The `owners` list restricts which event actors (sender logins) the group's routes will dispatch at all.
 - The `providers` list restricts which forge's events (`github`, `gitea`) the group's routes will dispatch. This lets you keep GitHub and Gitea groups separate even when org/user names collide.
+
+### Invites
+
+Owners (and super admins) can create single-use invite links valid for 7 days from the group's _Members_ panel. Accepting an invite adds the user with the invited role (`admin` or `viewer` — never `owner`); an existing `viewer` is upgraded to `admin`. Invites are stored in KV as `invite:{token}`.
+
+### Self Sign-up
+
+With `ALLOW_SELF_SIGNUP=1`, a GitHub user who has no group access gets a personal group (`u-{userId}`, owned by them) on first login instead of a `403`. This is the entry point for a fully self-service SaaS install; disable it to keep the console invite-only.
 
 ## Filter Types
 
@@ -230,6 +261,7 @@ Filters accept either a single string or an array of strings:
 | `token:{userId}`               | `{ userId, accessToken, expiresAt, refreshToken? }`                           | 0.9 × token expiry |
 | `token-reverse:{sha256}`       | User id for reverse lookup by token                                           | 0.9 × token expiry |
 | `state:{hex}`                  | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 seconds        |
+| `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 days             |
 | `delivery:{id}`                | Webhook delivery id (dedup marker)                                            | 300 seconds        |
 | `msg:{routeId}:{key}:{target}` | Message id tracking for in-place updates (e.g. `workflow_run`)                | 7 days             |
 | `cmd:guild:{id}`               | Guild id whose commands were registered (dedup)                               | Permanent          |
@@ -239,10 +271,13 @@ Filters accept either a single string or an array of strings:
 
 ## D1 Storage Layout
 
-The D1 database (`DB` binding, database `webhooker`) holds three tables:
+The D1 database (`DB` binding, database `webhooker`) holds four tables:
 
 | Table            | Purpose                                                                                        |
 | ---------------- | ---------------------------------------------------------------------------------------------- |
 | `send_logs`      | One row per dispatch attempt (route id, event, target, ok/error, duration, error code, detail) |
+| `audit_logs`     | One row per admin operation (login/logout, group/route/member/invite changes)                  |
 | `discord_links`  | Maps `discord_user_id` → `github_user_id` for `/gh` Discord commands                           |
 | `telegram_links` | Maps `telegram_user_id` → `github_user_id` for `/gh` Telegram commands                         |
+
+`audit_logs` is pruned automatically by the scheduled trigger after `AUDIT_RETENTION_DAYS` (default 90).

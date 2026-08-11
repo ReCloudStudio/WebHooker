@@ -65,6 +65,8 @@ npx wrangler dev     # 启动本地开发服务器
 | `TELEGRAM_RICH_HEADER_HOST` | 可选；覆盖内置 `GET /api/richheader` 的 Telegram 头像卡片地址               |
 | `BASE_URL`                  | 公网地址（用于 OAuth 回调与 Telegram webhook 同步）                         |
 | `ADMIN_USER_IDS`            | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                   |
+| `ALLOW_SELF_SIGNUP`         | 设为 `1` 时，无权限的 GitHub 用户首次登录自动获得个人分组（默认关闭）        |
+| `AUDIT_RETENTION_DAYS`      | 定时清理时审计日志的保留天数（默认 90）                                     |
 | `DOCS_URL`                  | 可选；落地页使用的文档站点 URL                                              |
 | `GITHUB_REPO_URL`           | 可选；落地页使用的 GitHub 仓库 URL                                          |
 | `LEGAL_CONTACT`             | 可选；`/terms` 与 `/privacy` 页面展示的联系方式                             |
@@ -110,13 +112,15 @@ npx wrangler dev     # 启动本地开发服务器
 
 ### Web 控制台（`/admin`）
 
-内置的配置控制台让你在浏览器中管理路由与分组（新增 / 编辑 / 删除 / 开关 / 排序），并查看发送日志——无需操作 KV：
+内置的配置控制台让你在浏览器中管理路由与分组（新增 / 编辑 / 删除 / 开关 / 排序）、查看发送日志、管理组成员与邀请链接、阅读审计日志——无需操作 KV：
 
 1. 设置 `ADMIN_USER_IDS` 为允许管理控制台的 GitHub 用户 ID（或登录名），例如 `ADMIN_USER_IDS=12345,RhenCloud`。
-2. 访问 `/admin` 并用 GitHub 登录，仅白名单内用户可进入。
+2. 访问 `/admin` 并用 GitHub 登录。无任何权限的用户收到 `403`——除非开启 `ALLOW_SELF_SIGNUP=1`（自动获得个人分组）或通过分组邀请链接加入。
 3. 修改会立即写入 KV，webhook 管线随即生效。
 
 在 `/admin/logout` 退出登录。
+
+**权限模型。** 每个分组都有带角色的 `members`：`owner`（管理分组、成员、邀请；可编辑路由）、`admin`（编辑路由、查看日志）、`viewer`（只读）。超级管理员（`ADMIN_USER_IDS`）绕过所有角色限制。旧的 `adminIds` 字段按 owner 读取。owner 可从分组页面生成一次性、7 天有效的邀请链接；所有管理操作（登录、分组/路由/成员/邀请变更）都会写入 D1 `audit_logs` 表，并按 `AUDIT_RETENTION_DAYS`（默认 90 天）自动清理。
 
 完整语法示例见 `config.example.yaml`。
 
@@ -157,13 +161,18 @@ npx wrangler dev     # 启动本地开发服务器
 - `GET /admin` — 配置控制台页面
 - `GET /admin/login` — 开始管理员登录（GitHub OAuth）
 - `GET /admin/logout` — 退出登录
+- `GET /admin/invite?token=…` — 接受分组邀请（浏览器页面）
 - `GET /admin/api/routes` — 列出路由
-- `PUT /admin/api/routes` — 替换路由
-- `GET /admin/api/groups` — 列出分组（按权限过滤）
-- `PUT /admin/api/groups` — 替换分组（仅超级管理员）
+- `PUT /admin/api/routes` — 替换路由（按分组 owner/admin 权限）
+- `GET /admin/api/groups` — 列出分组 + 你的角色
+- `PUT /admin/api/groups` — 替换分组（超管全量；owner 仅自己的组）
 - `GET /admin/api/groups/:groupId/routes` — 列出某分组的路由
 - `PUT /admin/api/groups/:groupId/routes` — 替换某分组的路由
-- `GET /admin/api/me` — 当前会话 / 权限范围
+- `POST /admin/api/groups/:groupId/invites` — 创建邀请链接（owner）
+- `GET /admin/api/groups/:groupId/invites` — 列出待接受邀请（owner）
+- `DELETE /admin/api/invites/:token` — 撤销邀请（owner）
+- `GET /admin/api/audit` — 审计日志（按权限过滤）
+- `GET /admin/api/me` — 当前会话 / 权限范围 / 角色
 - `GET /admin/api/logs` — 发送日志（按权限过滤）
 - `GET /admin/api/logs/:id` — 单条发送日志
 
