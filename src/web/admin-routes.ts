@@ -209,6 +209,18 @@ function validateGroups(
     ) {
       return { ok: false, error: `group "${g.id}".owners must be a list of strings` };
     }
+    if (
+      g.providers !== undefined &&
+      (!Array.isArray(g.providers) ||
+        !g.providers.every(
+          (p) => typeof p === "string" && ["github", "gitea", "gitlab"].includes(p),
+        ))
+    ) {
+      return {
+        ok: false,
+        error: `group "${g.id}".providers must be a list of "github" | "gitea" | "gitlab"`,
+      };
+    }
     if (g.emoji !== undefined && typeof g.emoji !== "boolean") {
       return { ok: false, error: `group "${g.id}".emoji must be a boolean` };
     }

@@ -1,10 +1,11 @@
 # WebHooker
 
-GitHub webhook → Discord / Telegram 分发服务。通过 Cloudflare Workers 接收 webhook 事件，应用过滤器，将格式化消息路由到 Discord 频道/子区与 Telegram 群组/话题。
+GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare Workers 接收 webhook 事件，应用过滤器，将格式化消息路由到 Discord 频道/子区与 Telegram 群组/话题。各 forge 适配器位于 `src/providers/`（目前支持 GitHub + Gitea；GitLab 等可后续扩展）。
 
 ## 功能特性
 
 - **28 种事件格式化** — push、pull_request、issues、issue_comment、workflow_run、workflow_job、status、deployment、deployment_status、check_run、check_suite、ping、release、create、delete、star、fork、pull_request_review、pull_request_review_comment、commit_comment、member、label、milestone、discussion、discussion_comment、repository、code_scanning_alert、dependabot_alert（+ 通用回退）
+- **多提供方 webhook** — GitHub（`X-Hub-Signature-256`）与 Gitea（`X-Gitea-Signature`）共用 `/webhook` 端点，按请求头自动识别来源
 - HMAC-SHA256 签名验证（Web Crypto API）
 - 按事件类型、仓库、操作人、操作、分支、关键词（支持正则）过滤
 - 富消息：颜色编码、作者头像、字段、时间戳——渲染为 Discord embed 与 Telegram HTML
@@ -51,6 +52,7 @@ npx wrangler dev     # 启动本地开发服务器
 | 变量                        | 说明                                                                        |
 | --------------------------- | --------------------------------------------------------------------------- |
 | `GITHUB_WEBHOOK_SECRET`     | GitHub webhook 密钥                                                         |
+| `GITEA_WEBHOOK_SECRET`      | Gitea webhook 密钥（仅接收 Gitea webhook 时需要）                           |
 | `GITHUB_APP_ID`             | GitHub App ID（当前代码未使用，为兼容保留）                                 |
 | `GITHUB_PRIVATE_KEY`        | App 私钥（PKCS#8 PEM；当前代码未使用，为兼容保留）                          |
 | `GITHUB_CLIENT_ID`          | OAuth Client ID                                                             |
@@ -104,7 +106,7 @@ npx wrangler dev     # 启动本地开发服务器
 }
 ```
 
-路由隶属于**分组**（KV `config:groups`），分组用于限定管理权限，并可限制哪些组织/用户的事件流入。完整模式见 `config.example.yaml` 与 `docs/zh/guide/configuration.md`。
+路由隶属于**分组**（KV `config:groups`），分组用于限定管理权限，并可限制哪些组织/用户的事件流入——包括来源平台（`providers`：`github` / `gitea`）。完整模式见 `config.example.yaml` 与 `docs/zh/guide/configuration.md`。
 
 ### Web 控制台（`/admin`）
 

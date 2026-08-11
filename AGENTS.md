@@ -12,7 +12,8 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - HTTP framework: Hono
 - Discord interactions: HTTPS Interactions Endpoint (`POST /discord/interactions`, Ed25519-signed) — no Discord Gateway / Durable Object; bot stays offline, messages always sent via REST
 - Storage: Cloudflare KV (tokens, OAuth state, route config `config:routes`, group config `config:groups`, admin sessions, delivery dedup, message-update tracking `msg:*`, i18n overrides `i18n:*`) + D1 (`send_logs`, `discord_links`, `telegram_links`)
-- Signature verification: Web Crypto API (HMAC-SHA256 for GitHub, Ed25519 for Discord, timing-safe secret-token compare for Telegram)
+- Signature verification: Web Crypto API (HMAC-SHA256 for GitHub/Gitea, Ed25519 for Discord, timing-safe secret-token compare for Telegram)
+- Webhook providers: pluggable forge adapters under `src/providers/` (github, gitea) — each verifies its own signature format and normalizes its payload to a GitHub-shaped `WebhookEvent`; GitLab etc. can be added later
 - GitHub OAuth: octokit (token is stored hashed for reverse lookup)
 - Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist
 - Local dev: wrangler + Miniflare
@@ -27,10 +28,18 @@ src/
 ├── server.ts             # Hono app: /health, /webhook, /discord/interactions, /telegram/webhook, mounts /auth, /admin + /
 ├── core/
 │   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter)
-├── events/               # GitHub webhook pipeline: verify signature, parse event, match route
-│   ├── verify.ts         # HMAC signature verify (Web Crypto, timing-safe)
-│   ├── parse.ts          # parseEvent (headers + body → WebhookEvent)
+├── events/               # Provider-agnostic route matching
 │   └── match.ts          # matchRoute, eventOwners, extractBranch, keyword regex filtering
+├── providers/            # Forge webhook providers (verify + parse/normalize to GitHub-shaped events)
+│   ├── types.ts          # Provider interface (matches/verify/parse)
+│   ├── hmac.ts           # HMAC-SHA256 + timing-safe compare helpers
+│   ├── index.ts          # detectProvider() registry (github, gitea)
+│   ├── github/           # X-GitHub-Event + X-Hub-Signature-256 ("sha256=" prefix)
+│   │   ├── verify.ts     # HMAC signature verify
+│   │   └── parse.ts      # parseEvent (headers + body → WebhookEvent)
+│   └── gitea/            # X-Gitea-Event + X-Gitea-Signature (plain hex HMAC)
+│       ├── verify.ts     # HMAC signature verify (no prefix)
+│       └── parse.ts      # parse + normalize Gitea payloads to GitHub shape
 ├── formatters/           # Platform-neutral message formatters (was formatter.ts)
 │   ├── index.ts          # formatEvent: 28-event switch → NeutralMessage + re-exports
 │   ├── colors.ts         # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
@@ -76,11 +85,13 @@ src/__tests__/            # bun test unit tests (webhook, formatter, discord, te
 
 ## Responsibilities
 
-- Verify GitHub webhook signatures (Web Crypto HMAC-SHA256)
+- Verify GitHub webhook signatures (Web Crypto HMAC-SHA256, `X-Hub-Signature-256`)
+- Verify Gitea webhook signatures (Web Crypto HMAC-SHA256, plain hex `X-Gitea-Signature`)
+- Normalize Gitea webhook payloads to a GitHub-shaped `WebhookEvent` (push `compare_url` → `compare`, `pull_request_comment` → `pull_request_review_comment`, ...)
 - Verify Discord interactions (Web Crypto Ed25519, X-Signature-Ed25519 over timestamp + body)
 - Verify Telegram webhook calls (X-Telegram-Bot-Api-Secret-Token when configured)
 - Filter events by: event type, repo name, actor, action, branch, keyword (regex supported)
-- Filter routes by group owner restriction (`Group.owners`) and skip fallback routes whenever a regular route matched; stop evaluating further routes when a matched route has `stop: true`
+- Filter routes by group owner restriction (`Group.owners`), group source-platform restriction (`Group.providers`: github/gitea), and skip fallback routes whenever a regular route matched; stop evaluating further routes when a matched route has `stop: true`
 - Mention Discord roles on route trigger: route-level `discordRoleIds` are rendered as `<@&id>` into the Discord message `content` (Telegram targets ignore the field)
 - Format 28 event types as platform-neutral messages (Discord embeds + Telegram HTML)
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
@@ -135,6 +146,7 @@ Rule: no functional change ships without its documentation; docs and code must n
 - **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `discord_links` + `telegram_links` tables
 - **Discord**: `DISCORD_PUBLIC_KEY` (Interactions Endpoint signature verification, from Discord Developer Portal) and `DISCORD_APPLICATION_ID` (optional, auto-resolved via `GET /oauth2/applications/@me` when omitted) are required for interactions
 - **Telegram**: `TELEGRAM_TOKEN` (Bot API token from BotFather) required for Telegram routes; `TELEGRAM_WEBHOOK_SECRET` (optional secret token for `POST /telegram/webhook` verification); avatars are sent as a link-preview card via the built-in `GET /api/richheader` (overridable with `TELEGRAM_RICH_HEADER_HOST`)
+- **Webhook providers**: `GITEA_WEBHOOK_SECRET` (required to receive Gitea webhooks; Gitea signs `X-Gitea-Signature` with the hex HMAC-SHA256 of the body)
 
 ## Deployment
 
@@ -150,7 +162,8 @@ npm run db:migrate:prod   # wrangler d1 migrations apply webhooker --remote (mig
 npx wrangler deploy
 ```
 
-Full list of secrets used: `GITHUB_WEBHOOK_SECRET`, `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY`
+Full list of secrets used: `GITHUB_WEBHOOK_SECRET`, `GITEA_WEBHOOK_SECRET`,
+`GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY`
 (PKCS#8 PEM), `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `DISCORD_TOKEN`,
 `DISCORD_PUBLIC_KEY`, `TELEGRAM_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ADMIN_USER_IDS`,
 plus optional `BASE_URL`, `DISCORD_APPLICATION_ID`, `TELEGRAM_RICH_HEADER_HOST`,

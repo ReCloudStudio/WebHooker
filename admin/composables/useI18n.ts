@@ -126,6 +126,10 @@ const en: Dict = {
   "groupEditor.ownersPlaceholder": "my-org, some-user",
   "groupEditor.ownersHint":
     "Only webhook events from these orgs/users enter this group's routes. Leave empty for no restriction.",
+  "groupEditor.providers": "Source platforms",
+  "groupEditor.providersNote": "(leave both unchecked = all)",
+  "groupEditor.providersHint":
+    "Only webhook events from the checked forges (GitHub / Gitea) enter this group's routes.",
   "groupEditor.emoji": "Show emojis in messages",
   "groupEditor.cancel": "Cancel",
   "groupEditor.save": "Save group",
@@ -292,6 +296,10 @@ const zh: Dict = {
   "groupEditor.ownersPlaceholder": "my-org, some-user",
   "groupEditor.ownersHint":
     "只有来自这些组织/用户的 webhook 事件才会进入本分组的路由。留空表示不限制。",
+  "groupEditor.providers": "来源平台",
+  "groupEditor.providersNote": "（都不勾选 = 全部来源）",
+  "groupEditor.providersHint":
+    "只有来自所勾选 forge（GitHub / Gitea）的 webhook 事件才会进入本分组的路由。",
   "groupEditor.emoji": "消息中显示表情符号",
   "groupEditor.cancel": "取消",
   "groupEditor.save": "保存分组",

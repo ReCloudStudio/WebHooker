@@ -20,10 +20,13 @@ src/
 ├── server.ts             # Hono app: /health, /webhook, /discord/interactions, /telegram/webhook, mounts /auth, /admin + /
 ├── core/
 │   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → getDriver().send/edit
-├── events/               # GitHub webhook pipeline: verify signature, parse event, match route
-│   ├── verify.ts         # HMAC signature verification (Web Crypto, timing-safe)
-│   ├── parse.ts          # parseEvent (headers + body → WebhookEvent)
+├── events/               # Provider-agnostic route matching
 │   └── match.ts          # matchRoute, eventOwners, extractBranch, keyword filtering
+├── providers/            # Forge webhook providers (verify + parse/normalize)
+│   ├── types.ts          # Provider interface (matches/verify/parse)
+│   ├── index.ts          # detectProvider() registry (github, gitea)
+│   ├── github/           # X-GitHub-Event + X-Hub-Signature-256
+│   └── gitea/            # X-Gitea-Event + X-Gitea-Signature (normalized payloads)
 ├── formatters/           # Platform-neutral formatters (produce NeutralMessage)
 │   ├── index.ts          # formatEvent: 28-event switch → NeutralMessage + re-exports
 │   ├── colors.ts         # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI

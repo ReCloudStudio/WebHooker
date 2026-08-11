@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { createHmac } from "crypto";
-import { verifySignature } from "../events/verify";
-import { parseEvent } from "../events/parse";
+import { verifySignature } from "../providers/github/verify";
+import { parseEvent } from "../providers/github/parse";
 import { matchRoute } from "../events/match";
 import type { Route, WebhookEvent } from "../types";
 

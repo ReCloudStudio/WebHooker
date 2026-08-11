@@ -1,12 +1,12 @@
 # Introduction
 
-WebHooker is a GitHub webhook dispatcher built on Cloudflare Workers. It receives GitHub webhook events, applies configurable filters, formats them into rich messages, and delivers them to Discord channels/threads (embeds) and Telegram chats/topics (HTML) via their REST APIs. In-Discord `/gh` interactions arrive via an HTTPS Interactions Endpoint (Ed25519-verified); Telegram `/gh` commands arrive via the Telegram webhook. Routes and groups are managed through a built-in Web UI.
+WebHooker is a GitHub/Gitea webhook dispatcher built on Cloudflare Workers. It receives webhook events from supported forges (GitHub, Gitea — more can be added via `src/providers/`), applies configurable filters, formats them into rich messages, and delivers them to Discord channels/threads (embeds) and Telegram chats/topics (HTML) via their REST APIs. In-Discord `/gh` interactions arrive via an HTTPS Interactions Endpoint (Ed25519-verified); Telegram `/gh` commands arrive via the Telegram webhook. Routes and groups are managed through a built-in Web UI.
 
 ## Architecture
 
 ```text
-GitHub Webhook → Cloudflare Worker (Hono)
-                 ├── POST /webhook → verify → dedup → filter → format → Discord (REST) / Telegram (Bot API)
+GitHub / Gitea Webhook → Cloudflare Worker (Hono)
+                 ├── POST /webhook → detect provider → verify → dedup → filter → format → Discord (REST) / Telegram (Bot API)
                  ├── POST /discord/interactions → verify (Ed25519) → handle /gh slash & context commands
                  ├── POST /telegram/webhook → verify (secret token) → handle /gh commands
                  ├── GET  /auth/github → OAuth flow
@@ -27,10 +27,10 @@ GitHub Webhook → Cloudflare Worker (Hono)
 
 ### Data Flow
 
-1. GitHub sends a webhook to `POST /webhook`
-2. Worker verifies the HMAC-SHA256 signature
-3. Worker deduplicates by `X-GitHub-Delivery` (KV, short TTL) to drop repeat deliveries
-4. Worker parses the event type and payload
+1. A forge (GitHub or Gitea) sends a webhook to `POST /webhook`
+2. Worker detects the provider from its headers (`X-GitHub-Event` / `X-Gitea-Event`) and verifies the provider-specific HMAC-SHA256 signature
+3. Worker deduplicates by the delivery id (KV, short TTL) to drop repeat deliveries
+4. Worker parses the event type and normalizes the payload to a GitHub-shaped event
 5. Routes are evaluated against filters (event, repo, actor, action, branch, keyword) and group owner restrictions
 6. Matching routes trigger formatter functions that produce platform-neutral messages
 7. Each message is sent to its route's target(s) via the Discord or Telegram REST API with rate-limit retry; `workflow_run` progress is edited in place. Every attempt is recorded in the D1 send log

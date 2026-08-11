@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: WebHooker
-  text: GitHub Webhook → Discord
-  tagline: Receive GitHub events via Cloudflare Workers, apply filters, and route formatted messages to Discord channels/threads and Telegram chats/topics.
+  text: GitHub / Gitea Webhook → Discord
+  tagline: Receive GitHub and Gitea events via Cloudflare Workers, apply filters, and route formatted messages to Discord channels/threads and Telegram chats/topics.
   actions:
     - theme: brand
       text: Get Started
@@ -23,7 +23,7 @@ features:
   - title: Web UI, Groups & Commands
     details: "Manage routes, groups and send logs from a built-in admin console. Link your GitHub account and comment on issues/PRs as yourself via /gh commands on Discord or Telegram."
   - title: Signature Verification
-    details: HMAC-SHA256 webhook signature verification and Ed25519 interaction signature verification using the Web Crypto API with timing-safe comparison.
+    details: Provider-aware HMAC-SHA256 webhook signature verification (GitHub X-Hub-Signature-256, Gitea X-Gitea-Signature) and Ed25519 interaction signature verification using the Web Crypto API with timing-safe comparison.
   - title: In-Place Updates
     details: workflow_run progress is edited in place on a single message as the run advances, on both Discord and Telegram.
 ---

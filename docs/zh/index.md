@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: WebHooker
-  text: GitHub Webhook → Discord
-  tagline: 通过 Cloudflare Workers 接收 GitHub 事件，应用过滤器，将格式化消息路由到 Discord 频道/子区与 Telegram 群组/话题。
+  text: GitHub / Gitea Webhook → Discord
+  tagline: 通过 Cloudflare Workers 接收 GitHub 与 Gitea 事件，应用过滤器，将格式化消息路由到 Discord 频道/子区与 Telegram 群组/话题。
   actions:
     - theme: brand
       text: 快速开始

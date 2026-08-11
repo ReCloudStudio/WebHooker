@@ -1,5 +1,6 @@
 export interface Env {
   GITHUB_WEBHOOK_SECRET: string;
+  GITEA_WEBHOOK_SECRET?: string;
   GITHUB_APP_ID?: string;
   GITHUB_PRIVATE_KEY?: string;
   GITHUB_CLIENT_ID?: string;
@@ -86,6 +87,11 @@ export interface Group {
    */
   owners?: string[];
   /**
+   * Webhook providers (source platforms) allowed into this group's routes
+   * (e.g. `["github"]`, `["gitea"]`). Empty/omitted = all providers.
+   */
+  providers?: WebhookProvider[];
+  /**
    * Whether to include emoji in messages sent through this group's routes.
    * Defaults to true when omitted.
    */
@@ -98,11 +104,14 @@ export interface Filter {
   exclude?: boolean;
 }
 
+export type WebhookProvider = "github" | "gitea" | "gitlab";
+
 export interface WebhookEvent {
   event: string;
   payload: Record<string, unknown>;
   signature?: string;
   deliveryId?: string;
+  provider?: WebhookProvider;
 }
 
 export interface NeutralAuthor {

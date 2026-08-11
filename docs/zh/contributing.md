@@ -20,10 +20,13 @@ src/
 ├── server.ts             # Hono 应用: /health、/webhook、/discord/interactions、/telegram/webhook，挂载 /auth、/admin + /
 ├── core/
 │   └── dispatch.ts       # 平台中立分发：匹配路由 → formatEvent → getDriver().send/edit
-├── events/               # GitHub webhook 事件流水线：验证签名、解析事件、匹配路由
-│   ├── verify.ts         # HMAC 签名验证 (Web Crypto，时间安全)
-│   ├── parse.ts          # parseEvent (headers + body → WebhookEvent)
+├── events/               # 与提供方无关的路由匹配
 │   └── match.ts          # matchRoute、eventOwners、extractBranch、关键词过滤
+├── providers/            # Forge webhook 提供方（验证 + 解析/归一化）
+│   ├── types.ts          # Provider 接口（matches/verify/parse）
+│   ├── index.ts          # detectProvider() 注册表（github、gitea）
+│   ├── github/           # X-GitHub-Event + X-Hub-Signature-256
+│   └── gitea/            # X-Gitea-Event + X-Gitea-Signature（归一化载荷）
 ├── formatters/           # 平台中立格式化器（产出 NeutralMessage）
 │   ├── index.ts          # formatEvent：28 事件 switch → NeutralMessage + re-export
 │   ├── colors.ts         # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI

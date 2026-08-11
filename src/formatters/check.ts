@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS, WORKFLOW_CONCLUSION_EMOJI } from "./colors";
-import { emojiPrefix, type T, buildMessage } from "./helpers";
+import { emojiPrefix, type T, buildMessage, repoBaseUrl } from "./helpers";
 
 export function formatCheckSuite(
   payload: Record<string, unknown>,
@@ -24,6 +24,7 @@ export function formatCheckSuite(
       : suite.status === "in_progress"
         ? "running"
         : (suite.conclusion ?? "pending");
+  const baseUrl = repoBaseUrl(payload, repo);
   const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
   const colorKey =
@@ -61,8 +62,8 @@ export function formatCheckSuite(
     fields.push({
       name: t("fields.commit"),
       value:
-        repo && suite.head_sha
-          ? `[${suite.head_sha.slice(0, 7)}](https://github.com/${repo}/commit/${suite.head_sha})`
+        baseUrl && suite.head_sha
+          ? `[${suite.head_sha.slice(0, 7)}](${baseUrl}/commit/${suite.head_sha})`
           : `\`${suite.head_sha.slice(0, 7)}\``,
       inline: true,
     });
@@ -77,9 +78,7 @@ export function formatCheckSuite(
       }),
       url:
         suite.html_url ??
-        (repo && suite.head_sha
-          ? `https://github.com/${repo}/commit/${suite.head_sha}/checks`
-          : undefined),
+        (baseUrl && suite.head_sha ? `${baseUrl}/commit/${suite.head_sha}/checks` : undefined),
       color: GITHUB_COLORS[colorKey],
       fields,
     },

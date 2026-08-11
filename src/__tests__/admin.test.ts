@@ -7,8 +7,9 @@ import {
   adminCookie,
   clearAdminCookie,
 } from "../web/session";
+import { groupAcceptsProvider } from "../web/groups";
 import { loadRoutes, saveRoutes, loadConfig } from "../config";
-import type { Env, Route } from "../types";
+import type { Env, Route, Group } from "../types";
 
 function createMockKV(): KVNamespace {
   const store = new Map<string, { value: string; expiration?: number }>();
@@ -108,6 +109,26 @@ describe("admin-session", () => {
   it("clear cookie is an expired cookie", () => {
     expect(clearAdminCookie()).toContain("wh_admin_session=;");
     expect(clearAdminCookie()).toContain("Max-Age=0");
+  });
+});
+
+describe("groupAcceptsProvider", () => {
+  const base: Group = { id: "g", name: "G", adminIds: [] };
+
+  it("accepts every provider when none are configured", () => {
+    expect(groupAcceptsProvider(base, "github")).toBe(true);
+    expect(groupAcceptsProvider(base, "gitea")).toBe(true);
+    expect(groupAcceptsProvider(base, undefined)).toBe(true);
+  });
+
+  it("restricts to the configured providers", () => {
+    expect(groupAcceptsProvider({ ...base, providers: ["gitea"] }, "gitea")).toBe(true);
+    expect(groupAcceptsProvider({ ...base, providers: ["gitea"] }, "github")).toBe(false);
+    expect(groupAcceptsProvider({ ...base, providers: ["gitea"] }, undefined)).toBe(false);
+  });
+
+  it("matches case-insensitively and trims whitespace", () => {
+    expect(groupAcceptsProvider({ ...base, providers: [" Gitea "] }, "gitea")).toBe(true);
   });
 });
 

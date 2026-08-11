@@ -6,13 +6,14 @@ WebHooker requires several secrets to function. For local development, store the
 
 ### Required Secrets
 
-| Variable                | Description                                                        |
-| ----------------------- | ------------------------------------------------------------------ |
-| `GITHUB_WEBHOOK_SECRET` | Webhook secret from your GitHub App settings                       |
-| `GITHUB_CLIENT_ID`      | OAuth client ID from App settings                                  |
-| `GITHUB_CLIENT_SECRET`  | OAuth client secret from App settings                              |
-| `DISCORD_TOKEN`         | Discord bot token                                                  |
-| `TELEGRAM_TOKEN`        | Telegram bot token (from BotFather) — required for Telegram routes |
+| Variable                | Description                                                              |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `GITHUB_WEBHOOK_SECRET` | Webhook secret from your GitHub App settings                             |
+| `GITEA_WEBHOOK_SECRET`  | Webhook secret from your Gitea instance (only to receive Gitea webhooks) |
+| `GITHUB_CLIENT_ID`      | OAuth client ID from App settings                                        |
+| `GITHUB_CLIENT_SECRET`  | OAuth client secret from App settings                                    |
+| `DISCORD_TOKEN`         | Discord bot token                                                        |
+| `TELEGRAM_TOKEN`        | Telegram bot token (from BotFather) — required for Telegram routes       |
 
 > [!NOTE]
 > `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` are not currently used by the code — the
@@ -29,6 +30,17 @@ WebHooker requires several secrets to function. For local development, store the
 | `TELEGRAM_RICH_HEADER_HOST` | Base URL of an external rich-header service; when unset, the built-in `GET /api/richheader` serves the Telegram avatar card | Built-in `/api/richheader`        |
 | `BASE_URL`                  | Public URL for OAuth callbacks                                                                                              | `http://localhost:8787`           |
 | `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                                                    | Disabled                          |
+
+## Webhook Providers
+
+WebHooker ingests webhooks from multiple forges through the same `POST /webhook` endpoint; the provider is auto-detected from the request headers, so point every forge's webhook at `{BASE_URL}/webhook`.
+
+| Provider | Event header     | Signature header      | Signature format           | Secret                  |
+| -------- | ---------------- | --------------------- | -------------------------- | ----------------------- |
+| GitHub   | `X-GitHub-Event` | `X-Hub-Signature-256` | `sha256=<hex>` HMAC-SHA256 | `GITHUB_WEBHOOK_SECRET` |
+| Gitea    | `X-Gitea-Event`  | `X-Gitea-Signature`   | plain hex HMAC-SHA256      | `GITEA_WEBHOOK_SECRET`  |
+
+Gitea payloads are normalized to the same internal shape as GitHub events, so routes, filters, and the 28 formatters work unchanged. Unknown or unmapped Gitea events fall back to the generic formatter. Repository/commit/user links are derived from the payload's `repository.html_url`, so they point at your Gitea instance.
 
 ## Web UI
 
@@ -156,17 +168,19 @@ Routes belong to groups. Groups scope admin access and can restrict which events
   "id": "backend-team",
   "name": "Backend Team",
   "adminIds": ["rhencloud"],
-  "owners": ["myorg"]
+  "owners": ["myorg"],
+  "providers": ["github", "gitea"]
 }
 ```
 
-| Field      | Type     | Required | Description                                                            |
-| ---------- | -------- | -------- | ---------------------------------------------------------------------- |
-| `id`       | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`     |
-| `name`     | string   | Yes      | Human-readable group name                                              |
-| `adminIds` | string[] | Yes      | GitHub user IDs or logins who may manage this group's routes           |
-| `owners`   | string[] | No       | Org/user logins whose events are accepted into this group; empty = all |
-| `emoji`    | boolean  | No       | Whether to include emoji in this group's messages (default `true`)     |
+| Field       | Type     | Required | Description                                                               |
+| ----------- | -------- | -------- | ------------------------------------------------------------------------- |
+| `id`        | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`        |
+| `name`      | string   | Yes      | Human-readable group name                                                 |
+| `adminIds`  | string[] | Yes      | GitHub user IDs or logins who may manage this group's routes              |
+| `owners`    | string[] | No       | Org/user logins whose events are accepted into this group; empty = all    |
+| `providers` | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all |
+| `emoji`     | boolean  | No       | Whether to include emoji in this group's messages (default `true`)        |
 
 ### Access Model
 
@@ -174,6 +188,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 - **Group admins** (`adminIds`) only see and edit the groups they manage; submitting a route outside their groups returns `403`.
 - Group admin endpoints operate on a single group at a time via `/admin/api/groups/:id/routes`; `groupId` is forced from the path parameter.
 - The `owners` list restricts which event actors (sender logins) the group's routes will dispatch at all.
+- The `providers` list restricts which forge's events (`github`, `gitea`) the group's routes will dispatch. This lets you keep GitHub and Gitea groups separate even when org/user names collide.
 
 ## Filter Types
 

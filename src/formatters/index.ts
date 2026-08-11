@@ -32,6 +32,7 @@ export function formatEvent(
   const repo = (payload.repository as { full_name?: string })?.full_name;
   const sender = (payload.sender as { login?: string })?.login;
   const senderAvatar = (payload.sender as { avatar_url?: string })?.avatar_url;
+  const senderUrl = (payload.sender as { html_url?: string })?.html_url;
   const repoUrl = (payload.repository as { html_url?: string })?.html_url;
 
   const t: T = makeT(tr);
@@ -39,7 +40,7 @@ export function formatEvent(
   const author: NeutralAuthor = {
     name: sender ?? t("common.unknown"),
     iconUrl: senderAvatar,
-    url: sender ? `https://github.com/${sender}` : undefined,
+    url: senderUrl ?? (sender ? `https://github.com/${sender}` : undefined),
   };
 
   switch (eventType) {

@@ -1,4 +1,4 @@
-import type { WebhookEvent } from "../types";
+import type { WebhookEvent } from "../../types";
 
 export function parseEvent(headers: Record<string, string>, body: string): WebhookEvent | null {
   const event = headers["x-github-event"];
@@ -9,7 +9,7 @@ export function parseEvent(headers: Record<string, string>, body: string): Webho
 
   try {
     const payload = JSON.parse(body);
-    return { event, payload, signature, deliveryId };
+    return { provider: "github", event, payload, signature, deliveryId };
   } catch {
     return null;
   }

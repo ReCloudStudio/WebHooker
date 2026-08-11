@@ -99,6 +99,14 @@ Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
 2. Set **Webhook URL** to `https://webhooker.<your-subdomain>.workers.dev/webhook`
 3. Set **Webhook secret** to match `GITHUB_WEBHOOK_SECRET`
 
+### 6. (Optional) Configure Gitea Webhook
+
+1. In your Gitea repo, go to **Settings → Webhooks → Add Webhook → Gitea**
+2. Set **Target URL** to `https://webhooker.<your-subdomain>.workers.dev/webhook`
+3. Set **HTTP Method** to `POST` and **Content Type** to `application/json`
+4. Set **Secret** to match `GITEA_WEBHOOK_SECRET`
+5. Choose the events to trigger (push, issues, pull requests, releases, ...)
+
 ## GitHub App Setup
 
 ### 1. Create App

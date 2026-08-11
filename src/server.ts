@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import type { Env } from "./types";
-import { verifySignature } from "./events/verify";
-import { parseEvent } from "./events/parse";
+import { detectProvider } from "./providers";
 import { dispatchEvent } from "./core/dispatch";
 import { handleInteractionRequest } from "./drivers/discord/interactions";
 import { handleTelegramWebhookRequest } from "./drivers/telegram/updates";
@@ -44,24 +43,26 @@ export function createServer(): Hono<{ Bindings: Env }> {
       headers[key] = value;
     });
 
-    if (
-      !(await verifySignature(body, headers["x-hub-signature-256"], c.env.GITHUB_WEBHOOK_SECRET))
-    ) {
+    const provider = detectProvider(headers);
+    if (!provider) {
+      return c.json({ error: "Unknown webhook provider" }, 400);
+    }
+
+    if (!(await provider.verify(body, headers, c.env))) {
       return c.json({ error: "Invalid signature" }, 401);
     }
 
-    const event = parseEvent(headers, body);
+    const event = provider.parse(body, headers);
     if (!event) {
       return c.json({ error: "Invalid event" }, 400);
     }
 
-    const delivery = headers["x-github-delivery"];
-    if (delivery) {
-      const seen = await c.env.KV.get(`delivery:${delivery}`);
+    if (event.deliveryId) {
+      const seen = await c.env.KV.get(`delivery:${event.deliveryId}`);
       if (seen) {
         return c.json({ ok: true, duplicate: true });
       }
-      await c.env.KV.put(`delivery:${delivery}`, "1", { expirationTtl: 300 });
+      await c.env.KV.put(`delivery:${event.deliveryId}`, "1", { expirationTtl: 300 });
     }
 
     const config = await loadConfig(c.env);

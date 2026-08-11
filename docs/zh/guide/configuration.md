@@ -9,6 +9,7 @@ WebHooker 需要多个密钥才能运行。本地开发时存储在 `.dev.vars` 
 | 变量                    | 说明                                                     |
 | ----------------------- | -------------------------------------------------------- |
 | `GITHUB_WEBHOOK_SECRET` | GitHub App 设置中的 Webhook 密钥                         |
+| `GITEA_WEBHOOK_SECRET`  | Gitea 实例的 Webhook 密钥（仅接收 Gitea webhook 时需要） |
 | `GITHUB_CLIENT_ID`      | App 设置中的 OAuth 客户端 ID                             |
 | `GITHUB_CLIENT_SECRET`  | App 设置中的 OAuth 客户端密钥                            |
 | `DISCORD_TOKEN`         | Discord Bot Token                                        |
@@ -29,6 +30,17 @@ WebHooker 需要多个密钥才能运行。本地开发时存储在 `.dev.vars` 
 | `DISCORD_APPLICATION_ID`    | Discord 应用 ID；省略时自动获取                                                                  | 自动获取                |
 | `TELEGRAM_WEBHOOK_SECRET`   | `POST /telegram/webhook` 验签密钥（X-Telegram-Bot-Api-Secret-Token）                             | 未设置时不校验          |
 | `TELEGRAM_RICH_HEADER_HOST` | 外部 rich-header 服务的基础 URL；未设置时使用内置的 `GET /api/richheader` 生成 Telegram 头像卡片 | 内置 `/api/richheader`  |
+
+## Webhook 提供方
+
+WebHooker 通过同一个 `POST /webhook` 端点接收多个 forge 的 webhook，按请求头自动识别来源；只需把各 forge 的 webhook 指向 `{BASE_URL}/webhook` 即可。
+
+| 提供方 | 事件请求头       | 签名请求头            | 签名格式                   | 密钥                    |
+| ------ | ---------------- | --------------------- | -------------------------- | ----------------------- |
+| GitHub | `X-GitHub-Event` | `X-Hub-Signature-256` | `sha256=<hex>` HMAC-SHA256 | `GITHUB_WEBHOOK_SECRET` |
+| Gitea  | `X-Gitea-Event`  | `X-Gitea-Signature`   | 纯 hex HMAC-SHA256         | `GITEA_WEBHOOK_SECRET`  |
+
+Gitea payload 会被归一化为与 GitHub 相同的内部结构，因此路由、过滤器与 28 个格式化器无需改动即可复用；未知或未映射的 Gitea 事件回退到通用格式化器。仓库/提交/用户链接基于 payload 的 `repository.html_url` 生成，会指向你的 Gitea 实例。
 
 ## Web 控制台
 
@@ -156,17 +168,19 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
   "id": "backend-team",
   "name": "后端团队",
   "adminIds": ["rhencloud"],
-  "owners": ["myorg"]
+  "owners": ["myorg"],
+  "providers": ["github", "gitea"]
 }
 ```
 
-| 字段       | 类型     | 必需 | 说明                                                  |
-| ---------- | -------- | ---- | ----------------------------------------------------- |
-| `id`       | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用 |
-| `name`     | string   | 是   | 可读的分组名称                                        |
-| `adminIds` | string[] | 是   | 可管理该分组路由的 GitHub 用户 ID 或登录名            |
-| `owners`   | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制   |
-| `emoji`    | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）           |
+| 字段        | 类型     | 必需 | 说明                                                        |
+| ----------- | -------- | ---- | ----------------------------------------------------------- |
+| `id`        | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用       |
+| `name`      | string   | 是   | 可读的分组名称                                              |
+| `adminIds`  | string[] | 是   | 可管理该分组路由的 GitHub 用户 ID 或登录名                  |
+| `owners`    | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制         |
+| `providers` | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部 |
+| `emoji`     | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                 |
 
 ### 权限模型
 
@@ -174,6 +188,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 - **分组管理员**（`adminIds`）只能查看和编辑其管理的分组；提交其分组之外的路由返回 `403`。
 - 分组管理端点通过 `/admin/api/groups/:id/routes` 一次只操作一个分组；`groupId` 由路径参数强制指定。
 - `owners` 列表限定哪些事件参与者（发送者登录名）的事件会被该分组的路由投递。
+- `providers` 列表限定哪个 forge（`github`、`gitea`）的事件会被该分组的路由投递。即使组织/用户同名，也可以借此将 GitHub 与 Gitea 分组区分开。
 
 ## 过滤器类型
 

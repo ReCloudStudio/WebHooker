@@ -215,4 +215,48 @@ describe("dispatchEvent fallback routing", () => {
     expect(parsed.content).toBe("<@&111> <@&222>");
     expect(parsed.embeds?.[0]).toBeDefined();
   });
+
+  it("filters events by the group's source provider", async () => {
+    const sent: string[] = [];
+    mockFetch((url) => {
+      sent.push(url);
+      return new Response("{}", { status: 200 });
+    });
+    const kv = createMockKV();
+    await kv.put(
+      "config:groups",
+      JSON.stringify([
+        { id: "gh", name: "GH", adminIds: [], providers: ["github"] },
+        { id: "gitea", name: "Gitea", adminIds: [], providers: ["gitea"] },
+      ]),
+    );
+    const env = createEnv({ KV: kv, DB: createMockDB() });
+    const routes: Route[] = [
+      {
+        id: "gh-push",
+        name: "GH",
+        enabled: true,
+        groupId: "gh",
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "111" }],
+      },
+      {
+        id: "gitea-push",
+        name: "Gitea",
+        enabled: true,
+        groupId: "gitea",
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "222" }],
+      },
+    ];
+
+    await dispatchEvent(
+      { ...baseConfig, routes },
+      { event: "push", payload: {}, provider: "gitea" },
+      env,
+    );
+
+    expect(sent.filter((u) => u.includes("/222/"))).toHaveLength(1);
+    expect(sent.filter((u) => u.includes("/111/"))).toHaveLength(0);
+  });
 });

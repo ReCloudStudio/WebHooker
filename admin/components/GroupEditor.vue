@@ -56,6 +56,31 @@
             />
             <div class="hint">{{ t("groupEditor.ownersHint") }}</div>
           </div>
+          <div class="field">
+            <label
+              >{{ t("groupEditor.providers") }}
+              <span class="lbl-note">{{ t("groupEditor.providersNote") }}</span></label
+            >
+            <div class="provider-options">
+              <label class="inline">
+                <input
+                  type="checkbox"
+                  :checked="form.providers.includes('github')"
+                  @change="toggleProvider('github', $event)"
+                />
+                <span>GitHub</span>
+              </label>
+              <label class="inline">
+                <input
+                  type="checkbox"
+                  :checked="form.providers.includes('gitea')"
+                  @change="toggleProvider('gitea', $event)"
+                />
+                <span>Gitea</span>
+              </label>
+            </div>
+            <div class="hint">{{ t("groupEditor.providersHint") }}</div>
+          </div>
           <label class="inline">
             <input v-model="form.emoji" type="checkbox" />
             <span>{{ t("groupEditor.emoji") }}</span>
@@ -95,6 +120,7 @@ const form = reactive({
   name: "",
   adminIds: "",
   owners: "",
+  providers: [] as ("github" | "gitea")[],
   emoji: true,
 });
 
@@ -103,6 +129,13 @@ function splitList(text: string): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function toggleProvider(p: "github" | "gitea", e: Event): void {
+  const checked = (e.target as HTMLInputElement).checked;
+  form.providers = checked
+    ? [...new Set([...form.providers, p])]
+    : form.providers.filter((x) => x !== p);
 }
 
 watch(
@@ -114,6 +147,9 @@ watch(
     form.name = g?.name ?? "";
     form.adminIds = (g?.adminIds ?? []).join(", ");
     form.owners = (g?.owners ?? []).join(", ");
+    form.providers = (g?.providers ?? []).filter(
+      (p): p is "github" | "gitea" => p === "github" || p === "gitea",
+    );
     form.emoji = g?.emoji ?? true;
     formError.value = "";
   },
@@ -141,6 +177,7 @@ function save(): void {
     name,
     adminIds: splitList(form.adminIds),
     owners: owners.length ? owners : undefined,
+    providers: form.providers.length ? form.providers : undefined,
     emoji: form.emoji,
   });
 }

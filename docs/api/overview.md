@@ -13,7 +13,7 @@ https://your-worker.workers.dev
 | Method   | Path                           | Auth              | Description                                               |
 | -------- | ------------------------------ | ----------------- | --------------------------------------------------------- |
 | `GET`    | `/health`                      | None              | Health check                                              |
-| `POST`   | `/webhook`                     | HMAC signature    | GitHub webhook ingestion                                  |
+| `POST`   | `/webhook`                     | HMAC signature    | GitHub / Gitea webhook ingestion (provider auto-detected) |
 | `POST`   | `/discord/interactions`        | Ed25519 signature | Discord interactions (slash commands, buttons, modals)    |
 | `POST`   | `/telegram/webhook`            | Secret token      | Telegram updates (bot `/gh` commands)                     |
 | `GET`    | `/api/richheader`              | None              | Open Graph page for the Telegram avatar link-preview card |

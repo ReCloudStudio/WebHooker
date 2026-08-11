@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { emojiPrefix, type T, buildMessage } from "./helpers";
+import { emojiPrefix, type T, buildMessage, repoBaseUrl } from "./helpers";
 
 export function formatPush(
   payload: Record<string, unknown>,
@@ -20,6 +20,7 @@ export function formatPush(
   }>;
   const count = commits.length;
   const compareUrl = payload.compare as string | undefined;
+  const baseUrl = repoBaseUrl(payload, repo);
   const forced = payload.forced as boolean | undefined;
   const created = payload.created as boolean | undefined;
   const em = (e: string): string => emojiPrefix(e, showEmoji);
@@ -46,7 +47,7 @@ export function formatPush(
   const commitField = (c: (typeof commits)[number]): { name: string; value: string } => {
     const shortId = c.id?.slice(0, 7) ?? "???????";
     const msg = c.message?.split("\n")[0].slice(0, 72) ?? t("common.no_message");
-    const url = repo && c.id ? `https://github.com/${repo}/commit/${c.id}` : null;
+    const url = baseUrl && c.id ? `${baseUrl}/commit/${c.id}` : null;
     const hash = url ? `[\`${shortId}\`](${url})` : `\`${shortId}\``;
     return { name: `\u200b`, value: `${hash} ${msg}` };
   };

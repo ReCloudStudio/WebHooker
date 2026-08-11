@@ -1,12 +1,12 @@
 # 简介
 
-WebHooker 是一个基于 Cloudflare Workers 构建的 GitHub webhook 调度器。它接收 GitHub webhook 事件，应用可配置的过滤器，将事件格式化为富消息，并通过各自 REST API 投递到 Discord 频道/子区（embed）与 Telegram 群组/话题（HTML）。Discord 内的 `/gh` 交互通过 HTTPS Interactions Endpoint（Ed25519 验签）送达；Telegram 的 `/gh` 命令通过 Telegram webhook 送达。路由与分组通过内置的 Web UI 管理。
+WebHooker 是一个基于 Cloudflare Workers 构建的 GitHub/Gitea webhook 调度器。它接收来自受支持 forge（GitHub、Gitea——更多可通过 `src/providers/` 扩展）的 webhook 事件，应用可配置的过滤器，将事件格式化为富消息，并通过各自 REST API 投递到 Discord 频道/子区（embed）与 Telegram 群组/话题（HTML）。Discord 内的 `/gh` 交互通过 HTTPS Interactions Endpoint（Ed25519 验签）送达；Telegram 的 `/gh` 命令通过 Telegram webhook 送达。路由与分组通过内置的 Web UI 管理。
 
 ## 架构
 
 ```text
-GitHub Webhook → Cloudflare Worker (Hono)
-                 ├── POST /webhook → 验证 → 去重 → 过滤 → 格式化 → Discord (REST) / Telegram (Bot API)
+GitHub / Gitea Webhook → Cloudflare Worker (Hono)
+                 ├── POST /webhook → 识别提供方 → 验证 → 去重 → 过滤 → 格式化 → Discord (REST) / Telegram (Bot API)
                  ├── POST /discord/interactions → 验证 (Ed25519) → 处理 /gh 斜杠与右键命令
                  ├── POST /telegram/webhook → 验证 (secret token) → 处理 /gh 命令
                  ├── GET  /auth/github → OAuth 流程
@@ -27,10 +27,10 @@ GitHub Webhook → Cloudflare Worker (Hono)
 
 ### 数据流
 
-1. GitHub 发送 webhook 到 `POST /webhook`
-2. Worker 验证 HMAC-SHA256 签名
-3. Worker 按 `X-GitHub-Delivery` 去重（KV，短 TTL），丢弃重复投递
-4. Worker 解析事件类型和载荷
+1. 某个 forge（GitHub 或 Gitea）发送 webhook 到 `POST /webhook`
+2. Worker 根据请求头识别提供方（`X-GitHub-Event` / `X-Gitea-Event`）并验证对应提供的 HMAC-SHA256 签名
+3. Worker 按投递 ID 去重（KV，短 TTL），丢弃重复投递
+4. Worker 解析事件类型并将载荷归一化为 GitHub 形状的事件
 5. 根据过滤器（event、repo、actor、action、branch、keyword）与分组所有者限制评估路由
 6. 匹配的路由触发格式化器函数生成平台中立消息
 7. 每条消息通过 Discord 或 Telegram REST API 发送到对应路由的目标，并处理速率限制重试；`workflow_run` 进度原地更新。每次尝试都记录到 D1 发送日志

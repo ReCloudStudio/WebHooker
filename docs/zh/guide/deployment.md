@@ -98,6 +98,14 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
 2. 设置 **Webhook URL** 为 `https://webhooker.<your-subdomain>.workers.dev/webhook`
 3. 设置 **Webhook secret** 与 `GITHUB_WEBHOOK_SECRET` 一致
 
+### 6.（可选）配置 Gitea Webhook
+
+1. 在 Gitea 仓库中进入 **设置 → Web 钩子 → 添加 Web 钩子 → Gitea**
+2. 设置 **目标 URL** 为 `https://webhooker.<your-subdomain>.workers.dev/webhook`
+3. 设置 **HTTP 方法** 为 `POST`、**Content Type** 为 `application/json`
+4. 设置 **密钥** 与 `GITEA_WEBHOOK_SECRET` 一致
+5. 选择要触发的事件（push、议题、拉取请求、发布等）
+
 ## GitHub App 设置
 
 ### 1. 创建 App

@@ -4,7 +4,7 @@ import { matchRoute, eventOwners } from "../events/match";
 import { log } from "../lib/log";
 import { loadTranslations, type Translations } from "../lib/i18n";
 import { recordSend } from "../lib/send-log";
-import { loadGroups, groupAcceptsOwners } from "../web/groups";
+import { loadGroups, groupAcceptsOwners, groupAcceptsProvider } from "../web/groups";
 import { getDriver } from "../drivers";
 import type { SendResult } from "../drivers/types";
 
@@ -24,7 +24,9 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
   const accepted = (route: Route): boolean => {
     if (!route.groupId) return true;
     const group = groupById.get(route.groupId);
-    return !group || groupAcceptsOwners(group, owners);
+    if (!group) return true;
+    if (!groupAcceptsOwners(group, owners)) return false;
+    return groupAcceptsProvider(group, event.provider);
   };
   const matched = config.routes.filter(
     (route) => !route.fallback && matchRoute(route, event) && accepted(route),

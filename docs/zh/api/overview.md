@@ -13,7 +13,7 @@ https://your-worker.workers.dev
 | 方法     | 路径                           | 鉴权         | 说明                                             |
 | -------- | ------------------------------ | ------------ | ------------------------------------------------ |
 | `GET`    | `/health`                      | 无           | 健康检查                                         |
-| `POST`   | `/webhook`                     | HMAC 签名    | GitHub webhook 接入                              |
+| `POST`   | `/webhook`                     | HMAC 签名    | GitHub / Gitea webhook 接入（自动识别来源）      |
 | `POST`   | `/discord/interactions`        | Ed25519 签名 | Discord 交互（斜杠命令、按钮、modal）            |
 | `POST`   | `/telegram/webhook`            | Secret token | Telegram 更新（bot `/gh` 命令）                  |
 | `GET`    | `/api/richheader`              | 无           | 用于 Telegram 头像链接预览卡片的 Open Graph 页面 |

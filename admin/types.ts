@@ -30,6 +30,7 @@ export interface Group {
   name: string;
   adminIds: string[];
   owners?: string[];
+  providers?: ("github" | "gitea" | "gitlab")[];
   emoji?: boolean;
 }
 

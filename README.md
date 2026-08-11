@@ -1,10 +1,11 @@
 # WebHooker
 
-GitHub webhook → Discord / Telegram dispatcher. Receives webhook events via Cloudflare Workers, applies filters, and routes formatted messages to Discord channels/threads and Telegram chats/topics.
+GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook events via Cloudflare Workers, applies filters, and routes formatted messages to Discord channels/threads and Telegram chats/topics. Forge-specific adapters live under `src/providers/` (GitHub + Gitea today; GitLab etc. can be added later).
 
 ## Features
 
 - **28 event formatters** — push, pull_request, issues, issue_comment, workflow_run, workflow_job, status, deployment, deployment_status, check_run, check_suite, ping, release, create, delete, star, fork, pull_request_review, pull_request_review_comment, commit_comment, member, label, milestone, discussion, discussion_comment, repository, code_scanning_alert, dependabot_alert (+ generic fallback)
+- **Multi-provider webhooks** — GitHub (`X-Hub-Signature-256`) and Gitea (`X-Gitea-Signature`) share one `/webhook` endpoint; the provider is auto-detected from headers
 - HMAC-SHA256 signature verification (Web Crypto API)
 - Filter by event type, repo, actor, action, branch, keyword (supports regex)
 - Rich messages with color coding, author avatars, fields, and timestamps — rendered as Discord embeds and Telegram HTML
@@ -51,6 +52,7 @@ npx wrangler dev     # Start local dev server
 | Variable                    | Description                                                                                    |
 | --------------------------- | ---------------------------------------------------------------------------------------------- |
 | `GITHUB_WEBHOOK_SECRET`     | Webhook secret from GitHub                                                                     |
+| `GITEA_WEBHOOK_SECRET`      | Webhook secret from Gitea (required only to receive Gitea webhooks)                            |
 | `GITHUB_APP_ID`             | GitHub App ID (not currently used by the code; kept for compatibility)                         |
 | `GITHUB_PRIVATE_KEY`        | App private key (PKCS#8 PEM; not currently used by the code; kept for compatibility)           |
 | `GITHUB_CLIENT_ID`          | OAuth client ID                                                                                |
@@ -104,7 +106,7 @@ Set `discordRoleIds` on a route to ping Discord roles (身份组) whenever it fi
 }
 ```
 
-Routes belong to **groups** (KV `config:groups`) that scope admin access and can restrict which org/user events flow in. See `config.example.yaml` and `docs/guide/configuration.md` for the full schema.
+Routes belong to **groups** (KV `config:groups`) that scope admin access and can restrict which org/user events flow in — including which source platform (`providers`: `github` / `gitea`). See `config.example.yaml` and `docs/guide/configuration.md` for the full schema.
 
 ### Web UI (`/admin`)
 

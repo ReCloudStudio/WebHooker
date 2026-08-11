@@ -8,6 +8,7 @@ groups:
     name: "Default"
     adminIds: ["your-github-id"]
     # owners: ["myorg"]            # restrict events to this org/user (optional)
+    # providers: ["github", "gitea"]  # restrict to source platforms (optional; empty = all)
     # emoji: true                  # include emoji in messages (default true)
 
 routes:

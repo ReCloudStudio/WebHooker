@@ -40,6 +40,17 @@ export function groupAcceptsOwners(group: Group, owners: string[]): boolean {
   return seen.some((o) => restrict.includes(o));
 }
 
+/**
+ * Whether an event from a webhook `provider` (source platform: github, gitea,
+ * ...) is allowed into this group. A group with no provider restriction
+ * accepts every provider. Events without a provider are treated as github.
+ */
+export function groupAcceptsProvider(group: Group, provider?: string): boolean {
+  const allowed = (group.providers ?? []).map((s) => s.trim().toLowerCase()).filter(Boolean);
+  if (allowed.length === 0) return true;
+  return allowed.includes(provider ?? "github");
+}
+
 export interface AccessScope {
   isSuper: boolean;
   /** Groups the user may view/edit. When isSuper, this is every group. */
