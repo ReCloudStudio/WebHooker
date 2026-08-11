@@ -62,9 +62,7 @@ export function currentAuth(c: Context<AuthEnv>): AuthContext {
   return c.get(AUTH_KEY);
 }
 
-export type GroupAccess =
-  | { ok: true; group: Group }
-  | { ok: false; status: 403 | 404 };
+export type GroupAccess = { ok: true; group: Group } | { ok: false; status: 403 | 404 };
 
 /** Resolves the group and checks the user can at least view it. */
 export function requireGroup(c: Context<AuthEnv>, groupId: string): GroupAccess {
@@ -95,7 +93,9 @@ export function requireGroupRole(
 export { canEditGroup, canEditRoutes, roleAt };
 
 /** Best-effort client IP for audit entries (Cloudflare header first). */
-export function clientIp(c: { req: { header: (n: string) => string | undefined } }): string | undefined {
+export function clientIp(c: {
+  req: { header: (n: string) => string | undefined };
+}): string | undefined {
   return c.req.header("cf-connecting-ip") ?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
 }
 

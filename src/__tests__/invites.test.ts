@@ -57,22 +57,42 @@ describe("invites", () => {
   });
 
   it("lists pending invites of a group only", async () => {
-    await createInvite(kv, { groupId: "team", role: "viewer", expiresAt: Date.now() + 86400_000, createdBy: "boss" });
-    await createInvite(kv, { groupId: "other", role: "viewer", expiresAt: Date.now() + 86400_000, createdBy: "boss" });
+    await createInvite(kv, {
+      groupId: "team",
+      role: "viewer",
+      expiresAt: Date.now() + 86400_000,
+      createdBy: "boss",
+    });
+    await createInvite(kv, {
+      groupId: "other",
+      role: "viewer",
+      expiresAt: Date.now() + 86400_000,
+      createdBy: "boss",
+    });
     const invites = await listInvites(kv, "team");
     expect(invites).toHaveLength(1);
     expect(invites[0]!.groupId).toBe("team");
   });
 
   it("revokes an invite", async () => {
-    const token = await createInvite(kv, { groupId: "team", role: "viewer", expiresAt: Date.now() + 86400_000, createdBy: "boss" });
+    const token = await createInvite(kv, {
+      groupId: "team",
+      role: "viewer",
+      expiresAt: Date.now() + 86400_000,
+      createdBy: "boss",
+    });
     await revokeInvite(kv, token);
     expect(await getInvite(kv, token)).toBeNull();
   });
 
   it("accept adds the user as a member and consumes the token", async () => {
     await saveGroups(kv, [group]);
-    const token = await createInvite(kv, { groupId: "team", role: "admin", expiresAt: Date.now() + 86400_000, createdBy: "boss" });
+    const token = await createInvite(kv, {
+      groupId: "team",
+      role: "admin",
+      expiresAt: Date.now() + 86400_000,
+      createdBy: "boss",
+    });
     const result = await acceptInvite(kv, token, "777", "newbie");
     expect(result).toEqual({ ok: true, groupId: "team", role: "admin" });
     expect(await getInvite(kv, token)).toBeNull();
@@ -84,9 +104,20 @@ describe("invites", () => {
 
   it("upgrades an existing viewer to admin", async () => {
     await saveGroups(kv, [
-      { ...group, members: [{ login: "boss", role: "owner" }, { login: "newbie", role: "viewer" }] },
+      {
+        ...group,
+        members: [
+          { login: "boss", role: "owner" },
+          { login: "newbie", role: "viewer" },
+        ],
+      },
     ]);
-    const token = await createInvite(kv, { groupId: "team", role: "admin", expiresAt: Date.now() + 86400_000, createdBy: "boss" });
+    const token = await createInvite(kv, {
+      groupId: "team",
+      role: "admin",
+      expiresAt: Date.now() + 86400_000,
+      createdBy: "boss",
+    });
     await acceptInvite(kv, token, "777", "newbie");
     const groups = await loadGroups(kv);
     expect(groups[0]!.members).toContainEqual({ login: "newbie", role: "admin" });
@@ -94,14 +125,24 @@ describe("invites", () => {
 
   it("rejects expired or unknown invites", async () => {
     await saveGroups(kv, [group]);
-    const token = await createInvite(kv, { groupId: "team", role: "viewer", expiresAt: Date.now() - 1000, createdBy: "boss" });
+    const token = await createInvite(kv, {
+      groupId: "team",
+      role: "viewer",
+      expiresAt: Date.now() - 1000,
+      createdBy: "boss",
+    });
     expect(await acceptInvite(kv, token, "1", "x")).toEqual({ ok: false, reason: "invalid" });
     expect(await acceptInvite(kv, "deadbeef", "1", "x")).toEqual({ ok: false, reason: "invalid" });
   });
 
   it("rejects invites for missing groups", async () => {
     await saveGroups(kv, []);
-    const token = await createInvite(kv, { groupId: "ghost", role: "viewer", expiresAt: Date.now() + 86400_000, createdBy: "boss" });
+    const token = await createInvite(kv, {
+      groupId: "ghost",
+      role: "viewer",
+      expiresAt: Date.now() + 86400_000,
+      createdBy: "boss",
+    });
     expect(await acceptInvite(kv, token, "1", "x")).toEqual({ ok: false, reason: "group-missing" });
   });
 });

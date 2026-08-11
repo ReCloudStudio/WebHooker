@@ -15,7 +15,8 @@ export interface AuditEntry {
   ip?: string;
 }
 
-const COLUMNS = "id, ts, actor_id, actor_login, action, target_type, target_id, group_id, detail, ip";
+const COLUMNS =
+  "id, ts, actor_id, actor_login, action, target_type, target_id, group_id, detail, ip";
 
 interface AuditRow {
   id: number;

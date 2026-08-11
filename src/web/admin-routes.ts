@@ -292,10 +292,7 @@ function ownerCount(members: GroupMember[]): number {
 }
 
 /** Route params are always present for matched paths; keeps Hono's loose typing honest. */
-function param(
-  c: { req: { param: (name: string) => string | undefined } },
-  name: string,
-): string {
+function param(c: { req: { param: (name: string) => string | undefined } }, name: string): string {
   return c.req.param(name) ?? "";
 }
 
@@ -329,7 +326,9 @@ export function createAdminRoutes(): Hono<AuthEnv> {
     if (!token) return c.redirect("/admin");
     const auth = c.get("auth");
     if (!auth) {
-      return c.redirect(`/auth/github?redirect=${encodeURIComponent(`/admin/invite?token=${token}`)}`);
+      return c.redirect(
+        `/auth/github?redirect=${encodeURIComponent(`/admin/invite?token=${token}`)}`,
+      );
     }
     const result = await acceptInvite(c.env.KV, token, auth.session.userId, auth.session.login);
     if (result.ok) {
@@ -411,10 +410,7 @@ export function createAdminRoutes(): Hono<AuthEnv> {
         );
         const otherOwner = ownerCount(members) > 1;
         if (!stillMine && !otherOwner) {
-          return c.json(
-            { error: `group "${g.id}" would be left without an owner by you` },
-            403,
-          );
+          return c.json({ error: `group "${g.id}" would be left without an owner by you` }, 403);
         }
       }
       nextAll = [
@@ -453,7 +449,8 @@ export function createAdminRoutes(): Hono<AuthEnv> {
       if (prev.emoji !== g.emoji) fields.push("emoji");
       if (!deepEqual(prev.providers ?? [], g.providers ?? [])) fields.push("providers");
       if (!deepEqual(prev.owners ?? [], g.owners ?? [])) fields.push("owners");
-      if (!deepEqual(prev.members ?? normalizeGroupMembers(prev), g.members)) fields.push("members");
+      if (!deepEqual(prev.members ?? normalizeGroupMembers(prev), g.members))
+        fields.push("members");
       if (fields.length > 0) {
         await recordAudit(c.env.DB, {
           ts: Date.now(),

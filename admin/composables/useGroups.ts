@@ -70,5 +70,17 @@ export function useGroupsApi() {
     groups.value = next;
   }
 
-  return { groups, isSuper, roles, roleOf, canEditGroup, canEditRoutes, loading, needLogin, error, load, save };
+  return {
+    groups,
+    isSuper,
+    roles,
+    roleOf,
+    canEditGroup,
+    canEditRoutes,
+    loading,
+    needLogin,
+    error,
+    load,
+    save,
+  };
 }

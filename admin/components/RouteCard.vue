@@ -39,7 +39,11 @@
           >
             ↓
           </button>
-          <button class="icon-btn" :title="t('routeEditor.editTitle')" @click="$emit('edit', route)">
+          <button
+            class="icon-btn"
+            :title="t('routeEditor.editTitle')"
+            @click="$emit('edit', route)"
+          >
             ✎
           </button>
           <button
@@ -88,7 +92,12 @@ import { fmtMatch } from "~/types";
 
 const { t } = useI18n();
 
-const props = defineProps<{ route: Route; atFirst?: boolean; atLast?: boolean; readonly?: boolean }>();
+const props = defineProps<{
+  route: Route;
+  atFirst?: boolean;
+  atLast?: boolean;
+  readonly?: boolean;
+}>();
 const emit = defineEmits<{
   (e: "toggle", route: Route): void;
   (e: "edit", route: Route): void;

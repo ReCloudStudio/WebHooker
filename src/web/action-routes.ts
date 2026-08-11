@@ -148,14 +148,7 @@ export function createActionRoutes(): Hono<AuthEnv> {
         repo: body.repo,
         issue_number: body.issueNumber,
         content: body.reaction as
-          | "+1"
-          | "-1"
-          | "laugh"
-          | "confused"
-          | "heart"
-          | "hooray"
-          | "rocket"
-          | "eyes",
+          "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes",
       });
     } catch (err) {
       log.error({ err }, "Failed to create reaction");

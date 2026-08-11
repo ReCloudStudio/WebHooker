@@ -26,7 +26,7 @@ WebHooker 需要多个密钥才能运行。本地开发时存储在 `.dev.vars` 
 | --------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------- |
 | `BASE_URL`                  | OAuth 回调的公开 URL                                                                             | `http://localhost:8787` |
 | `ADMIN_USER_IDS`            | 允许访问 WebUI 的 GitHub 用户 ID（或登录名），逗号分隔                                           | 未设置时 WebUI 关闭     |
-| `ALLOW_SELF_SIGNUP`         | 开启（`1`/`true`）后，没有任何分组权限的 GitHub 用户首次登录会自动获得个人分组而非 403          | 关闭                    |
+| `ALLOW_SELF_SIGNUP`         | 开启（`1`/`true`）后，没有任何分组权限的 GitHub 用户首次登录会自动获得个人分组而非 403           | 关闭                    |
 | `AUDIT_RETENTION_DAYS`      | 定时清理时审计日志的保留天数                                                                     | `90`                    |
 | `DISCORD_PUBLIC_KEY`        | Discord 应用的公钥（开发者门户获取），交互功能必需                                               | 未设置时交互返回 401    |
 | `DISCORD_APPLICATION_ID`    | Discord 应用 ID；省略时自动获取                                                                  | 自动获取                |
@@ -58,25 +58,25 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 控制台以 SPA 形式挂在 `/admin`，各标签页可通过 URL 路径直达（`/admin/groups`、`/admin/logs`、`/admin/audit`）。`/admin` 之外且未匹配下方端点的 URL 直接返回 `404`，不会再被吞进控制台。
 
-| 端点                                  | 说明                                 |
-| ------------------------------------- | ------------------------------------ |
-| `GET /admin`                          | 配置控制台页面                       |
-| `GET /admin/login`                    | 开始 GitHub OAuth 登录               |
-| `GET /admin/logout`                   | 销毁会话                             |
-| `GET /admin/invite?token=…`           | 接受分组邀请（浏览器页面）           |
-| `GET /admin/api/me`                   | 当前会话、权限范围、分组和角色       |
-| `GET /admin/api/routes`               | 列出路由（按权限过滤）               |
-| `PUT /admin/api/routes`               | 替换路由（按分组 owner/admin 权限）  |
-| `GET /admin/api/groups`               | 列出分组 + 当前用户在各组的角色      |
-| `PUT /admin/api/groups`               | 替换分组（超管全量；owner 仅自己的组） |
-| `GET /admin/api/groups/:id/routes`    | 列出某分组的路由                     |
-| `PUT /admin/api/groups/:id/routes`    | 替换某分组的路由（owner/admin）      |
-| `GET /admin/api/logs`                 | 发送日志（按可访问路由过滤）         |
-| `GET /admin/api/logs/:id`             | 单条发送日志（按权限过滤）           |
-| `POST /admin/api/groups/:id/invites`  | 创建邀请链接（owner）                |
-| `GET /admin/api/groups/:id/invites`   | 列出待接受邀请（owner）              |
-| `DELETE /admin/api/invites/:token`    | 撤销邀请（owner）                    |
-| `GET /admin/api/audit`                | 审计日志（按可访问分组过滤）         |
+| 端点                                 | 说明                                   |
+| ------------------------------------ | -------------------------------------- |
+| `GET /admin`                         | 配置控制台页面                         |
+| `GET /admin/login`                   | 开始 GitHub OAuth 登录                 |
+| `GET /admin/logout`                  | 销毁会话                               |
+| `GET /admin/invite?token=…`          | 接受分组邀请（浏览器页面）             |
+| `GET /admin/api/me`                  | 当前会话、权限范围、分组和角色         |
+| `GET /admin/api/routes`              | 列出路由（按权限过滤）                 |
+| `PUT /admin/api/routes`              | 替换路由（按分组 owner/admin 权限）    |
+| `GET /admin/api/groups`              | 列出分组 + 当前用户在各组的角色        |
+| `PUT /admin/api/groups`              | 替换分组（超管全量；owner 仅自己的组） |
+| `GET /admin/api/groups/:id/routes`   | 列出某分组的路由                       |
+| `PUT /admin/api/groups/:id/routes`   | 替换某分组的路由（owner/admin）        |
+| `GET /admin/api/logs`                | 发送日志（按可访问路由过滤）           |
+| `GET /admin/api/logs/:id`            | 单条发送日志（按权限过滤）             |
+| `POST /admin/api/groups/:id/invites` | 创建邀请链接（owner）                  |
+| `GET /admin/api/groups/:id/invites`  | 列出待接受邀请（owner）                |
+| `DELETE /admin/api/invites/:token`   | 撤销邀请（owner）                      |
+| `GET /admin/api/audit`               | 审计日志（按可访问分组过滤）           |
 
 控制台支持新增、编辑、删除和开关路由。保存后立即写入 KV `config:routes` 并使配置缓存失效，下一次 webhook 处理即会生效。
 
@@ -186,25 +186,25 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 }
 ```
 
-| 字段        | 类型     | 必需 | 说明                                                               |
-| ----------- | -------- | ---- | ------------------------------------------------------------------ |
-| `id`        | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用              |
-| `name`      | string   | 是   | 可读的分组名称                                                     |
-| `members`   | object[] | 否   | `{ login, role }` 列表；角色为 `owner`、`admin` 或 `viewer`        |
-| `adminIds`  | string[] | 否   | 已废弃的旧字段；存在时按 role 为 `owner` 的成员处理                 |
-| `owners`    | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制                |
-| `providers` | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部        |
-| `emoji`     | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                        |
+| 字段        | 类型     | 必需 | 说明                                                        |
+| ----------- | -------- | ---- | ----------------------------------------------------------- |
+| `id`        | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用       |
+| `name`      | string   | 是   | 可读的分组名称                                              |
+| `members`   | object[] | 否   | `{ login, role }` 列表；角色为 `owner`、`admin` 或 `viewer` |
+| `adminIds`  | string[] | 否   | 已废弃的旧字段；存在时按 role 为 `owner` 的成员处理         |
+| `owners`    | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制         |
+| `providers` | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部 |
+| `emoji`     | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                 |
 
 ### 角色
 
 每个分组成员拥有三种角色之一。超级管理员（`ADMIN_USER_IDS`）始终绕过角色限制。
 
-| 角色     | 查看路由/日志 | 编辑路由 | 管理成员与邀请 | 编辑分组设置 |
-| -------- | ------------- | -------- | -------------- | ------------ |
+| 角色     | 查看路由/日志 | 编辑路由 | 管理成员与邀请 | 编辑分组设置       |
+| -------- | ------------- | -------- | -------------- | ------------------ |
 | `owner`  | ✓             | ✓        | ✓              | ✓（`owners` 除外） |
-| `admin`  | ✓             | ✓        | ✗              | ✗            |
-| `viewer` | ✓（只读）     | ✗        | ✗              | ✗            |
+| `admin`  | ✓             | ✓        | ✗              | ✗                  |
+| `viewer` | ✓（只读）     | ✗        | ✗              | ✗                  |
 
 ### 权限模型
 
@@ -264,7 +264,7 @@ owner（及超级管理员）可在分组的「成员」面板创建一次性邀
 | `token-reverse:{sha256}`       | 用于按 Token 反查的用户 id                                                    | 0.9 × Token 有效期 |
 | `state:{hex}`                  | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 秒             |
 | `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 天               |
-| `invite:group:{id}`            | 每组的 Token 索引（保证邀请列表一致性）                                        | 永久               |
+| `invite:group:{id}`            | 每组的 Token 索引（保证邀请列表一致性）                                       | 永久               |
 | `delivery:{id}`                | Webhook 投递 id（去重标记）                                                   | 300 秒             |
 | `msg:{routeId}:{key}:{target}` | 原地更新用消息 id 追踪（如 `workflow_run`）                                   | 7 天               |
 | `cmd:guild:{id}`               | 已注册命令的服务器 id（去重标记）                                             | 永久               |
