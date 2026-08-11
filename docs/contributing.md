@@ -20,7 +20,7 @@ src/
 ├── server.ts             # Hono app: /health, /webhook, /discord/interactions, /telegram/webhook, mounts /auth, /admin + /
 ├── core/
 │   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → getDriver().send/edit
-├── events/               # GitHub webhook pipeline (legacy src/webhook.ts is dead code)
+├── events/               # GitHub webhook pipeline: verify signature, parse event, match route
 │   ├── verify.ts         # HMAC signature verification (Web Crypto, timing-safe)
 │   ├── parse.ts          # parseEvent (headers + body → WebhookEvent)
 │   └── match.ts          # matchRoute, eventOwners, extractBranch, keyword filtering

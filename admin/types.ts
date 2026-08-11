@@ -33,13 +33,6 @@ export interface Group {
   emoji?: boolean;
 }
 
-export interface Me {
-  login: string;
-  userId: string;
-  isSuper: boolean;
-  groups: Group[];
-}
-
 export interface RouteTemplate {
   id: string;
   nameKey: string;
@@ -124,15 +117,6 @@ export const ROUTE_TEMPLATES: RouteTemplate[] = [
 ];
 
 export const FILTER_TYPES = ["event", "repo", "actor", "action", "branch", "keyword"] as const;
-
-export const FILTER_LABELS: Record<string, string> = {
-  event: "Event",
-  repo: "Repo",
-  actor: "Actor",
-  action: "Action",
-  branch: "Branch",
-  keyword: "Keyword",
-};
 
 export function fmtMatch(match: string | string[]): string {
   if (Array.isArray(match)) return match.join(", ");

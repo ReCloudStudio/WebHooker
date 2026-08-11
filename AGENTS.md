@@ -13,7 +13,7 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Discord interactions: HTTPS Interactions Endpoint (`POST /discord/interactions`, Ed25519-signed) — no Discord Gateway / Durable Object; bot stays offline, messages always sent via REST
 - Storage: Cloudflare KV (tokens, OAuth state, route config `config:routes`, group config `config:groups`, admin sessions, delivery dedup, message-update tracking `msg:*`, i18n overrides `i18n:*`) + D1 (`send_logs`, `discord_links`, `telegram_links`)
 - Signature verification: Web Crypto API (HMAC-SHA256 for GitHub, Ed25519 for Discord, timing-safe secret-token compare for Telegram)
-- GitHub OAuth: octokit (token is stored hashed for reverse lookup; jose is a dependency but JWT issuance is not used)
+- GitHub OAuth: octokit (token is stored hashed for reverse lookup)
 - Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist
 - Local dev: wrangler + Miniflare
 
@@ -27,7 +27,7 @@ src/
 ├── server.ts             # Hono app: /health, /webhook, /discord/interactions, /telegram/webhook, mounts /auth, /admin + /
 ├── core/
 │   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter)
-├── events/               # GitHub webhook pipeline (legacy src/webhook.ts is dead code — do not import it)
+├── events/               # GitHub webhook pipeline: verify signature, parse event, match route
 │   ├── verify.ts         # HMAC signature verify (Web Crypto, timing-safe)
 │   ├── parse.ts          # parseEvent (headers + body → WebhookEvent)
 │   └── match.ts          # matchRoute, eventOwners, extractBranch, keyword regex filtering

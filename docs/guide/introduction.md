@@ -43,7 +43,7 @@ GitHub Webhook → Cloudflare Worker (Hono)
 - **Telegram delivery**: Telegram Bot API (webhook with optional secret-token verification)
 - **Web UI**: Nuxt 3 static SPA served from Worker assets
 - **Storage**: Cloudflare KV + D1
-- **Auth**: Web Crypto API (HMAC-SHA256, Ed25519), octokit (GitHub API), jose (dependency)
+- **Auth**: Web Crypto API (HMAC-SHA256, Ed25519), octokit (GitHub API)
 - **Language**: TypeScript
 
 ## License

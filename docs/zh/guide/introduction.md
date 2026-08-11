@@ -43,7 +43,7 @@ GitHub Webhook → Cloudflare Worker (Hono)
 - **Telegram 投递**: Telegram Bot API（webhook 带可选 secret-token 校验）
 - **Web UI**: Nuxt 3 静态 SPA，由 Worker 资源托管
 - **存储**: Cloudflare KV + D1
-- **鉴权**: Web Crypto API (HMAC-SHA256、Ed25519)、octokit (GitHub API)、jose（依赖）
+- **鉴权**: Web Crypto API (HMAC-SHA256、Ed25519)、octokit (GitHub API)
 - **语言**: TypeScript
 
 ## 许可证

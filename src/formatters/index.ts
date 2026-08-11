@@ -22,28 +22,6 @@ import { formatCodeScanningAlert, formatDependabotAlert } from "./security";
 import { formatGeneric } from "./generic";
 import { formatPing } from "./ping";
 
-export type { T } from "./helpers";
-export { formatPush } from "./push";
-export { formatPullRequest } from "./pull-request";
-export { formatPullRequestReview, formatPullRequestReviewComment } from "./review";
-export { formatIssues } from "./issues";
-export { formatIssueComment } from "./comments";
-export { formatWorkflowRun, formatWorkflowJob } from "./workflow";
-export { formatRelease } from "./release";
-export { formatCreate, formatDelete } from "./create";
-export { formatStar, formatFork } from "./repo";
-export { formatCheckRun, formatCheckSuite, formatStatus } from "./check";
-export { formatCommitComment } from "./commit-comment";
-export { formatDeployment, formatDeploymentStatus } from "./deployment";
-export { formatMember } from "./member";
-export { formatLabel } from "./label";
-export { formatMilestone } from "./milestone";
-export { formatDiscussion, formatDiscussionComment } from "./discussion";
-export { formatRepository } from "./repository";
-export { formatCodeScanningAlert, formatDependabotAlert } from "./security";
-export { formatGeneric } from "./generic";
-export { formatPing } from "./ping";
-
 export function formatEvent(
   route: Route,
   event: WebhookEvent,

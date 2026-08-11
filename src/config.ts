@@ -33,10 +33,6 @@ export async function saveRoutes(kv: KVNamespace, routes: Route[]): Promise<void
   configCache = null;
 }
 
-export function invalidateConfigCache(): void {
-  configCache = null;
-}
-
 export async function loadConfig(env: Env): Promise<Config> {
   if (configCache && Date.now() < configCache.expiresAt) {
     return configCache.config;

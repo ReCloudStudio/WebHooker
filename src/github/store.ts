@@ -2,7 +2,6 @@ interface StoredToken {
   userId: string;
   accessToken: string;
   expiresAt: number;
-  refreshToken?: string;
 }
 
 async function hashToken(token: string): Promise<string> {
@@ -18,13 +17,11 @@ export async function saveToken(
   userId: string,
   accessToken: string,
   expiresInSeconds: number,
-  refreshToken?: string,
 ): Promise<void> {
   const token: StoredToken = {
     userId,
     accessToken,
     expiresAt: Date.now() + expiresInSeconds * 1000,
-    refreshToken,
   };
   const ttl = Math.max(Math.floor(expiresInSeconds * 0.9), 60);
   await kv.put(`token:${userId}`, JSON.stringify(token), { expirationTtl: ttl });
@@ -42,12 +39,6 @@ export async function getToken(kv: KVNamespace, userId: string): Promise<string 
     return null;
   }
   return t.accessToken;
-}
-
-export async function getRefreshToken(kv: KVNamespace, userId: string): Promise<string | null> {
-  const raw = await kv.get(`token:${userId}`, "json");
-  if (!raw) return null;
-  return (raw as StoredToken).refreshToken ?? null;
 }
 
 export async function removeToken(kv: KVNamespace, userId: string): Promise<void> {

@@ -20,7 +20,7 @@ src/
 ├── server.ts             # Hono 应用: /health、/webhook、/discord/interactions、/telegram/webhook，挂载 /auth、/admin + /
 ├── core/
 │   └── dispatch.ts       # 平台中立分发：匹配路由 → formatEvent → getDriver().send/edit
-├── events/               # GitHub webhook 事件流水线（旧 src/webhook.ts 为死代码）
+├── events/               # GitHub webhook 事件流水线：验证签名、解析事件、匹配路由
 │   ├── verify.ts         # HMAC 签名验证 (Web Crypto，时间安全)
 │   ├── parse.ts          # parseEvent (headers + body → WebhookEvent)
 │   └── match.ts          # matchRoute、eventOwners、extractBranch、关键词过滤
