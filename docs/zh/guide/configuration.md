@@ -185,15 +185,15 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 }
 ```
 
-| 字段        | 类型     | 必需 | 说明                                                               |
-| ----------- | -------- | ---- | ------------------------------------------------------------------ |
-| `id`        | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用              |
-| `name`      | string   | 是   | 可读的分组名称                                                     |
-| `members`   | object[] | 否   | `{ login, role }` 列表；角色为 `owner`、`admin` 或 `viewer`        |
-| `adminIds`  | string[] | 否   | 已废弃的旧字段；存在时按 role 为 `owner` 的成员处理                 |
-| `owners`    | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制                |
-| `providers` | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部        |
-| `emoji`     | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                        |
+| 字段        | 类型     | 必需 | 说明                                                                                 |
+| ----------- | -------- | ---- | ------------------------------------------------------------------------------------ |
+| `id`        | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用                                |
+| `name`      | string   | 是   | 可读的分组名称                                                                       |
+| `members`   | object[] | 否   | `{ login, role }` 列表；角色为 `owner`、`admin` 或 `viewer`                          |
+| `adminIds`  | string[] | 否   | 已废弃的旧字段；存在时按 role 为 `owner` 的成员处理                                  |
+| `owners`    | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制                                  |
+| `providers` | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部                          |
+| `emoji`     | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                                          |
 | `lang`      | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——默认 `en` |
 
 ### 角色

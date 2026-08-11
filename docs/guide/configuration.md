@@ -185,15 +185,15 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 }
 ```
 
-| Field       | Type     | Required | Description                                                                  |
-| ----------- | -------- | -------- | ---------------------------------------------------------------------------- |
-| `id`        | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`           |
-| `name`      | string   | Yes      | Human-readable group name                                                    |
-| `members`   | object[] | No       | `{ login, role }` entries; role is `owner`, `admin`, or `viewer`             |
-| `adminIds`  | string[] | No       | Deprecated legacy field; treated as `members` with role `owner` when present |
-| `owners`    | string[] | No       | Org/user logins whose events are accepted into this group; empty = all       |
-| `providers` | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all    |
-| `emoji`     | boolean  | No       | Whether to include emoji in this group's messages (default `true`)           |
+| Field       | Type     | Required | Description                                                                                                      |
+| ----------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `id`        | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`                                               |
+| `name`      | string   | Yes      | Human-readable group name                                                                                        |
+| `members`   | object[] | No       | `{ login, role }` entries; role is `owner`, `admin`, or `viewer`                                                 |
+| `adminIds`  | string[] | No       | Deprecated legacy field; treated as `members` with role `owner` when present                                     |
+| `owners`    | string[] | No       | Org/user logins whose events are accepted into this group; empty = all                                           |
+| `providers` | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all                                        |
+| `emoji`     | boolean  | No       | Whether to include emoji in this group's messages (default `true`)                                               |
 | `lang`      | string   | No       | Message language for every route in this group (e.g. `en`, `zh`; custom via KV `i18n:<lang>`) — defaults to `en` |
 
 ### Roles
