@@ -161,8 +161,8 @@
               :loading="logsLoading"
               :groups="groups"
               :selected-group-id="logFilterGroup"
-              @refresh="loadLogs"
-              @filter="loadLogs"
+              @refresh="loadLogs(50, logFilterGroup || undefined)"
+              @filter="loadLogs(50, logFilterGroup || undefined)"
               @update:selected-group-id="logFilterGroup = $event"
             />
           </template>
