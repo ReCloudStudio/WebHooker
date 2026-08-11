@@ -82,8 +82,16 @@ describe("gitea event parsing", () => {
       { "x-gitea-event": "pull_request_comment" },
       JSON.stringify({
         action: "created",
-        issue: { number: 7, title: "Add feature", html_url: "https://git.example.com/org/repo/pulls/7" },
-        comment: { body: "looks good", line: 12, html_url: "https://git.example.com/org/repo/pulls/7#issuecomment-1" },
+        issue: {
+          number: 7,
+          title: "Add feature",
+          html_url: "https://git.example.com/org/repo/pulls/7",
+        },
+        comment: {
+          body: "looks good",
+          line: 12,
+          html_url: "https://git.example.com/org/repo/pulls/7#issuecomment-1",
+        },
         repository: { full_name: "org/repo" },
         sender: { login: "octo" },
       }),
@@ -101,7 +109,10 @@ describe("gitea event parsing", () => {
       JSON.stringify({
         action: "created",
         commit_id: "abcd1234ef",
-        comment: { body: "why?", html_url: "https://git.example.com/org/repo/commit/abcd1234ef#commitcomment-1" },
+        comment: {
+          body: "why?",
+          html_url: "https://git.example.com/org/repo/commit/abcd1234ef#commitcomment-1",
+        },
         repository: { full_name: "org/repo" },
         sender: { login: "octo" },
       }),
