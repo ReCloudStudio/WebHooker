@@ -1,14 +1,21 @@
 import { Hono } from "hono";
-import type { Env, Route, Group } from "../types";
+import type { Route, Group, GroupMember, GroupRole } from "../types";
 import { loadRoutes, saveRoutes } from "../config";
+import { getAdminSession, destroyAdminSession, clearAdminCookie } from "./session";
+import { saveGroups, loadGroups, identityMatches, normalizeGroupMembers } from "./groups";
 import {
-  getAdminSession,
-  destroyAdminSession,
-  clearAdminCookie,
-  type AdminSession,
-} from "./session";
-import { loadGroups, saveGroups, resolveScope, hasAnyAccess, type AccessScope } from "./groups";
+  sessionMiddleware,
+  requireAnyAccess,
+  currentAuth,
+  requireGroup,
+  requireGroupRole,
+  roleAt,
+  clientIp,
+  type AuthEnv,
+} from "./auth";
 import { getSendLog, getSendLogById } from "../lib/send-log";
+import { getAuditLog, recordAudit } from "../lib/audit";
+import { createInvite, listInvites, revokeInvite, getInvite, acceptInvite } from "./invites";
 import { log } from "../lib/log";
 
 const VALID_FILTER_TYPES = new Set(["event", "repo", "actor", "action", "branch", "keyword"]);
@@ -178,6 +185,58 @@ function validateTarget(
   };
 }
 
+function validateMembers(
+  g: Record<string, unknown>,
+  gid: string,
+): { ok: true; members: GroupMember[] } | { ok: false; error: string } {
+  const raw = g.members;
+  if (raw === undefined || raw === null) {
+    // Legacy payload without members: derive owners from adminIds.
+    const adminIds = g.adminIds;
+    if (!Array.isArray(adminIds)) {
+      return { ok: false, error: `group "${gid}" needs a members list` };
+    }
+    if (!adminIds.every((a) => typeof a === "string" && a.trim().length > 0)) {
+      return { ok: false, error: `group "${gid}".adminIds must be a list of strings` };
+    }
+    const members: GroupMember[] = [];
+    const seen = new Set<string>();
+    for (const a of adminIds as string[]) {
+      const login = a.trim();
+      if (!login || seen.has(login.toLowerCase())) continue;
+      seen.add(login.toLowerCase());
+      members.push({ login, role: "owner" });
+    }
+    return { ok: true, members };
+  }
+  if (!Array.isArray(raw)) return { ok: false, error: `group "${gid}".members must be an array` };
+  const seen = new Set<string>();
+  const members: GroupMember[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const m = raw[i] as Record<string, unknown>;
+    if (!m || typeof m !== "object")
+      return { ok: false, error: `group "${gid}".members[${i}] is not an object` };
+    const login = typeof m.login === "string" ? m.login.trim() : "";
+    if (!login) return { ok: false, error: `group "${gid}".members[${i}].login is required` };
+    const role = m.role;
+    if (role !== "owner" && role !== "admin" && role !== "viewer") {
+      return {
+        ok: false,
+        error: `group "${gid}".members[${i}].role must be "owner" | "admin" | "viewer"`,
+      };
+    }
+    if (seen.has(login.toLowerCase())) {
+      return { ok: false, error: `group "${gid}" has duplicate member "${login}"` };
+    }
+    seen.add(login.toLowerCase());
+    members.push({ login, role });
+  }
+  if (members.length > 0 && !members.some((m) => m.role === "owner")) {
+    return { ok: false, error: `group "${gid}" needs at least one owner` };
+  }
+  return { ok: true, members };
+}
+
 function validateGroups(
   groups: unknown,
 ): { ok: true; groups: Group[] } | { ok: false; error: string } {
@@ -196,12 +255,12 @@ function validateGroups(
     if (typeof g.name !== "string" || g.name.trim().length === 0) {
       return { ok: false, error: `group "${g.id}" needs a name` };
     }
-    if (
-      !Array.isArray(g.adminIds) ||
-      !g.adminIds.every((a) => typeof a === "string" && a.trim().length > 0)
-    ) {
-      return { ok: false, error: `group "${g.id}".adminIds must be a list of strings` };
-    }
+    const mres = validateMembers(g, g.id);
+    if (!mres.ok) return mres;
+    // `members` is the single source of truth; adminIds stays in sync so
+    // legacy consumers (isGroupAdmin, older UI) keep working.
+    g.members = mres.members;
+    g.adminIds = mres.members.filter((m) => m.role === "owner").map((m) => m.login);
     if (
       g.owners !== undefined &&
       (!Array.isArray(g.owners) ||
@@ -228,52 +287,95 @@ function validateGroups(
   return { ok: true, groups: groups as Group[] };
 }
 
-export function createAdminRoutes(): Hono<{ Bindings: Env }> {
-  const app = new Hono<{ Bindings: Env }>();
+function ownerCount(members: GroupMember[]): number {
+  return members.filter((m) => m.role === "owner").length;
+}
 
-  async function loadScope(c: {
-    env: Env;
-    req: { header: (name: string) => string | undefined };
-  }): Promise<{ session: AdminSession; scope: AccessScope; groups: Group[] } | null> {
-    const session = await getAdminSession(c.env.KV, c.req.header("cookie"));
-    if (!session) return null;
-    const groups = await loadGroups(c.env.KV);
-    const scope = resolveScope(c.env, groups, session.userId, session.login);
-    if (!hasAnyAccess(scope)) return null;
-    return { session, scope, groups };
-  }
+/** Route params are always present for matched paths; keeps Hono's loose typing honest. */
+function param(
+  c: { req: { param: (name: string) => string | undefined } },
+  name: string,
+): string {
+  return c.req.param(name) ?? "";
+}
+
+export function createAdminRoutes(): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
 
   app.get("/login", (c) => {
     return c.redirect("/auth/github?redirect=/admin");
   });
 
   app.get("/logout", async (c) => {
+    const session = await getAdminSession(c.env.KV, c.req.header("cookie"));
+    if (session) {
+      await recordAudit(c.env.DB, {
+        ts: Date.now(),
+        actorId: session.userId,
+        actorLogin: session.login,
+        action: "session.logout",
+        ip: clientIp(c),
+      });
+    }
     await destroyAdminSession(c.env.KV, c.req.header("cookie"));
     c.header("Set-Cookie", clearAdminCookie());
     return c.redirect("/admin");
   });
 
-  app.get("/api/me", async (c) => {
-    const s = await loadScope(c);
-    if (!s) return c.json({ error: "Unauthorized" }, 401);
+  // Browser page that accepts a group invite. Not logged in �?OAuth first,
+  // carrying the same invite URL as the redirect target.
+  app.get("/invite", sessionMiddleware(), async (c) => {
+    const token = c.req.query("token");
+    if (!token) return c.redirect("/admin");
+    const auth = c.get("auth");
+    if (!auth) {
+      return c.redirect(`/auth/github?redirect=${encodeURIComponent(`/admin/invite?token=${token}`)}`);
+    }
+    const result = await acceptInvite(c.env.KV, token, auth.session.userId, auth.session.login);
+    if (result.ok) {
+      await recordAudit(c.env.DB, {
+        ts: Date.now(),
+        actorId: auth.session.userId,
+        actorLogin: auth.session.login,
+        action: "invite.accept",
+        targetType: "group",
+        targetId: result.groupId,
+        groupId: result.groupId,
+        detail: { role: result.role },
+        ip: clientIp(c),
+      });
+    }
+    return c.redirect(`/admin?invite=${result.ok ? "ok" : result.reason}`);
+  });
+
+  app.get("/api/me", requireAnyAccess(), async (c) => {
+    const auth = currentAuth(c);
+    const roles: Record<string, GroupRole> = {};
+    for (const g of auth.scope.groups) {
+      const role = roleAt(auth.scope, g.id);
+      if (role) roles[g.id] = role;
+    }
     return c.json({
-      login: s.session.login,
-      userId: s.session.userId,
-      isSuper: s.scope.isSuper,
-      groups: s.scope.groups,
+      login: auth.session.login,
+      userId: auth.session.userId,
+      isSuper: auth.scope.isSuper,
+      groups: auth.scope.groups,
+      roles,
     });
   });
 
-  app.get("/api/groups", async (c) => {
-    const s = await loadScope(c);
-    if (!s) return c.json({ error: "Unauthorized" }, 401);
-    return c.json({ groups: s.scope.groups, isSuper: s.scope.isSuper });
+  app.get("/api/groups", requireAnyAccess(), async (c) => {
+    const auth = currentAuth(c);
+    const roles: Record<string, GroupRole> = {};
+    for (const g of auth.scope.groups) {
+      const role = roleAt(auth.scope, g.id);
+      if (role) roles[g.id] = role;
+    }
+    return c.json({ groups: auth.scope.groups, isSuper: auth.scope.isSuper, roles });
   });
 
-  app.put("/api/groups", async (c) => {
-    const s = await loadScope(c);
-    if (!s) return c.json({ error: "Unauthorized" }, 401);
-    if (!s.scope.isSuper) return c.json({ error: "Forbidden" }, 403);
+  app.put("/api/groups", requireAnyAccess(), async (c) => {
+    const auth = currentAuth(c);
     let body: unknown;
     try {
       body = await c.req.json();
@@ -282,57 +384,124 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     }
     const result = validateGroups((body as { groups?: unknown })?.groups);
     if (!result.ok) return c.json({ error: result.error }, 400);
+
+    const existing = await loadGroups(c.env.KV);
+    const prevById = new Map(existing.map((g) => [g.id, g]));
+    let nextAll: Group[];
+
+    if (auth.scope.isSuper) {
+      // Super admins see and submit every group: full replace.
+      nextAll = result.groups;
+    } else {
+      // Owners may only write groups they own. Preserve every other group and
+      // never let a submission drop the last owner of a group.
+      const mine = new Set<string>();
+      for (const [gid, role] of auth.scope.roles) {
+        if (role === "owner") mine.add(gid);
+      }
+      for (const g of result.groups) {
+        if (!mine.has(g.id)) {
+          return c.json({ error: `group "${g.id}" is outside your ownership` }, 403);
+        }
+        const members = g.members ?? normalizeGroupMembers(g);
+        const stillMine = members.some(
+          (m) =>
+            m.role === "owner" &&
+            identityMatches([m.login], auth.session.userId, auth.session.login),
+        );
+        const otherOwner = ownerCount(members) > 1;
+        if (!stillMine && !otherOwner) {
+          return c.json(
+            { error: `group "${g.id}" would be left without an owner by you` },
+            403,
+          );
+        }
+      }
+      nextAll = [
+        ...existing.filter((g) => !mine.has(g.id)),
+        ...result.groups.map((g) => {
+          const prev = prevById.get(g.id);
+          if (prev && prev.owners !== undefined && g.owners === undefined) {
+            // Owners cannot edit the `owners` scope; keep the stored value.
+            return { ...g, owners: prev.owners };
+          }
+          return g;
+        }),
+      ];
+    }
+
+    // Audit every create / update / delete.
+    const prevGroups = existing;
+    const nextById = new Map(nextAll.map((g) => [g.id, g]));
+    const actor = { actorId: auth.session.userId, actorLogin: auth.session.login };
+    for (const g of nextAll) {
+      const prev = prevById.get(g.id);
+      if (!prev) {
+        await recordAudit(c.env.DB, {
+          ts: Date.now(),
+          ...actor,
+          action: "group.create",
+          targetType: "group",
+          targetId: g.id,
+          groupId: g.id,
+          ip: clientIp(c),
+        });
+        continue;
+      }
+      const fields: string[] = [];
+      if (prev.name !== g.name) fields.push("name");
+      if (prev.emoji !== g.emoji) fields.push("emoji");
+      if (!deepEqual(prev.providers ?? [], g.providers ?? [])) fields.push("providers");
+      if (!deepEqual(prev.owners ?? [], g.owners ?? [])) fields.push("owners");
+      if (!deepEqual(prev.members ?? normalizeGroupMembers(prev), g.members)) fields.push("members");
+      if (fields.length > 0) {
+        await recordAudit(c.env.DB, {
+          ts: Date.now(),
+          ...actor,
+          action: "group.update",
+          targetType: "group",
+          targetId: g.id,
+          groupId: g.id,
+          detail: { fields },
+          ip: clientIp(c),
+        });
+      }
+    }
+    for (const g of prevGroups) {
+      if (!nextById.has(g.id)) {
+        await recordAudit(c.env.DB, {
+          ts: Date.now(),
+          ...actor,
+          action: "group.delete",
+          targetType: "group",
+          targetId: g.id,
+          groupId: g.id,
+          ip: clientIp(c),
+        });
+      }
+    }
+
     try {
-      await saveGroups(c.env.KV, result.groups);
+      await saveGroups(c.env.KV, nextAll);
     } catch (err) {
       log.error({ err }, "Failed to save groups");
       return c.json({ error: "Failed to save groups" }, 500);
     }
-    log.info({ count: result.groups.length }, "Groups updated via admin UI");
-    return c.json({ ok: true, count: result.groups.length });
+    log.info({ count: nextAll.length }, "Groups updated via admin UI");
+    return c.json({ ok: true, count: nextAll.length });
   });
 
-  app.get("/api/routes", async (c) => {
-    const s = await loadScope(c);
-    if (!s) return c.json({ error: "Unauthorized" }, 401);
+  app.get("/api/routes", requireAnyAccess(), async (c) => {
+    const auth = currentAuth(c);
     const all = await loadRoutes(c.env.KV);
-    const routes = s.scope.isSuper
+    const routes = auth.scope.isSuper
       ? all
-      : all.filter((r) => r.groupId != null && s.scope.groupIds.has(r.groupId));
+      : all.filter((r) => r.groupId != null && auth.scope.groupIds.has(r.groupId));
     return c.json({ routes });
   });
 
-  app.get("/api/logs", async (c) => {
-    const s = await loadScope(c);
-    if (!s) return c.json({ error: "Unauthorized" }, 401);
-    const limit = Math.min(Math.max(Number(c.req.query("limit") ?? 50), 1), 100);
-    const filterGroupId = c.req.query("groupId") || undefined;
-    const allLogs = await getSendLog(c.env.DB, 200);
-    const allowed = s.scope.isSuper
-      ? allLogs
-      : allLogs.filter((l) => l.groupId != null && s.scope.groupIds.has(l.groupId));
-    const logs = filterGroupId ? allowed.filter((l) => l.groupId === filterGroupId) : allowed;
-    return c.json({ logs: logs.slice(0, limit) });
-  });
-
-  app.get("/api/logs/:id", async (c) => {
-    const s = await loadScope(c);
-    if (!s) return c.json({ error: "Unauthorized" }, 401);
-    const id = Number(c.req.param("id"));
-    if (!Number.isInteger(id) || id <= 0) return c.json({ error: "Invalid log id" }, 400);
-    const entry = await getSendLogById(c.env.DB, id);
-    if (!entry) return c.json({ error: "Log entry not found" }, 404);
-    if (!s.scope.isSuper) {
-      if (!entry.groupId || !s.scope.groupIds.has(entry.groupId)) {
-        return c.json({ error: "Forbidden" }, 403);
-      }
-    }
-    return c.json({ log: entry });
-  });
-
-  app.put("/api/routes", async (c) => {
-    const s = await loadScope(c);
-    if (!s) return c.json({ error: "Unauthorized" }, 401);
+  app.put("/api/routes", requireAnyAccess(), async (c) => {
+    const auth = currentAuth(c);
     let body: unknown;
     try {
       body = await c.req.json();
@@ -346,14 +515,17 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
 
     let nextAll: Route[];
 
-    if (s.scope.isSuper) {
+    if (auth.scope.isSuper) {
       // Super admins see and submit every route: full replace.
       nextAll = result.routes;
     } else {
-      // Group admins may only write routes inside their own groups. Reject any
-      // submitted route that targets a group they do not manage, then splice
-      // their groups' routes in place while preserving all other groups' routes.
-      const writable = s.scope.groupIds;
+      // Owners and admins may only write routes inside groups they manage.
+      // Reject any submitted route that targets a group they cannot edit,
+      // then splice their groups' routes in place while preserving all others.
+      const writable = new Set<string>();
+      for (const [gid, role] of auth.scope.roles) {
+        if (role === "owner" || role === "admin") writable.add(gid);
+      }
       for (const r of result.routes) {
         if (!r.groupId || !writable.has(r.groupId)) {
           return c.json({ error: `route "${r.id}" is outside your groups` }, 403);
@@ -371,27 +543,51 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
       log.error({ err }, "Failed to save routes");
       return c.json({ error: "Failed to save routes" }, 500);
     }
+    await recordAudit(c.env.DB, {
+      ts: Date.now(),
+      actorId: auth.session.userId,
+      actorLogin: auth.session.login,
+      action: "routes.update",
+      targetType: "routes",
+      targetId: "all",
+      detail: { count: nextAll.length },
+      ip: clientIp(c),
+    });
     log.info({ count: nextAll.length }, "Routes updated via admin UI");
     return c.json({ ok: true, count: nextAll.length });
   });
 
+  app.get("/api/logs", requireAnyAccess(), async (c) => {
+    const auth = currentAuth(c);
+    const limit = Math.min(Math.max(Number(c.req.query("limit") ?? 50), 1), 100);
+    const filterGroupId = c.req.query("groupId") || undefined;
+    const allLogs = await getSendLog(c.env.DB, 200);
+    const allowed = auth.scope.isSuper
+      ? allLogs
+      : allLogs.filter((l) => l.groupId != null && auth.scope.groupIds.has(l.groupId));
+    const logs = filterGroupId ? allowed.filter((l) => l.groupId === filterGroupId) : allowed;
+    return c.json({ logs: logs.slice(0, limit) });
+  });
+
+  app.get("/api/logs/:id", requireAnyAccess(), async (c) => {
+    const auth = currentAuth(c);
+    const id = Number(param(c, "id"));
+    if (!Number.isInteger(id) || id <= 0) return c.json({ error: "Invalid log id" }, 400);
+    const entry = await getSendLogById(c.env.DB, id);
+    if (!entry) return c.json({ error: "Log entry not found" }, 404);
+    if (!auth.scope.isSuper) {
+      if (!entry.groupId || !auth.scope.groupIds.has(entry.groupId)) {
+        return c.json({ error: "Forbidden" }, 403);
+      }
+    }
+    return c.json({ log: entry });
+  });
+
   // Routes scoped to a single group. The group is the container: the console
   // enters a group and then lists / edits only that group's routes.
-  function groupAccess(
-    s: { scope: AccessScope; groups: Group[] },
-    groupId: string,
-  ): { ok: true; group: Group } | { ok: false; status: 403 | 404 } {
-    const group = s.groups.find((g) => g.id === groupId);
-    if (!group) return { ok: false, status: 404 };
-    if (!s.scope.isSuper && !s.scope.groupIds.has(groupId)) return { ok: false, status: 403 };
-    return { ok: true, group };
-  }
-
-  app.get("/api/groups/:groupId/routes", async (c) => {
-    const s = await loadScope(c);
-    if (!s) return c.json({ error: "Unauthorized" }, 401);
-    const groupId = c.req.param("groupId");
-    const access = groupAccess(s, groupId);
+  app.get("/api/groups/:groupId/routes", requireAnyAccess(), async (c) => {
+    const groupId = param(c, "groupId");
+    const access = requireGroup(c, groupId);
     if (!access.ok) {
       return c.json(
         { error: access.status === 404 ? "Group not found" : "Forbidden" },
@@ -402,11 +598,9 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
     return c.json({ group: access.group, routes: all.filter((r) => r.groupId === groupId) });
   });
 
-  app.put("/api/groups/:groupId/routes", async (c) => {
-    const s = await loadScope(c);
-    if (!s) return c.json({ error: "Unauthorized" }, 401);
-    const groupId = c.req.param("groupId");
-    const access = groupAccess(s, groupId);
+  app.put("/api/groups/:groupId/routes", requireAnyAccess(), async (c) => {
+    const groupId = param(c, "groupId");
+    const access = requireGroupRole(c, groupId, "admin");
     if (!access.ok) {
       return c.json(
         { error: access.status === 404 ? "Group not found" : "Forbidden" },
@@ -442,8 +636,117 @@ export function createAdminRoutes(): Hono<{ Bindings: Env }> {
       log.error({ err }, "Failed to save routes");
       return c.json({ error: "Failed to save routes" }, 500);
     }
+    const auth = currentAuth(c);
+    await recordAudit(c.env.DB, {
+      ts: Date.now(),
+      actorId: auth.session.userId,
+      actorLogin: auth.session.login,
+      action: "group.routes.update",
+      targetType: "group",
+      targetId: groupId,
+      groupId,
+      detail: { count: result.routes.length },
+      ip: clientIp(c),
+    });
     log.info({ groupId, count: result.routes.length }, "Group routes updated via admin UI");
     return c.json({ ok: true, count: result.routes.length });
+  });
+
+  // ---- Group invites (owner +) ----
+  app.post("/api/groups/:groupId/invites", requireAnyAccess(), async (c) => {
+    const groupId = param(c, "groupId");
+    const access = requireGroupRole(c, groupId, "owner");
+    if (!access.ok) {
+      return c.json(
+        { error: access.status === 404 ? "Group not found" : "Forbidden" },
+        access.status,
+      );
+    }
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    const role = (body as { role?: unknown })?.role;
+    if (role !== "admin" && role !== "viewer") {
+      return c.json({ error: 'role must be "admin" or "viewer"' }, 400);
+    }
+    const note = (body as { note?: unknown })?.note;
+    const auth = currentAuth(c);
+    const token = await createInvite(c.env.KV, {
+      groupId,
+      role,
+      expiresAt: Date.now() + 7 * 86400_000,
+      createdBy: auth.session.login,
+      note: typeof note === "string" && note.trim() ? note.trim() : undefined,
+    });
+    await recordAudit(c.env.DB, {
+      ts: Date.now(),
+      actorId: auth.session.userId,
+      actorLogin: auth.session.login,
+      action: "invite.create",
+      targetType: "group",
+      targetId: groupId,
+      groupId,
+      detail: { role },
+      ip: clientIp(c),
+    });
+    return c.json({
+      ok: true,
+      token,
+      url: `/admin/invite?token=${token}`,
+      expiresAt: Date.now() + 7 * 86400_000,
+    });
+  });
+
+  app.get("/api/groups/:groupId/invites", requireAnyAccess(), async (c) => {
+    const groupId = param(c, "groupId");
+    const access = requireGroupRole(c, groupId, "owner");
+    if (!access.ok) {
+      return c.json(
+        { error: access.status === 404 ? "Group not found" : "Forbidden" },
+        access.status,
+      );
+    }
+    const invites = await listInvites(c.env.KV, groupId);
+    return c.json({ invites });
+  });
+
+  app.delete("/api/invites/:token", requireAnyAccess(), async (c) => {
+    const token = param(c, "token");
+    const invite = await getInvite(c.env.KV, token);
+    if (!invite) return c.json({ error: "Invite not found" }, 404);
+    const access = requireGroupRole(c, invite.groupId, "owner");
+    if (!access.ok) return c.json({ error: "Forbidden" }, 403);
+    await revokeInvite(c.env.KV, token);
+    const auth = currentAuth(c);
+    await recordAudit(c.env.DB, {
+      ts: Date.now(),
+      actorId: auth.session.userId,
+      actorLogin: auth.session.login,
+      action: "invite.revoke",
+      targetType: "group",
+      targetId: invite.groupId,
+      groupId: invite.groupId,
+      ip: clientIp(c),
+    });
+    return c.json({ ok: true });
+  });
+
+  // ---- Audit log (any access; group admins see only their groups) ----
+  app.get("/api/audit", requireAnyAccess(), async (c) => {
+    const auth = currentAuth(c);
+    const limit = Math.min(Math.max(Number(c.req.query("limit") ?? 50), 1), 200);
+    const groupId = c.req.query("groupId") || undefined;
+    if (groupId && !auth.scope.isSuper && !auth.scope.groupIds.has(groupId)) {
+      return c.json({ error: "Forbidden" }, 403);
+    }
+    const entries = await getAuditLog(c.env.DB, { groupId, limit });
+    const visible = auth.scope.isSuper
+      ? entries
+      : entries.filter((e) => e.groupId != null && auth.scope.groupIds.has(e.groupId));
+    return c.json({ audit: visible });
   });
 
   return app;

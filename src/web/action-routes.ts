@@ -1,16 +1,7 @@
 import { Hono } from "hono";
 import { getUserOctokit } from "../github/oauth";
-import { findUserIdByToken } from "../github/store";
-import type { Env } from "../types";
+import { bearerAuthMiddleware, type AuthEnv } from "./auth";
 import { log } from "../lib/log";
-
-function extractBearerToken(c: {
-  req: { header: (name: string) => string | undefined };
-}): string | null {
-  const auth = c.req.header("authorization");
-  if (!auth?.startsWith("Bearer ")) return null;
-  return auth.slice(7);
-}
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
@@ -30,15 +21,11 @@ async function readJson(c: {
   }
 }
 
-export function createActionRoutes(): Hono<{ Bindings: Env }> {
-  const app = new Hono<{ Bindings: Env }>();
+export function createActionRoutes(): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
 
-  app.post("/api/comment", async (c) => {
-    const token = extractBearerToken(c);
-    if (!token) return c.json({ error: "Missing authorization" }, 401);
-    const userId = await findUserIdByToken(c.env.KV, token);
-    if (!userId) return c.json({ error: "Invalid or expired token" }, 401);
-
+  app.post("/api/comment", bearerAuthMiddleware(), async (c) => {
+    const userId = c.get("userId");
     const body = await readJson(c);
     if (
       !body ||
@@ -67,12 +54,8 @@ export function createActionRoutes(): Hono<{ Bindings: Env }> {
     return c.json({ ok: true });
   });
 
-  app.post("/api/merge", async (c) => {
-    const token = extractBearerToken(c);
-    if (!token) return c.json({ error: "Missing authorization" }, 401);
-    const userId = await findUserIdByToken(c.env.KV, token);
-    if (!userId) return c.json({ error: "Invalid or expired token" }, 401);
-
+  app.post("/api/merge", bearerAuthMiddleware(), async (c) => {
+    const userId = c.get("userId");
     const body = await readJson(c);
     if (
       !body ||
@@ -104,12 +87,8 @@ export function createActionRoutes(): Hono<{ Bindings: Env }> {
     return c.json({ ok: true });
   });
 
-  app.post("/api/close", async (c) => {
-    const token = extractBearerToken(c);
-    if (!token) return c.json({ error: "Missing authorization" }, 401);
-    const userId = await findUserIdByToken(c.env.KV, token);
-    if (!userId) return c.json({ error: "Invalid or expired token" }, 401);
-
+  app.post("/api/close", bearerAuthMiddleware(), async (c) => {
+    const userId = c.get("userId");
     const body = await readJson(c);
     if (
       !body ||
@@ -137,12 +116,8 @@ export function createActionRoutes(): Hono<{ Bindings: Env }> {
     return c.json({ ok: true });
   });
 
-  app.post("/api/react", async (c) => {
-    const token = extractBearerToken(c);
-    if (!token) return c.json({ error: "Missing authorization" }, 401);
-    const userId = await findUserIdByToken(c.env.KV, token);
-    if (!userId) return c.json({ error: "Invalid or expired token" }, 401);
-
+  app.post("/api/react", bearerAuthMiddleware(), async (c) => {
+    const userId = c.get("userId");
     const body = await readJson(c);
     const reactions = [
       "+1",
@@ -173,7 +148,14 @@ export function createActionRoutes(): Hono<{ Bindings: Env }> {
         repo: body.repo,
         issue_number: body.issueNumber,
         content: body.reaction as
-          "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes",
+          | "+1"
+          | "-1"
+          | "laugh"
+          | "confused"
+          | "heart"
+          | "hooray"
+          | "rocket"
+          | "eyes",
       });
     } catch (err) {
       log.error({ err }, "Failed to create reaction");

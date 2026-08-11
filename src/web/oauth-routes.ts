@@ -2,9 +2,11 @@ import { Hono } from "hono";
 import { getOAuthURL, handleOAuthCallback } from "../github/oauth";
 import { removeToken, saveDiscordLink, saveTelegramLink } from "../github/store";
 import { createAdminSession, adminCookie, getAdminSession } from "./session";
-import { loadGroups, resolveScope, hasAnyAccess } from "./groups";
+import { loadGroups, saveGroups, resolveScope, hasAnyAccess } from "./groups";
+import { clientIp } from "./auth";
+import { recordAudit } from "../lib/audit";
 import { sendMessage } from "../drivers/telegram/rest";
-import type { Env } from "../types";
+import type { Env, Group } from "../types";
 
 interface PendingState {
   redirectTo: string;
@@ -32,6 +34,41 @@ function safeRedirectPath(value: string | undefined): string {
   if (value.startsWith("//")) return "/";
   if (/^\/\\/.test(value)) return "/";
   return value;
+}
+
+function selfSignupEnabled(env: Env): boolean {
+  const flag = (env.ALLOW_SELF_SIGNUP ?? "").trim().toLowerCase();
+  return flag === "1" || flag === "true" || flag === "yes" || flag === "on";
+}
+
+/**
+ * Opt-in self service: users without any group access get a personal group
+ * they own, so they can configure their own routing without a super admin.
+ * The group id is deterministic (`u-{userId}`), so it is created at most once.
+ */
+async function ensurePersonalGroup(env: Env, userId: string, login: string): Promise<boolean> {
+  if (!selfSignupEnabled(env)) return false;
+  const groups = await loadGroups(env.KV);
+  const gid = `u-${userId}`;
+  if (groups.some((g) => g.id === gid)) return true;
+  const personal: Group = {
+    id: gid,
+    name: `@${login}`,
+    members: [{ login, role: "owner" }],
+    adminIds: [login],
+  };
+  await saveGroups(env.KV, [...groups, personal]);
+  await recordAudit(env.DB, {
+    ts: Date.now(),
+    actorId: userId,
+    actorLogin: login,
+    action: "group.create",
+    targetType: "group",
+    targetId: gid,
+    groupId: gid,
+    detail: { auto: true },
+  });
+  return true;
 }
 
 export function createOAuthRoutes(): Hono<{ Bindings: Env }> {
@@ -109,13 +146,36 @@ export function createOAuthRoutes(): Hono<{ Bindings: Env }> {
 
     const isBrowser = (c.req.header("accept") ?? "").includes("text/html");
     if (isBrowser) {
-      const groups = await loadGroups(c.env.KV);
-      const scope = resolveScope(c.env, groups, result.userId, result.login);
-      if (!hasAnyAccess(scope)) {
+      // Invite accept flow: the redirect target is the invite page, which
+      // processes the token after the session exists. Skip the access gate so
+      // non-members can get in and accept.
+      const isInviteFlow =
+        pending.redirectTo.startsWith("/admin/invite") ||
+        pending.redirectTo.startsWith("/admin/invite?");
+
+      let groups = await loadGroups(c.env.KV);
+      let scope = resolveScope(c.env, groups, result.userId, result.login);
+
+      if (!hasAnyAccess(scope) && !isInviteFlow) {
+        const created = await ensurePersonalGroup(c.env, result.userId, result.login);
+        if (created) {
+          groups = await loadGroups(c.env.KV);
+          scope = resolveScope(c.env, groups, result.userId, result.login);
+        }
+      }
+      if (!hasAnyAccess(scope) && !isInviteFlow) {
         return c.redirect("/admin?error=forbidden");
       }
+
       const sessionId = await createAdminSession(c.env.KV, result.userId, result.login);
       c.header("Set-Cookie", adminCookie(sessionId));
+      await recordAudit(c.env.DB, {
+        ts: Date.now(),
+        actorId: result.userId,
+        actorLogin: result.login,
+        action: "session.login",
+        ip: clientIp(c),
+      });
       return c.redirect(pending.redirectTo);
     }
 
@@ -129,7 +189,17 @@ export function createOAuthRoutes(): Hono<{ Bindings: Env }> {
   app.delete("/token/:userId", async (c) => {
     const session = await getAdminSession(c.env.KV, c.req.header("Cookie"));
     if (!session) return c.json({ error: "Unauthorized" }, 401);
-    await removeToken(c.env.KV, c.req.param("userId"));
+    const target = c.req.param("userId");
+    await removeToken(c.env.KV, target);
+    await recordAudit(c.env.DB, {
+      ts: Date.now(),
+      actorId: session.userId,
+      actorLogin: session.login,
+      action: "token.delete",
+      targetType: "token",
+      targetId: target,
+      ip: clientIp(c),
+    });
     return c.json({ ok: true });
   });
 

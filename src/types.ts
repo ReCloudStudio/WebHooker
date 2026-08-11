@@ -17,6 +17,13 @@ export interface Env {
   TELEGRAM_TOKEN?: string;
   TELEGRAM_WEBHOOK_SECRET?: string;
   TELEGRAM_RICH_HEADER_HOST?: string;
+  /**
+   * When enabled ("1"/"true"), GitHub users without any group access get a
+   * personal group on first login instead of being blocked.
+   */
+  ALLOW_SELF_SIGNUP?: string;
+  /** Audit log retention in days (default 90). */
+  AUDIT_RETENTION_DAYS?: string;
   ASSETS?: Fetcher;
   KV: KVNamespace;
   DB: D1Database;
@@ -72,14 +79,31 @@ export interface Route {
   discordRoleIds?: string[];
 }
 
+export type GroupRole = "owner" | "admin" | "viewer";
+
+export interface GroupMember {
+  /**
+   * GitHub login (case-insensitive). Ids are matched when stored, logins
+   * otherwise; identityMatches handles both.
+   */
+  login: string;
+  role: GroupRole;
+}
+
 export interface Group {
   id: string;
   name: string;
   /**
-   * GitHub user ids or logins (case-insensitive) allowed to manage this group.
-   * Super admins (ADMIN_USER_IDS) always have access regardless of this list.
+   * Deprecated legacy field: GitHub user ids or logins allowed to manage this
+   * group. Kept for backward compatibility — when `members` is absent, these
+   * are normalized to `members` with role "owner". New writes use `members`.
    */
   adminIds: string[];
+  /**
+   * Group members with roles. Roles: owner (manage group + members + invites),
+   * admin (manage routes), viewer (read-only). Super admins always bypass.
+   */
+  members?: GroupMember[];
   /**
    * GitHub organization/user logins (case-insensitive) whose webhook events are
    * allowed into this group's routes. Empty/omitted = no owner restriction.
