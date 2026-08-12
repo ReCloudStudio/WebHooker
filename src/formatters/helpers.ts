@@ -34,3 +34,32 @@ export function repoBaseUrl(payload: Record<string, unknown>, repo?: string): st
   if (html) return html;
   return repo ? `https://github.com/${repo}` : undefined;
 }
+
+function encodeRefPath(ref: string): string {
+  return ref
+    .split("/")
+    .map((seg) => encodeURIComponent(seg))
+    .join("/");
+}
+
+/** Inline code + hyperlink for a commit, e.g. [`abc123d`](.../commit/abc123def456). */
+export function commitLink(baseUrl: string | undefined, sha: string, short?: string): string {
+  const label = short ?? sha.slice(0, 7);
+  return baseUrl ? `[\`${label}\`](${baseUrl}/commit/${encodeRefPath(sha)})` : `\`${label}\``;
+}
+
+/** Inline code + hyperlink for a branch (or bare ref), e.g. [`main`](.../tree/main). */
+export function branchLink(baseUrl: string | undefined, branch: string, label?: string): string {
+  const clean = branch.replace("refs/heads/", "").replace("refs/tags/", "");
+  const display = label ?? clean;
+  return baseUrl ? `[\`${display}\`](${baseUrl}/tree/${encodeRefPath(clean)})` : `\`${display}\``;
+}
+
+/** Inline code + hyperlink for a tag, e.g. [`v1.0`](.../releases/tag/v1.0). */
+export function tagLink(baseUrl: string | undefined, tag: string, label?: string): string {
+  const clean = tag.replace("refs/tags/", "");
+  const display = label ?? clean;
+  return baseUrl
+    ? `[\`${display}\`](${baseUrl}/releases/tag/${encodeRefPath(clean)})`
+    : `\`${display}\``;
+}

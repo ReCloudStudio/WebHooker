@@ -88,7 +88,7 @@ export const zh = {
     push: {
       force_push: "**强制推送**",
       branch_created: "分支已创建",
-      commits_pushed: "**{count}** 个提交已推送到 `{ref}`",
+      commits_pushed: "**{count}** 个提交已推送到 {ref}",
       view_comparison: "[查看比较]({url})",
       added: "+{count} 新增",
       removed: "-{count} 删除",
@@ -124,10 +124,10 @@ export const zh = {
       title: "{repo}: {name}",
     },
     create: {
-      title: "{repo}: {emoji}已创建{type} `{ref}`",
+      title: "{repo}: {emoji}已创建{type} {ref}",
     },
     delete: {
-      title: "{repo}: {emoji}已删除{type} `{ref}`",
+      title: "{repo}: {emoji}已删除{type} {ref}",
     },
     star: {
       starred: "已加星标",
@@ -154,7 +154,7 @@ export const zh = {
     },
     commit_comment: {
       action_comment: "{emoji}**{action}**",
-      title: "{repo}: 提交 `{sha}` 的评论",
+      title: "{repo}: 提交 {sha} 的评论",
     },
     deployment: {
       title: "{repo}: 部署到 `{env}` — {state}",

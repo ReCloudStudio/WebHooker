@@ -167,9 +167,9 @@ describe("message title spec", () => {
     expect(msg.url).toBe("https://github.com/acme/widget/runs/2");
     expect(msg.fields![0].value).toBe("✅ success");
     expect(msg.fields![1].value).toBe("Cloudflare Pages");
-    expect(msg.fields![2].value).toBe("main");
+    expect(msg.fields![2].value).toBe("[\`main\`](https://github.com/acme/widget/tree/main)");
     expect(msg.fields![3].value).toBe(
-      "[abc123d](https://github.com/acme/widget/commit/abc123def456)",
+      "[\`abc123d\`](https://github.com/acme/widget/commit/abc123def456)",
     );
   });
 
@@ -191,8 +191,10 @@ describe("message title spec", () => {
     expect(msg.fields![0].value).toBe("❌ failure");
     expect(msg.fields![1].value).toBe("test");
     expect(msg.fields![2].value).toBe("CI");
-    expect(msg.fields![3].value).toBe("`main`");
-    expect(msg.fields![4].value).toBe("`abc123d`");
+    expect(msg.fields![3].value).toBe("[\`main\`](https://github.com/acme/widget/tree/main)");
+    expect(msg.fields![4].value).toBe(
+      "[\`abc123d\`](https://github.com/acme/widget/commit/abc123def456)",
+    );
   });
 
   it("status shows context, state and commit", () => {
@@ -211,7 +213,9 @@ describe("message title spec", () => {
     expect(msg.title).toBe("acme/widget: continuous-integration/travis-ci — pending");
     expect(msg.fields![0].value).toBe("⏳ pending");
     expect(msg.fields![1].value).toBe("continuous-integration/travis-ci");
-    expect(msg.fields![2].value).toBe("`abc123d`");
+    expect(msg.fields![2].value).toBe(
+      "[\`abc123d\`](https://github.com/acme/widget/commit/abc123def456)",
+    );
     expect(msg.fields![3].value).toBe("The Travis CI build is in progress");
   });
 
@@ -227,8 +231,10 @@ describe("message title spec", () => {
     expect(msg.title).toBe("acme/widget: Deployment to `production` — created");
     expect(msg.fields![0].value).toBe("🚀 created");
     expect(msg.fields![1].value).toBe("production");
-    expect(msg.fields![2].value).toBe("`main`");
-    expect(msg.fields![3].value).toBe("`abc123d`");
+    expect(msg.fields![2].value).toBe("[\`main\`](https://github.com/acme/widget/tree/main)");
+    expect(msg.fields![3].value).toBe(
+      "[\`abc123d\`](https://github.com/acme/widget/commit/abc123def456)",
+    );
   });
 
   it("ping shows the webhook confirmation", () => {

@@ -122,6 +122,10 @@ src/__tests__/            # bun test unit tests (webhook, formatter, discord, te
   the locale files. Emoji is controlled per group through the `Group.emoji` toggle (default true);
   `showEmoji=false` must strip every emoji from titles, descriptions, fields and links.
 - Milestone progress bars (🟢🟡🟠⬜) are data visualization and are exempt from the emoji toggle.
+- Commit hashes, branches and tags render as inline code wrapped in a hyperlink
+  (`commitLink`/`branchLink`/`tagLink` helpers in `src/formatters/helpers.ts`, e.g.
+  ``[`abc123d`](https://.../commit/abc123def456)``, ``[`main`](https://.../tree/main)``),
+  falling back to plain inline code when the repo base URL is unavailable.
 - Locale templates use a `{emoji}` placeholder immediately followed by the text (no space);
   the formatter injects `em(...)` which carries the trailing space.
 

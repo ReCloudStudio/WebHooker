@@ -88,7 +88,7 @@ export const en = {
     push: {
       force_push: "**Force push**",
       branch_created: "Branch created",
-      commits_pushed: "**{count}** commit{s} pushed to `{ref}`",
+      commits_pushed: "**{count}** commit{s} pushed to {ref}",
       view_comparison: "[View comparison]({url})",
       added: "+{count} added",
       removed: "-{count} removed",
@@ -124,10 +124,10 @@ export const en = {
       title: "{repo}: {name}",
     },
     create: {
-      title: "{repo}: {emoji}Created {type} `{ref}`",
+      title: "{repo}: {emoji}Created {type} {ref}",
     },
     delete: {
-      title: "{repo}: {emoji}Deleted {type} `{ref}`",
+      title: "{repo}: {emoji}Deleted {type} {ref}",
     },
     star: {
       starred: "Starred",
@@ -154,7 +154,7 @@ export const en = {
     },
     commit_comment: {
       action_comment: "{emoji}**{action}**",
-      title: "{repo}: Comment on commit `{sha}`",
+      title: "{repo}: Comment on commit {sha}",
     },
     deployment: {
       title: "{repo}: Deployment to `{env}` — {state}",

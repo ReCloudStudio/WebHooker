@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor, NeutralAction } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { emojiPrefix, type T, buildMessage } from "./helpers";
+import { branchLink, emojiPrefix, type T, buildMessage, repoBaseUrl } from "./helpers";
 
 export function formatPullRequest(
   payload: Record<string, unknown>,
@@ -17,8 +17,8 @@ export function formatPullRequest(
     state?: string;
     draft?: boolean;
     merged?: boolean;
-    head?: { ref?: string; sha?: string };
-    base?: { ref?: string };
+    head?: { ref?: string; sha?: string; repo?: { html_url?: string } };
+    base?: { ref?: string; repo?: { html_url?: string } };
     body?: string;
     labels?: Array<{ name?: string; color?: string }>;
     changed_files?: number;
@@ -57,9 +57,12 @@ export function formatPullRequest(
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
   if (pr.head?.ref && pr.base?.ref) {
+    const baseUrl = repoBaseUrl(payload, repo);
+    const headUrl = pr.head.repo?.html_url ?? baseUrl;
+    const baseRepoUrl = pr.base.repo?.html_url ?? baseUrl;
     fields.push({
       name: t("fields.branch"),
-      value: `\`${pr.head.ref}\` → \`${pr.base.ref}\``,
+      value: `${branchLink(headUrl, pr.head.ref)} → ${branchLink(baseRepoUrl, pr.base.ref)}`,
       inline: true,
     });
   }

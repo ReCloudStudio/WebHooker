@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { emojiPrefix, type T, buildMessage, repoBaseUrl } from "./helpers";
+import { branchLink, emojiPrefix, tagLink, type T, buildMessage, repoBaseUrl } from "./helpers";
 
 export function formatPush(
   payload: Record<string, unknown>,
@@ -9,7 +9,9 @@ export function formatPush(
   t: T,
   showEmoji: boolean,
 ): NeutralMessage {
-  const ref = (payload.ref as string)?.replace("refs/heads/", "").replace("refs/tags/", "tag: ");
+  const rawRef = (payload.ref as string) ?? "";
+  const isTagPush = rawRef.startsWith("refs/tags/");
+  const ref = rawRef.replace("refs/heads/", "").replace("refs/tags/", "tag: ");
   const commits = (payload.commits ?? []) as Array<{
     id?: string;
     message?: string;
@@ -35,7 +37,11 @@ export function formatPush(
   }
 
   descriptionParts.push(
-    t("events.push.commits_pushed", { count, s: count !== 1 ? "s" : "", ref: ref ?? "" }),
+    t("events.push.commits_pushed", {
+      count,
+      s: count !== 1 ? "s" : "",
+      ref: isTagPush ? tagLink(baseUrl, rawRef, ref) : branchLink(baseUrl, rawRef, ref),
+    }),
   );
 
   if (compareUrl) {

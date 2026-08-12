@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS, WORKFLOW_CONCLUSION_EMOJI } from "./colors";
-import { emojiPrefix, type T, buildMessage, repoBaseUrl } from "./helpers";
+import { branchLink, commitLink, emojiPrefix, type T, buildMessage, repoBaseUrl } from "./helpers";
 
 export function formatCheckSuite(
   payload: Record<string, unknown>,
@@ -53,7 +53,7 @@ export function formatCheckSuite(
   if (suite.head_branch) {
     fields.push({
       name: t("fields.branch"),
-      value: suite.head_branch,
+      value: branchLink(baseUrl, suite.head_branch),
       inline: true,
     });
   }
@@ -61,10 +61,7 @@ export function formatCheckSuite(
   if (suite.head_sha) {
     fields.push({
       name: t("fields.commit"),
-      value:
-        baseUrl && suite.head_sha
-          ? `[${suite.head_sha.slice(0, 7)}](${baseUrl}/commit/${suite.head_sha})`
-          : `\`${suite.head_sha.slice(0, 7)}\``,
+      value: commitLink(baseUrl, suite.head_sha),
       inline: true,
     });
   }
@@ -99,6 +96,7 @@ export function formatStatus(
   const description = payload.description as string | undefined;
   const targetUrl = payload.target_url as string | undefined;
   const sha = payload.sha as string | undefined;
+  const baseUrl = repoBaseUrl(payload, repo);
 
   const emoji = state === "success" ? "✅" : state === "failure" || state === "error" ? "❌" : "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
@@ -128,7 +126,7 @@ export function formatStatus(
   if (sha) {
     fields.push({
       name: t("fields.commit"),
-      value: `\`${sha.slice(0, 7)}\``,
+      value: commitLink(baseUrl, sha),
       inline: true,
     });
   }

@@ -1,6 +1,14 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { emojiPrefix, type T, buildMessage } from "./helpers";
+import {
+  branchLink,
+  commitLink,
+  emojiPrefix,
+  tagLink,
+  type T,
+  buildMessage,
+  repoBaseUrl,
+} from "./helpers";
 
 export function formatDeployment(
   payload: Record<string, unknown>,
@@ -22,6 +30,7 @@ export function formatDeployment(
   const em = (e: string): string => emojiPrefix(e, showEmoji);
   const env = deployment.environment ?? t("common.unknown");
   const shortSha = deployment.sha?.slice(0, 7) ?? "???????";
+  const baseUrl = repoBaseUrl(payload, repo);
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
   fields.push({
@@ -37,9 +46,10 @@ export function formatDeployment(
   });
 
   if (deployment.ref) {
+    const isTag = deployment.ref.startsWith("refs/tags/");
     fields.push({
       name: t("fields.branch_tag"),
-      value: `\`${deployment.ref.replace("refs/heads/", "")}\``,
+      value: isTag ? tagLink(baseUrl, deployment.ref) : branchLink(baseUrl, deployment.ref),
       inline: true,
     });
   }
@@ -47,7 +57,7 @@ export function formatDeployment(
   if (deployment.sha) {
     fields.push({
       name: t("fields.commit"),
-      value: `\`${shortSha}\``,
+      value: commitLink(baseUrl, deployment.sha, shortSha),
       inline: true,
     });
   }
@@ -107,6 +117,7 @@ export function formatDeploymentStatus(
   const em = (e: string): string => emojiPrefix(e, showEmoji);
   const env = status.environment ?? deployment.environment ?? t("common.unknown");
   const shortSha = deployment.sha?.slice(0, 7) ?? "???????";
+  const baseUrl = repoBaseUrl(payload, repo);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -123,9 +134,10 @@ export function formatDeploymentStatus(
   });
 
   if (deployment.ref) {
+    const isTag = deployment.ref.startsWith("refs/tags/");
     fields.push({
       name: t("fields.branch_tag"),
-      value: `\`${deployment.ref}\``,
+      value: isTag ? tagLink(baseUrl, deployment.ref) : branchLink(baseUrl, deployment.ref),
       inline: true,
     });
   }
@@ -133,7 +145,7 @@ export function formatDeploymentStatus(
   if (deployment.sha) {
     fields.push({
       name: t("fields.commit"),
-      value: `\`${shortSha}\``,
+      value: commitLink(baseUrl, deployment.sha, shortSha),
       inline: true,
     });
   }

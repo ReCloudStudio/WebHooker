@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS, WORKFLOW_CONCLUSION_EMOJI } from "./colors";
-import { emojiPrefix, type T, buildMessage } from "./helpers";
+import { emojiPrefix, type T, buildMessage, branchLink, commitLink, repoBaseUrl } from "./helpers";
 
 export function formatWorkflowJob(
   payload: Record<string, unknown>,
@@ -28,6 +28,7 @@ export function formatWorkflowJob(
         : (job.conclusion ?? "pending");
   const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
+  const baseUrl = repoBaseUrl(payload, repo);
   const colorKey =
     status === "success"
       ? "workflow_run_success"
@@ -62,7 +63,7 @@ export function formatWorkflowJob(
   if (job.head_branch) {
     fields.push({
       name: t("fields.branch"),
-      value: `\`${job.head_branch}\``,
+      value: branchLink(baseUrl, job.head_branch),
       inline: true,
     });
   }
@@ -70,7 +71,7 @@ export function formatWorkflowJob(
   if (job.head_sha) {
     fields.push({
       name: t("fields.commit"),
-      value: `\`${job.head_sha.slice(0, 7)}\``,
+      value: commitLink(baseUrl, job.head_sha),
       inline: true,
     });
   }
@@ -121,6 +122,7 @@ export function formatWorkflowRun(
         : (workflow.conclusion ?? "pending");
   const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
+  const baseUrl = repoBaseUrl(payload, repo);
   const colorKey =
     status === "success"
       ? "workflow_run_success"
@@ -150,7 +152,7 @@ export function formatWorkflowRun(
   if (workflow.head_branch) {
     fields.push({
       name: t("fields.branch"),
-      value: `\`${workflow.head_branch}\``,
+      value: branchLink(baseUrl, workflow.head_branch),
       inline: true,
     });
   }
