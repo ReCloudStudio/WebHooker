@@ -266,7 +266,7 @@ owner（及超级管理员）可在分组的「成员」面板创建一次性邀
 | `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 天               |
 | `invite:group:{id}`            | 每组的 Token 索引（保证邀请列表一致性）                                       | 永久               |
 | `delivery:{id}`                | Webhook 投递 id（去重标记）                                                   | 300 秒             |
-| `msg:{routeId}:{key}:{target}` | 原地更新用消息 id 追踪（如 `workflow_run`）                                   | 7 天               |
+| `msg:{routeId}:{key}:{target}` | 原地更新用消息 id 追踪（如 `workflow_run` / `check_run`）                     | 7 天               |
 | `cmd:guild:{id}`               | 已注册命令的服务器 id（去重标记）                                             | 永久               |
 | `cmd:registered:global`        | 全局命令已注册标记（24h 去重）                                                | 1 天               |
 | `config:discord-app-id`        | Discord 应用 id 缓存                                                          | 永久               |

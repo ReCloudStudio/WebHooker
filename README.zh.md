@@ -10,7 +10,7 @@ GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare W
 - 按事件类型、仓库、操作人、操作、分支、关键词（支持正则）过滤
 - 富消息：颜色编码、作者头像、字段、时间戳——渲染为 Discord embed 与 Telegram HTML
 - 路由到 Discord 频道/子区与 Telegram 群组/话题（一条路由可多目标）
-- `workflow_run` 进度**原地编辑**同一条消息（工作流推进时更新），两个平台均支持
+- `workflow_run` / `check_run` 进度**原地编辑**同一条消息（运行推进时更新），两个平台均支持
 - GitHub OAuth 用户授权（评论、编辑评论、删除评论、合并、关闭、反应）
 - **Web 配置控制台**（`/admin`）— 通过 GitHub OAuth + 管理员白名单管理路由与分组、查看发送日志
 - **Discord Interactions Endpoint**（Ed25519 验签）支持 `/gh` 斜杠命令、消息右键菜单命令、PR 合并/关闭按钮与评论 modal
@@ -332,7 +332,7 @@ npm test              # 单元测试（bun test）
 | `status`                      | 提交状态、上下文、状态值             |
 | `deployment`                  | 环境、引用、任务                     |
 | `deployment_status`           | 环境、状态、commit ref               |
-| `check_run`                   | 状态、结论、详情链接                 |
+| `check_run`                   | 状态、结论、详情链接（原地更新）     |
 | `check_suite`                 | 套件结论、head 分支、提交            |
 | `ping`                        | Webhook 确认                         |
 | `release`                     | Tag、内容、资产                      |

@@ -33,7 +33,7 @@ GitHub / Gitea Webhook → Cloudflare Worker (Hono)
 4. Worker 解析事件类型并将载荷归一化为 GitHub 形状的事件
 5. 根据过滤器（event、repo、actor、action、branch、keyword）与分组所有者限制评估路由
 6. 匹配的路由触发格式化器函数生成平台中立消息
-7. 每条消息通过 Discord 或 Telegram REST API 发送到对应路由的目标，并处理速率限制重试；`workflow_run` 进度原地更新。每次尝试都记录到 D1 发送日志
+7. 每条消息通过 Discord 或 Telegram REST API 发送到对应路由的目标，并处理速率限制重试；`workflow_run` / `check_run` 进度原地更新。每次尝试都记录到 D1 发送日志
 
 ## 技术栈
 

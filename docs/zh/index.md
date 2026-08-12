@@ -25,5 +25,5 @@ features:
   - title: 签名验证
     details: 使用 Web Crypto API 进行 HMAC-SHA256 webhook 签名验证与 Ed25519 交互签名验证，支持时间安全比较。
   - title: 原地更新
-    details: workflow_run 进度在运行推进时于同一条消息上原地更新，Discord 与 Telegram 均支持。
+    details: workflow_run / check_run 进度在运行推进时于同一条消息上原地更新，Discord 与 Telegram 均支持。
 ---

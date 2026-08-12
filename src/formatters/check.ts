@@ -164,6 +164,7 @@ export function formatCheckRun(
   showEmoji: boolean,
 ): NeutralMessage {
   const checkRun = payload.check_run as {
+    id?: number;
     name?: string;
     conclusion?: string;
     html_url?: string;
@@ -213,6 +214,7 @@ export function formatCheckRun(
       url: checkRun.html_url,
       color: GITHUB_COLORS[colorKey],
       fields,
+      updateKey: repo && checkRun.id != null ? `check_run:${repo}:${checkRun.id}` : undefined,
     },
     t,
     repo,

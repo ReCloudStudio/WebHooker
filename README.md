@@ -10,7 +10,7 @@ GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook event
 - Filter by event type, repo, actor, action, branch, keyword (supports regex)
 - Rich messages with color coding, author avatars, fields, and timestamps — rendered as Discord embeds and Telegram HTML
 - Route to Discord channels/threads and Telegram chats/topics (multi-target routes)
-- `workflow_run` progress is edited **in place** (single message updated as the workflow advances) on both platforms
+- `workflow_run` / `check_run` progress is edited **in place** (single message updated as the run advances) on both platforms
 - GitHub OAuth for user actions (comment, edit comment, delete comment, merge, close, react)
 - **Web UI config console** (`/admin`) — manage routes and groups with GitHub OAuth + admin whitelist, view send logs
 - **Discord Interactions Endpoint** (Ed25519-verified) for `/gh` slash commands, message context-menu commands, PR merge/close buttons, and comment modals
@@ -333,7 +333,7 @@ npm test              # Unit tests (bun test)
 | `status`                      | Commit status, context, state                           |
 | `deployment`                  | Environment, ref, task                                  |
 | `deployment_status`           | Environment, status, commit ref                         |
-| `check_run`                   | Status, conclusion, details URL                         |
+| `check_run`                   | Status, conclusion, details URL (edited in place)       |
 | `check_suite`                 | Suite conclusion, head branch, commit                   |
 | `ping`                        | Webhook confirmation                                    |
 | `release`                     | Tag, body, assets                                       |

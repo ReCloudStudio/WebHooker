@@ -33,7 +33,7 @@ GitHub / Gitea Webhook → Cloudflare Worker (Hono)
 4. Worker parses the event type and normalizes the payload to a GitHub-shaped event
 5. Routes are evaluated against filters (event, repo, actor, action, branch, keyword) and group owner restrictions
 6. Matching routes trigger formatter functions that produce platform-neutral messages
-7. Each message is sent to its route's target(s) via the Discord or Telegram REST API with rate-limit retry; `workflow_run` progress is edited in place. Every attempt is recorded in the D1 send log
+7. Each message is sent to its route's target(s) via the Discord or Telegram REST API with rate-limit retry; `workflow_run` / `check_run` progress is edited in place. Every attempt is recorded in the D1 send log
 
 ## Tech Stack
 

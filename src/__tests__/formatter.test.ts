@@ -137,6 +137,7 @@ describe("message title spec", () => {
 
   it("check_run uses status for queued and running", () => {
     const checkRun = {
+      id: 42,
       name: "Lint",
       html_url: "https://github.com/acme/widget/runs/1",
       conclusion: null as string | null,
@@ -148,6 +149,19 @@ describe("message title spec", () => {
     );
     expect(msg.title).toBe("acme/widget: Lint — running");
     expect(msg.fields![0].value).toBe("🔄 running");
+    expect(msg.updateKey).toBe("check_run:acme/widget:42");
+  });
+
+  it("check_run omits updateKey without a run id", () => {
+    const msg = formatEvent(
+      route,
+      event("check_run", {
+        check_run: { name: "Lint", status: "completed", conclusion: "success" },
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(msg.updateKey).toBeUndefined();
   });
 
   it("check_suite shows conclusion, service, branch and commit", () => {

@@ -266,7 +266,7 @@ Filters accept either a single string or an array of strings:
 | `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 days             |
 | `invite:group:{id}`            | Token index per group (keeps invite listing consistent)                       | Permanent          |
 | `delivery:{id}`                | Webhook delivery id (dedup marker)                                            | 300 seconds        |
-| `msg:{routeId}:{key}:{target}` | Message id tracking for in-place updates (e.g. `workflow_run`)                | 7 days             |
+| `msg:{routeId}:{key}:{target}` | Message id tracking for in-place updates (e.g. `workflow_run` / `check_run`)  | 7 days             |
 | `cmd:guild:{id}`               | Guild id whose commands were registered (dedup)                               | Permanent          |
 | `cmd:registered:global`        | Global command registration marker (dedup)                                    | 1 day              |
 | `config:discord-app-id`        | Cached Discord application id                                                 | Permanent          |

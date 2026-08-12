@@ -15,7 +15,7 @@ WebHooker 支持 28 种 GitHub webhook 事件类型，每种都有专用的格�
 | `status`                      | 提交状态更新           | 提交状态、上下文、状态值、提交链接               |
 | `deployment`                  | 部署已创建             | 环境、引用、任务                                 |
 | `deployment_status`           | 部署状态更新           | 环境、状态、提交引用                             |
-| `check_run`                   | 检查运行完成           | 状态、结论、详情 URL                             |
+| `check_run`                   | 检查运行阶段更新       | 状态、结论、详情 URL；各阶段原地更新同一条消息   |
 | `check_suite`                 | 检查套件完成           | 套件结论、head 分支、提交链接                    |
 | `ping`                        | Webhook 确认           | Webhook 确认、已订阅的事件类型                   |
 | `release`                     | 发布创建/编辑          | 标签、内容、附件、预发布标记                     |
@@ -61,7 +61,7 @@ WebHooker 支持 28 种 GitHub webhook 事件类型，每种都有专用的格�
 
 ## 原地消息更新
 
-`workflow_run` 事件（queued → running → success/failure）只发送一条消息，后续每个阶段会**原地编辑**该消息，而不是发送新消息。消息的链接预览、作者和字段布局保持不变，仅刷新状态、结论 emoji、耗时和标题。Discord（`editMessage`）和 Telegram（`editMessageText` / `editMessageCaption`）均支持。
+`workflow_run` / `check_run` 事件（queued → running → success/failure）只发送一条消息，后续每个阶段会**原地编辑**该消息，而不是发送新消息。消息的链接预览、作者和字段布局保持不变，仅刷新状态、结论 emoji、耗时和标题。Discord（`editMessage`）和 Telegram（`editMessageText` / `editMessageCaption`）均支持。
 
 ## 过滤器兼容性
 

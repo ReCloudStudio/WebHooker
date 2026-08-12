@@ -25,5 +25,5 @@ features:
   - title: Signature Verification
     details: Provider-aware HMAC-SHA256 webhook signature verification (GitHub X-Hub-Signature-256, Gitea X-Gitea-Signature) and Ed25519 interaction signature verification using the Web Crypto API with timing-safe comparison.
   - title: In-Place Updates
-    details: workflow_run progress is edited in place on a single message as the run advances, on both Discord and Telegram.
+    details: workflow_run and check_run progress are edited in place on a single message as the run advances, on both Discord and Telegram.
 ---

@@ -104,7 +104,7 @@ src/__tests__/            # bun test unit tests (webhook, formatter, discord, te
 - Mention Discord roles on route trigger: route-level `discordRoleIds` are rendered as `<@&id>` into the Discord message `content` (Telegram targets ignore the field)
 - Format 28 event types as platform-neutral messages (Discord embeds + Telegram HTML)
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
-- Edit already-sent messages in place for `workflow_run` progress (stable `updateKey`, KV `msg:*` tracking)
+- Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, KV `msg:*` tracking)
 - Record every dispatch attempt to D1 `send_logs` (route id, event, target, ok/error, duration, error code)
 - Serve `/gh` slash commands + message context-menu commands + PR merge/close buttons + comment modals
 - Serve Telegram `/gh` commands (login/logout/comment/merge/close) via reply-message parsing

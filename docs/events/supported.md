@@ -15,7 +15,7 @@ WebHooker supports 28 GitHub webhook event types, each with a dedicated formatte
 | `status`                      | Commit status updated          | Commit status, context, state, commit link                                     |
 | `deployment`                  | Deployment created             | Environment, ref, task                                                         |
 | `deployment_status`           | Deployment status updated      | Environment, status, commit ref                                                |
-| `check_run`                   | Check run completed            | Status, conclusion, details URL                                                |
+| `check_run`                   | Check run phase updated        | Status, conclusion, details URL; phases update a single message in place       |
 | `check_suite`                 | Check suite completed          | Suite conclusion, head branch, commit link                                     |
 | `ping`                        | Webhook confirmation           | Webhook confirmation, event types subscribed                                   |
 | `release`                     | Release published/edited       | Tag, body, assets, pre-release flag                                            |
@@ -61,7 +61,7 @@ Any event type without a dedicated formatter falls through to the generic format
 
 ## In-Place Message Updates
 
-`workflow_run` events (queued → running → success/failure) are sent once and then **edited in place** for each subsequent phase instead of posting a new message. The original message's link preview, author, and field layout are preserved; only the status, conclusion emoji, duration, and title are refreshed. Supported on both Discord (`editMessage`) and Telegram (`editMessageText` / `editMessageCaption`).
+`workflow_run` and `check_run` events (queued → running → success/failure) are sent once and then **edited in place** for each subsequent phase instead of posting a new message. The original message's link preview, author, and field layout are preserved; only the status, conclusion emoji, duration, and title are refreshed. Supported on both Discord (`editMessage`) and Telegram (`editMessageText` / `editMessageCaption`).
 
 ## Filter Compatibility
 
