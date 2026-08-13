@@ -299,6 +299,28 @@ describe("group emoji toggle", () => {
     expect(msg.description).not.toContain("🔗");
   });
 
+  it("push with deleted:true renders as a branch deletion", () => {
+    const msg = formatEvent(
+      route,
+      event("push", {
+        ref: "refs/heads/dependabot/npm_and_yarn/multi-e1b34b8be3",
+        before: "abcd1234ef",
+        after: "0000000000000000000000000000000000000000",
+        created: false,
+        forced: false,
+        deleted: true,
+        commits: [],
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(msg.title).toBe(
+      "acme/widget: 🌿 Deleted branch [`dependabot/npm_and_yarn/multi-e1b34b8be3`](https://github.com/acme/widget/tree/dependabot/npm_and_yarn/multi-e1b34b8be3)",
+    );
+    expect(msg.description).toBeUndefined();
+    expect(msg.fields).toBeUndefined();
+  });
+
   it("push commit renders linked short hash with plain-text message", () => {
     const msg = formatEvent(
       route,

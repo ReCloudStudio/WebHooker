@@ -25,7 +25,29 @@ export function formatPush(
   const baseUrl = repoBaseUrl(payload, repo);
   const forced = payload.forced as boolean | undefined;
   const created = payload.created as boolean | undefined;
+  const deleted = payload.deleted as boolean | undefined;
   const em = (e: string): string => emojiPrefix(e, showEmoji);
+
+  // A branch/tag deletion pushed via `git push --delete` arrives as a push
+  // event with `deleted: true` and no commits — render it like the `delete`
+  // event instead of a confusing "0 commits pushed".
+  if (deleted) {
+    const refType = isTagPush ? "tag" : "branch";
+    return buildMessage(
+      {
+        author,
+        title: t("events.delete.title", {
+          repo: repo ?? t("common.repository"),
+          emoji: em(isTagPush ? "🏷️" : "🌿"),
+          type: refType,
+          ref: isTagPush ? tagLink(baseUrl, rawRef, ref) : branchLink(baseUrl, rawRef, ref),
+        }),
+        color: GITHUB_COLORS.delete,
+      },
+      t,
+      repo,
+    );
+  }
 
   const descriptionParts: string[] = [];
 
