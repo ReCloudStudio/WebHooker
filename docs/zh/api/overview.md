@@ -32,6 +32,7 @@ https://your-worker.workers.dev
 | `PUT`    | `/admin/api/groups`            | 管理员会话   | 替换分组（仅超级管理员）                             |
 | `GET`    | `/admin/api/groups/:id/routes` | 管理员会话   | 列出某分组的路由                                     |
 | `PUT`    | `/admin/api/groups/:id/routes` | 管理员会话   | 替换某分组的路由                                     |
+| `PUT`    | `/admin/api/groups/:id/rename` | 管理员会话   | 重命名分组（owner）；路由/secret/邀请自动跟随        |
 | `GET`    | `/admin/api/me`                | 管理员会话   | 当前会话信息                                         |
 | `GET`    | `/admin/api/logs`              | 管理员会话   | 发送日志（按权限过滤）                               |
 | `GET`    | `/admin/api/logs/:id`          | 管理员会话   | 单条发送日志（按权限过滤）                           |

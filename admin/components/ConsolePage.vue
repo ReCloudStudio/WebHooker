@@ -274,6 +274,7 @@ const {
   error: groupsError,
   load: loadGroups,
   save: saveGroups,
+  rename: groupsRename,
 } = useGroupsApi();
 const {
   routes: groupRoutes,
@@ -435,9 +436,17 @@ async function onSaveGroupFromPanel(group: Group): Promise<void> {
 async function onSaveGroup(group: Group): Promise<void> {
   savingGroup.value = true;
   try {
+    const editing = editingGroup.value;
     let next: Group[];
-    if (editingGroup.value) {
-      next = groups.value.map((g) => (g.id === editingGroup.value!.id ? group : g));
+    if (editing) {
+      if (group.id !== editing.id) {
+        // Id changed: rename first so routes/webhook secret/invites follow,
+        // then persist the remaining edits under the new id.
+        await groupsRename(editing.id, group.id);
+        next = [...groups.value.filter((g) => g.id !== editing.id), group];
+      } else {
+        next = groups.value.map((g) => (g.id === editing.id ? group : g));
+      }
     } else {
       if (groups.value.some((g) => g.id === group.id)) {
         push(t("toast.groupIdExists"), "bad");
@@ -448,6 +457,7 @@ async function onSaveGroup(group: Group): Promise<void> {
     await saveGroups(next);
     groupEditorOpen.value = false;
     push(t("toast.groupSaved"));
+    await loadGroups();
   } catch (err) {
     push(t("toast.saveFailed", { msg: err instanceof Error ? err.message : String(err) }), "bad");
   } finally {

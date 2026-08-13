@@ -70,6 +70,24 @@ export function useGroupsApi() {
     groups.value = next;
   }
 
+  /** Rename a group; routes, webhook secret and invites follow automatically. */
+  async function rename(oldId: string, newId: string): Promise<void> {
+    const res = await fetch(`/admin/api/groups/${encodeURIComponent(oldId)}/rename`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ newId }),
+    });
+    if (res.status === 401) {
+      needLogin.value = true;
+      throw new Error("unauthorized");
+    }
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(data.error ?? `HTTP ${res.status}`);
+    }
+  }
+
   return {
     groups,
     isSuper,
@@ -82,5 +100,6 @@ export function useGroupsApi() {
     error,
     load,
     save,
+    rename,
   };
 }

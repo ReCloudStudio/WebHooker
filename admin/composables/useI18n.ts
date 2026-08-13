@@ -167,6 +167,8 @@ const en: Dict = {
   "groupEditor.id": "ID",
   "groupEditor.idPlaceholder": "my-team",
   "groupEditor.idHint": "Unique, use a-z / 0-9 / dashes",
+  "groupEditor.renameHint":
+    "Changing the id also updates routes, webhook secrets and invites that reference this group.",
   "groupEditor.language": "Message language",
   "groupEditor.langPlaceholder": "en",
   "groupEditor.langHint": "en or zh; custom via KV i18n:<lang>",
@@ -416,6 +418,7 @@ const zh: Dict = {
   "groupEditor.id": "ID",
   "groupEditor.idPlaceholder": "my-team",
   "groupEditor.idHint": "唯一，使用 a-z / 0-9 / 短横线",
+  "groupEditor.renameHint": "修改 id 会同步更新引用该分组的路由、webhook secret 与邀请链接。",
   "groupEditor.language": "消息语言",
   "groupEditor.langPlaceholder": "zh",
   "groupEditor.langHint": "en 或 zh；可通过 KV i18n:<lang> 自定义",

@@ -15,7 +15,14 @@ import {
 } from "./auth";
 import { getSendLog, getSendLogById } from "../lib/send-log";
 import { getAuditLog, recordAudit } from "../lib/audit";
-import { createInvite, listInvites, revokeInvite, getInvite, acceptInvite } from "./invites";
+import {
+  createInvite,
+  listInvites,
+  revokeInvite,
+  getInvite,
+  acceptInvite,
+  migrateInvites,
+} from "./invites";
 import { getTenantSecret, setTenantSecret, deleteTenantSecret } from "./tenants";
 import { log } from "../lib/log";
 
@@ -754,6 +761,75 @@ export function createAdminRoutes(): Hono<AuthEnv> {
       ip: clientIp(c),
     });
     return c.json({ ok: true });
+  });
+
+  // Rename a group (owner +). References follow: routes, the per-group
+  // webhook secret (tenant:{id}) and pending invites are re-pointed.
+  app.put("/api/groups/:groupId/rename", requireAnyAccess(), async (c) => {
+    const groupId = param(c, "groupId");
+    const access = requireGroupRole(c, groupId, "owner");
+    if (!access.ok) {
+      return c.json(
+        { error: access.status === 404 ? "Group not found" : "Forbidden" },
+        access.status,
+      );
+    }
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    const newId = String((body as { newId?: unknown })?.newId ?? "").trim();
+    if (!ID_RE.test(newId)) {
+      return c.json({ error: "newId is invalid" }, 400);
+    }
+    if (newId === groupId) {
+      return c.json({ error: "newId must differ from the current id" }, 400);
+    }
+    const auth = currentAuth(c);
+    const existing = await loadGroups(c.env.KV);
+    if (existing.some((g) => g.id === newId)) {
+      return c.json({ error: `group id "${newId}" already exists` }, 400);
+    }
+
+    const next = existing.map((g) => (g.id === groupId ? { ...g, id: newId } : g));
+    try {
+      await saveGroups(c.env.KV, next);
+    } catch (err) {
+      log.error({ err }, "Failed to save groups on rename");
+      return c.json({ error: "Failed to save groups" }, 500);
+    }
+
+    // Re-point routes, the tenant webhook secret and pending invites.
+    const routes = await loadRoutes(c.env.KV);
+    const touched = routes.filter((r) => r.groupId === groupId);
+    if (touched.length > 0) {
+      await saveRoutes(
+        c.env.KV,
+        routes.map((r) => (r.groupId === groupId ? { ...r, groupId: newId } : r)),
+      );
+    }
+    const secret = await getTenantSecret(c.env.KV, groupId);
+    if (secret) {
+      await c.env.KV.put(`tenant:${newId}`, secret);
+      await c.env.KV.delete(`tenant:${groupId}`);
+    }
+    await migrateInvites(c.env.KV, groupId, newId);
+
+    await recordAudit(c.env.DB, {
+      ts: Date.now(),
+      actorId: auth.session.userId,
+      actorLogin: auth.session.login,
+      action: "group.rename",
+      targetType: "group",
+      targetId: newId,
+      groupId: newId,
+      detail: { from: groupId, to: newId, routes: touched.length },
+      ip: clientIp(c),
+    });
+    log.info({ from: groupId, to: newId }, "Group renamed via admin UI");
+    return c.json({ ok: true, id: newId });
   });
 
   // ---- Group webhook ingress (owner +) ----

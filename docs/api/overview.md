@@ -32,6 +32,7 @@ https://your-worker.workers.dev
 | `PUT`    | `/admin/api/groups`            | Admin session     | Replace groups (super)                                             |
 | `GET`    | `/admin/api/groups/:id/routes` | Admin session     | List a group's routes                                              |
 | `PUT`    | `/admin/api/groups/:id/routes` | Admin session     | Replace a group's routes                                           |
+| `PUT`    | `/admin/api/groups/:id/rename` | Admin session     | Rename a group (owner); routes/secret/invites follow               |
 | `GET`    | `/admin/api/me`                | Admin session     | Current session info                                               |
 | `GET`    | `/admin/api/logs`              | Admin session     | Send logs (scoped)                                                 |
 | `GET`    | `/admin/api/logs/:id`          | Admin session     | Single send-log entry (scoped)                                     |

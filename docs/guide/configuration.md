@@ -58,28 +58,29 @@ WebHooker ships with a built-in config console at `/admin` for managing routes i
 
 The console is served as an SPA at `/admin`; its tabs are deep-linkable via the URL path (`/admin/groups`, `/admin/logs`, `/admin/audit`). URLs outside `/admin` that do not match an endpoint below return a plain `404` instead of the console.
 
-| Endpoint                                        | Description                                          |
-| ----------------------------------------------- | ---------------------------------------------------- |
-| `GET /admin`                                    | Config console UI                                    |
-| `GET /admin/login`                              | Start GitHub OAuth sign-in                           |
-| `GET /admin/logout`                             | Destroy session                                      |
-| `GET /admin/invite?token=…`                     | Accept a group invite (browser page)                 |
-| `GET /admin/api/me`                             | Current session, scope, groups, and roles            |
-| `GET /admin/api/routes`                         | List routes (scoped to access)                       |
-| `PUT /admin/api/routes`                         | Replace routes (owner/admin per group)               |
-| `GET /admin/api/groups`                         | List groups + the signed-in user's role each         |
-| `PUT /admin/api/groups`                         | Replace groups (super: all; owner: own only)         |
-| `GET /admin/api/groups/:id/routes`              | List a group's routes                                |
-| `PUT /admin/api/groups/:id/routes`              | Replace a group's routes (owner/admin)               |
-| `GET /admin/api/logs`                           | Send logs (scoped to accessible routes)              |
-| `GET /admin/api/logs/:id`                       | Single send-log entry (scoped)                       |
-| `POST /admin/api/groups/:id/invites`            | Create an invite link (owner)                        |
-| `GET /admin/api/groups/:id/invites`             | List pending invites (owner)                         |
-| `DELETE /admin/api/invites/:token`              | Revoke an invite (owner)                             |
-| `GET /admin/api/audit`                          | Audit log (scoped to accessible groups)              |
-| `GET /admin/api/groups/:id/webhook`             | Group webhook endpoint info (owner)                  |
-| `POST /admin/api/groups/:id/webhook/regenerate` | Generate/regenerate the group webhook secret (owner) |
-| `DELETE /admin/api/groups/:id/webhook`          | Disable the group webhook ingress (owner)            |
+| Endpoint                                        | Description                                                       |
+| ----------------------------------------------- | ----------------------------------------------------------------- |
+| `GET /admin`                                    | Config console UI                                                 |
+| `GET /admin/login`                              | Start GitHub OAuth sign-in                                        |
+| `GET /admin/logout`                             | Destroy session                                                   |
+| `GET /admin/invite?token=…`                     | Accept a group invite (browser page)                              |
+| `GET /admin/api/me`                             | Current session, scope, groups, and roles                         |
+| `GET /admin/api/routes`                         | List routes (scoped to access)                                    |
+| `PUT /admin/api/routes`                         | Replace routes (owner/admin per group)                            |
+| `GET /admin/api/groups`                         | List groups + the signed-in user's role each                      |
+| `PUT /admin/api/groups`                         | Replace groups (super: all; owner: own only)                      |
+| `GET /admin/api/groups/:id/routes`              | List a group's routes                                             |
+| `PUT /admin/api/groups/:id/routes`              | Replace a group's routes (owner/admin)                            |
+| `PUT /admin/api/groups/:id/rename`              | Rename a group (owner); routes, webhook secret and invites follow |
+| `GET /admin/api/logs`                           | Send logs (scoped to accessible routes)                           |
+| `GET /admin/api/logs/:id`                       | Single send-log entry (scoped)                                    |
+| `POST /admin/api/groups/:id/invites`            | Create an invite link (owner)                                     |
+| `GET /admin/api/groups/:id/invites`             | List pending invites (owner)                                      |
+| `DELETE /admin/api/invites/:token`              | Revoke an invite (owner)                                          |
+| `GET /admin/api/audit`                          | Audit log (scoped to accessible groups)                           |
+| `GET /admin/api/groups/:id/webhook`             | Group webhook endpoint info (owner)                               |
+| `POST /admin/api/groups/:id/webhook/regenerate` | Generate/regenerate the group webhook secret (owner)              |
+| `DELETE /admin/api/groups/:id/webhook`          | Disable the group webhook ingress (owner)                         |
 
 The console lets you add, edit, delete, and toggle routes. Saved routes are written to KV `config:routes` immediately and the config cache is invalidated so the webhook pipeline picks them up on the next run.
 
@@ -249,7 +250,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 
 | Field            | Type     | Required | Description                                                                                                                                                                                  |
 | ---------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`             | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`                                                                                                                           |
+| `id`             | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`. Editable: renaming a group re-points its routes, per-group webhook secret and pending invites                            |
 | `name`           | string   | Yes      | Human-readable group name                                                                                                                                                                    |
 | `members`        | object[] | No       | `{ login, role }` entries; role is `owner`, `admin`, or `viewer`                                                                                                                             |
 | `adminIds`       | string[] | No       | Deprecated legacy field; treated as `members` with role `owner` when present                                                                                                                 |
@@ -273,7 +274,7 @@ Every group member has one of three roles. Super admins (`ADMIN_USER_IDS`) alway
 ### Access Model
 
 - **Super admins** (`ADMIN_USER_IDS`) see and edit every group and all routes; only they can edit a group's `owners` list.
-- **Owners** manage their group's routes, members, invites, name, `emoji`, and `providers`. They cannot remove the last owner or demote themselves when no other owner remains.
+- **Owners** manage their group's routes, members, invites, name, id, `emoji`, and `providers`. They cannot remove the last owner or demote themselves when no other owner remains.
 - **Admins** edit routes inside their groups and view logs; **viewers** get a read-only console.
 - Group admin endpoints operate on a single group at a time via `/admin/api/groups/:id/routes`; `groupId` is forced from the path parameter.
 - The `owners` list restricts which event actors (sender logins) the group's routes will dispatch at all.

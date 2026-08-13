@@ -58,28 +58,29 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 控制台以 SPA 形式挂在 `/admin`，各标签页可通过 URL 路径直达（`/admin/groups`、`/admin/logs`、`/admin/audit`）。`/admin` 之外且未匹配下方端点的 URL 直接返回 `404`，不会再被吞进控制台。
 
-| 端点                                            | 说明                                      |
-| ----------------------------------------------- | ----------------------------------------- |
-| `GET /admin`                                    | 配置控制台页面                            |
-| `GET /admin/login`                              | 开始 GitHub OAuth 登录                    |
-| `GET /admin/logout`                             | 销毁会话                                  |
-| `GET /admin/invite?token=…`                     | 接受分组邀请（浏览器页面）                |
-| `GET /admin/api/me`                             | 当前会话、权限范围、分组和角色            |
-| `GET /admin/api/routes`                         | 列出路由（按权限过滤）                    |
-| `PUT /admin/api/routes`                         | 替换路由（按分组 owner/admin 权限）       |
-| `GET /admin/api/groups`                         | 列出分组 + 当前用户在各组的角色           |
-| `PUT /admin/api/groups`                         | 替换分组（超管全量；owner 仅自己的组）    |
-| `GET /admin/api/groups/:id/routes`              | 列出某分组的路由                          |
-| `PUT /admin/api/groups/:id/routes`              | 替换某分组的路由（owner/admin）           |
-| `GET /admin/api/logs`                           | 发送日志（按可访问路由过滤）              |
-| `GET /admin/api/logs/:id`                       | 单条发送日志（按权限过滤）                |
-| `POST /admin/api/groups/:id/invites`            | 创建邀请链接（owner）                     |
-| `GET /admin/api/groups/:id/invites`             | 列出待接受邀请（owner）                   |
-| `DELETE /admin/api/invites/:token`              | 撤销邀请（owner）                         |
-| `GET /admin/api/audit`                          | 审计日志（按可访问分组过滤）              |
-| `GET /admin/api/groups/:id/webhook`             | 分组 webhook 入口信息（owner）            |
-| `POST /admin/api/groups/:id/webhook/regenerate` | 生成/重新生成分组 webhook secret（owner） |
-| `DELETE /admin/api/groups/:id/webhook`          | 停用分组 webhook 入口（owner）            |
+| 端点                                            | 说明                                                     |
+| ----------------------------------------------- | -------------------------------------------------------- |
+| `GET /admin`                                    | 配置控制台页面                                           |
+| `GET /admin/login`                              | 开始 GitHub OAuth 登录                                   |
+| `GET /admin/logout`                             | 销毁会话                                                 |
+| `GET /admin/invite?token=…`                     | 接受分组邀请（浏览器页面）                               |
+| `GET /admin/api/me`                             | 当前会话、权限范围、分组和角色                           |
+| `GET /admin/api/routes`                         | 列出路由（按权限过滤）                                   |
+| `PUT /admin/api/routes`                         | 替换路由（按分组 owner/admin 权限）                      |
+| `GET /admin/api/groups`                         | 列出分组 + 当前用户在各组的角色                          |
+| `PUT /admin/api/groups`                         | 替换分组（超管全量；owner 仅自己的组）                   |
+| `GET /admin/api/groups/:id/routes`              | 列出某分组的路由                                         |
+| `PUT /admin/api/groups/:id/routes`              | 替换某分组的路由（owner/admin）                          |
+| `PUT /admin/api/groups/:id/rename`              | 重命名分组（owner）；路由、webhook secret 与邀请自动跟随 |
+| `GET /admin/api/logs`                           | 发送日志（按可访问路由过滤）                             |
+| `GET /admin/api/logs/:id`                       | 单条发送日志（按权限过滤）                               |
+| `POST /admin/api/groups/:id/invites`            | 创建邀请链接（owner）                                    |
+| `GET /admin/api/groups/:id/invites`             | 列出待接受邀请（owner）                                  |
+| `DELETE /admin/api/invites/:token`              | 撤销邀请（owner）                                        |
+| `GET /admin/api/audit`                          | 审计日志（按可访问分组过滤）                             |
+| `GET /admin/api/groups/:id/webhook`             | 分组 webhook 入口信息（owner）                           |
+| `POST /admin/api/groups/:id/webhook/regenerate` | 生成/重新生成分组 webhook secret（owner）                |
+| `DELETE /admin/api/groups/:id/webhook`          | 停用分组 webhook 入口（owner）                           |
 
 控制台支持新增、编辑、删除和开关路由。保存后立即写入 KV `config:routes` 并使配置缓存失效，下一次 webhook 处理即会生效。
 
@@ -249,7 +250,7 @@ GitHub App 安装后，**所有**安装方的事件都会到达全局端点。�
 
 | 字段             | 类型     | 必需 | 说明                                                                                                                                                                 |
 | ---------------- | -------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`             | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用                                                                                                                |
+| `id`             | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用。可修改：重命名分组会同步更新其路由、分组级 webhook secret 与待接受邀请                                        |
 | `name`           | string   | 是   | 可读的分组名称                                                                                                                                                       |
 | `members`        | object[] | 否   | `{ login, role }` 列表；角色为 `owner`、`admin` 或 `viewer`                                                                                                          |
 | `adminIds`       | string[] | 否   | 已废弃的旧字段；存在时按 role 为 `owner` 的成员处理                                                                                                                  |
@@ -273,7 +274,7 @@ GitHub App 安装后，**所有**安装方的事件都会到达全局端点。�
 ### 权限模型
 
 - **超级管理员**（`ADMIN_USER_IDS`）可查看和编辑所有分组及全部路由；只有他们能修改分组的 `owners` 列表。
-- **owner** 管理本组的路由、成员、邀请、名称、`emoji` 与 `providers`；不能移除最后一位 owner，也没有其他 owner 时不能把自己降级。
+- **owner** 管理本组的路由、成员、邀请、名称、id、`emoji` 与 `providers`；不能移除最后一位 owner，也没有其他 owner 时不能把自己降级。
 - **admin** 可编辑本组路由并查看日志；**viewer** 只读控制台。
 - 分组管理端点通过 `/admin/api/groups/:id/routes` 一次只操作一个分组；`groupId` 由路径参数强制指定。
 - `owners` 列表限定哪些事件参与者（发送者登录名）的事件会被该分组的路由投递。

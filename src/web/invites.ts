@@ -121,6 +121,35 @@ export async function revokeInvite(kv: KVNamespace, token: string): Promise<void
 }
 
 /**
+ * Re-point every pending invite of a group to its new id (group rename).
+ * Best-effort: a failure leaves the old invites in place (they will be
+ * rejected as group-missing after the rename).
+ */
+export async function migrateInvites(kv: KVNamespace, from: string, to: string): Promise<void> {
+  try {
+    const tokens = await readIndex(kv, from);
+    if (tokens.length === 0) {
+      await kv.delete(indexKey(from));
+      return;
+    }
+    const moved: string[] = [];
+    for (const token of tokens) {
+      const invite = await kv.get<Invite>(inviteKey(token), "json");
+      if (invite && invite.groupId === from) {
+        await kv.put(inviteKey(token), JSON.stringify({ ...invite, groupId: to }), {
+          expirationTtl: INVITE_TTL,
+        });
+        moved.push(token);
+      }
+    }
+    await kv.put(indexKey(to), JSON.stringify(moved));
+    await kv.delete(indexKey(from));
+  } catch (err) {
+    log.warn({ err, from, to }, "Failed to migrate invites on group rename");
+  }
+}
+
+/**
  * Adds the accepting user to the invited group (or upgrades their role when
  * they are already a viewer) and consumes the invite. The invited role is
  * never an owner — ownership stays with the inviter's discretion.

@@ -26,10 +26,11 @@
                 v-model="form.id"
                 type="text"
                 :placeholder="t('groupEditor.idPlaceholder')"
-                :disabled="isEdit"
                 required
               />
-              <div class="hint">{{ t("groupEditor.idHint") }}</div>
+              <div class="hint">
+                {{ isEdit ? t("groupEditor.renameHint") : t("groupEditor.idHint") }}
+              </div>
             </div>
           </div>
           <div class="row2">
