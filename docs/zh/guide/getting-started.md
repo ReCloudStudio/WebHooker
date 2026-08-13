@@ -63,7 +63,7 @@ curl http://localhost:8787/health
 ## 可用脚本
 
 | 脚本                   | 说明                                 |
-|------------------------|--------------------------------------|
+| ---------------------- | ------------------------------------ |
 | `bun run dev`          | 启动 Nuxt 开发服务器 (HMR)           |
 | `bun run build`        | 生产构建（cloudflare_module preset） |
 | `bun run deploy`       | 部署到 Cloudflare                    |

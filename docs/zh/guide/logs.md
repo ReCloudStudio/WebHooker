@@ -4,25 +4,25 @@
 
 每次分发尝试都会记录到 D1 `send_logs` 表，并可在控制台（**日志**标签页）查看。字段：
 
-| 字段         | 含义                                                        |
-|--------------|-------------------------------------------------------------|
-| `routeId`    | 匹配的路由                                                  |
-| `groupId`    | 路由所属分组                                                |
-| `event`      | 事件类型（如 `push`、`pull_request`、`custom`）             |
-| `repo`       | 仓库全名（存在时）                                          |
-| `target`     | 消息发送到的目标 id                                         |
-| `platform`   | `discord` 或 `telegram`                                     |
-| `ok`         | 发送是否成功                                                |
-| `status`     | 平台 API 的 HTTP 状态码（适用时）                           |
-| `error`      | 失败时的错误信息                                            |
-| `errorCode`  | 稳定错误码（如 `NO_TARGET`、`NO_TOKEN`、`RATE_LIMITED`）    |
-| `attempts`   | 含重试在内的发送次数                                        |
-| `durationMs` | 发送耗时                                                    |
-| `deliveryId` | Webhook 投递 id（提供时）                                   |
-| `messageId`  | 平台消息 id（用于原地编辑）                                 |
-| `actor`      | 发送者登录名                                                |
-| `action`     | 事件动作（存在时）                                          |
-| `detail`     | 附加 JSON 详情（存在时）                                    |
+| 字段         | 含义                                                     |
+| ------------ | -------------------------------------------------------- |
+| `routeId`    | 匹配的路由                                               |
+| `groupId`    | 路由所属分组                                             |
+| `event`      | 事件类型（如 `push`、`pull_request`、`custom`）          |
+| `repo`       | 仓库全名（存在时）                                       |
+| `target`     | 消息发送到的目标 id                                      |
+| `platform`   | `discord` 或 `telegram`                                  |
+| `ok`         | 发送是否成功                                             |
+| `status`     | 平台 API 的 HTTP 状态码（适用时）                        |
+| `error`      | 失败时的错误信息                                         |
+| `errorCode`  | 稳定错误码（如 `NO_TARGET`、`NO_TOKEN`、`RATE_LIMITED`） |
+| `attempts`   | 含重试在内的发送次数                                     |
+| `durationMs` | 发送耗时                                                 |
+| `deliveryId` | Webhook 投递 id（提供时）                                |
+| `messageId`  | 平台消息 id（用于原地编辑）                              |
+| `actor`      | 发送者登录名                                             |
+| `action`     | 事件动作（存在时）                                       |
+| `detail`     | 附加 JSON 详情（存在时）                                 |
 
 控制台的**日志**标签页列出最近记录（可按分组过滤），并可查看单条完整详情。写入为尽力而为——插入失败不会中断分发。
 

@@ -7,12 +7,12 @@
 
 ## 一、现状总览
 
-| 文档 | 规模 | 状态 |
-|---|---|---|
-| `docs/`（VitePress，en+zh 镜像） | 11 页 ×2，约 75KB | 结构完整但存在事实错误、覆盖缺失、信息架构混乱 |
-| `README.md` / `README.zh.md` | 363 行 | 与 docs 大量重复（secrets、GitHub App 设置、部署），已出现漂移 |
-| `AGENTS.md` | 222 行 | 基本同步，个别过时 |
-| `config.example.yaml` / `.env.example` | — | 良好，但 README/AGENTS 中 `DOCS_URL` 等变量名与代码不符（`.env.example` 正确） |
+| 文档                                   | 规模              | 状态                                                                           |
+| -------------------------------------- | ----------------- | ------------------------------------------------------------------------------ |
+| `docs/`（VitePress，en+zh 镜像）       | 11 页 ×2，约 75KB | 结构完整但存在事实错误、覆盖缺失、信息架构混乱                                 |
+| `README.md` / `README.zh.md`           | 363 行            | 与 docs 大量重复（secrets、GitHub App 设置、部署），已出现漂移                 |
+| `AGENTS.md`                            | 222 行            | 基本同步，个别过时                                                             |
+| `config.example.yaml` / `.env.example` | —                 | 良好，但 README/AGENTS 中 `DOCS_URL` 等变量名与代码不符（`.env.example` 正确） |
 
 ---
 
@@ -108,14 +108,14 @@
 
 ## 五、中英一致性（zh 滞后）
 
-| 严重度 | 文件 | 差异 |
-|---|---|---|
-| 高 | guide/introduction.md | zh 技术栈仍是"Nux3 静态 SPA"，en 已为"Nuxt 4 (Vue 3 + Tailwind CSS v3)" |
-| 高 | guide/getting-started.md | zh 脚本表缺 `bun run build`、`bun test` 两行；`bun run dev` 描述不一致（wrangler vs Nuxt HMR） |
-| 中 | api/overview.md | zh 漏"or manage a group"准入条件；漏"空过滤器仅 fallback 路由允许" |
-| 低 | guide/configuration.md | 可选密钥表行序不同；keyword 示例 zh 多 `*release-*`；"manage everything" 译作"管理路由" |
-| 低 | guide/filters.md | zh 一处"`/` 包裹"应为"`//` 包裹"（同文件其他处正确） |
-| 低 | index.md | 2 处 feature 描述中文略精简（未列签名头部、未列 slash commands and buttons） |
+| 严重度 | 文件                     | 差异                                                                                           |
+| ------ | ------------------------ | ---------------------------------------------------------------------------------------------- |
+| 高     | guide/introduction.md    | zh 技术栈仍是"Nux3 静态 SPA"，en 已为"Nuxt 4 (Vue 3 + Tailwind CSS v3)"                        |
+| 高     | guide/getting-started.md | zh 脚本表缺 `bun run build`、`bun test` 两行；`bun run dev` 描述不一致（wrangler vs Nuxt HMR） |
+| 中     | api/overview.md          | zh 漏"or manage a group"准入条件；漏"空过滤器仅 fallback 路由允许"                             |
+| 低     | guide/configuration.md   | 可选密钥表行序不同；keyword 示例 zh 多 `*release-*`；"manage everything" 译作"管理路由"        |
+| 低     | guide/filters.md         | zh 一处"`/` 包裹"应为"`//` 包裹"（同文件其他处正确）                                           |
+| 低     | index.md                 | 2 处 feature 描述中文略精简（未列签名头部、未列 slash commands and buttons）                   |
 
 完全一致的文件对：guide/deployment.md、api/actions.md、api/oauth.md、events/supported.md、contributing.md。
 

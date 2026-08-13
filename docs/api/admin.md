@@ -7,7 +7,7 @@ The console itself is served at `/admin`; its tabs are deep-linkable via the URL
 ## Endpoints
 
 | Endpoint                                        | Description                                                       |
-|-------------------------------------------------|-------------------------------------------------------------------|
+| ----------------------------------------------- | ----------------------------------------------------------------- |
 | `GET /admin`                                    | Config console UI                                                 |
 | `GET /admin/login`                              | Start admin sign-in (GitHub OAuth)                                |
 | `GET /admin/logout`                             | Sign out and destroy the session                                  |

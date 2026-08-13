@@ -31,12 +31,12 @@
 
 `targets` 的每一项都是一个推送目标，因此一条路由可同时转发到多个频道（例如一个 Discord 频道**和**一个 Telegram 群组）。`target.platform` 选择平台：`discord`（默认）或 `telegram`。**Discord** 目标要求 `target.channelId`（可选 `target.threadId` 指定子区）；**Telegram** 目标要求 `target.chatId`（群组/超级群组 id，如 `-1001234567890`），可选 `target.topicId`（话题的 `message_thread_id`，相当于 Discord 子区）。没有默认频道回退。
 
-| 字段             | 类型     | 必需 | 说明                                                                        |
-|------------------|----------|------|-----------------------------------------------------------------------------|
-| `groupId`        | string   | 是   | 路由所属[分组](./groups)的 id                                               |
-| `fallback`       | boolean  | 否   | 为 `true` 时仅在没有其他非 fallback 路由匹配时才触发；其自身过滤器被忽略    |
-| `stop`           | boolean  | 否   | 为 `true` 且该路由匹配时，不再评估后续路由                                  |
-| `discordRoleIds` | string[] | 否   | 路由触发时要提醒的 Discord 身份组 id；仅对 Discord 目标生效                 |
+| 字段             | 类型     | 必需 | 说明                                                                     |
+| ---------------- | -------- | ---- | ------------------------------------------------------------------------ |
+| `groupId`        | string   | 是   | 路由所属[分组](./groups)的 id                                            |
+| `fallback`       | boolean  | 否   | 为 `true` 时仅在没有其他非 fallback 路由匹配时才触发；其自身过滤器被忽略 |
+| `stop`           | boolean  | 否   | 为 `true` 且该路由匹配时，不再评估后续路由                               |
+| `discordRoleIds` | string[] | 否   | 路由触发时要提醒的 Discord 身份组 id；仅对 Discord 目标生效              |
 
 ## Discord 身份组提醒
 

@@ -32,7 +32,7 @@ There are **no default routes** — each route must define its own target. If no
 Each entry of `targets` is a push destination, so one route can forward to several channels at once (e.g. a Discord channel **and** a Telegram group). `target.platform` selects the platform: `discord` (default) or `telegram`. For **Discord**, `target.channelId` is required (a thread in `target.threadId` is optional). For **Telegram**, `target.chatId` (the group/supergroup chat id, e.g. `-1001234567890`) is required and `target.topicId` (the `message_thread_id` of a topic, equivalent of a Discord thread) is optional. There is no fallback to a default channel.
 
 | Field            | Type     | Required | Description                                                                                     |
-|------------------|----------|----------|-------------------------------------------------------------------------------------------------|
+| ---------------- | -------- | -------- | ----------------------------------------------------------------------------------------------- |
 | `groupId`        | string   | Yes      | Id of the [group](./groups) this route belongs to                                               |
 | `fallback`       | boolean  | No       | When `true`, fires only if no non-fallback route matched the event; its own filters are ignored |
 | `stop`           | boolean  | No       | When `true` and this route matches, no further routes are evaluated for this event              |

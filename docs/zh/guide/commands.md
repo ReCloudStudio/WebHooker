@@ -6,12 +6,12 @@
 
 使用任何命令前，需先绑定一次 GitHub 账号：
 
-| 平台     | 命令                             | 效果                                                        |
-|----------|----------------------------------|-------------------------------------------------------------|
-| Discord  | `/gh login`                      | 返回一条仅你可见的 OAuth 链接，用于授权 GitHub 账号         |
-| Discord  | `/gh logout`                     | 解除绑定                                                    |
-| Telegram | `/gh login`（引用一条消息）      | 返回 OAuth 链接                                             |
-| Telegram | `/gh logout`（引用一条消息）     | 解除绑定                                                    |
+| 平台     | 命令                         | 效果                                                |
+| -------- | ---------------------------- | --------------------------------------------------- |
+| Discord  | `/gh login`                  | 返回一条仅你可见的 OAuth 链接，用于授权 GitHub 账号 |
+| Discord  | `/gh logout`                 | 解除绑定                                            |
+| Telegram | `/gh login`（引用一条消息）  | 返回 OAuth 链接                                     |
+| Telegram | `/gh logout`（引用一条消息） | 解除绑定                                            |
 
 链接保存在服务端（KV），并在 D1 中映射到你的 Discord/Telegram 用户 ID。
 
@@ -43,12 +43,12 @@ Discord 命令为**斜杠命令**与**消息右键菜单命令**，由定时任�
 
 ### 前置条件
 
-| 项目         | 如何满足                                                                                            |
-|--------------|-----------------------------------------------------------------------------------------------------|
-| 公钥         | 设置 `DISCORD_PUBLIC_KEY` 并配置 Interactions Endpoint URL                                          |
-| 邀请 scope   | 机器人以 `applications.commands` scope 邀请（见 [Discord Bot 设置](./deployment#discord-bot-设置)） |
-| OAuth        | 配置 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 与 `BASE_URL`                                      |
-| 绑定账号     | 每位用户先执行 `/gh login`                                                                          |
+| 项目       | 如何满足                                                                                            |
+| ---------- | --------------------------------------------------------------------------------------------------- |
+| 公钥       | 设置 `DISCORD_PUBLIC_KEY` 并配置 Interactions Endpoint URL                                          |
+| 邀请 scope | 机器人以 `applications.commands` scope 邀请（见 [Discord Bot 设置](./deployment#discord-bot-设置)） |
+| OAuth      | 配置 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 与 `BASE_URL`                                      |
+| 绑定账号   | 每位用户先执行 `/gh login`                                                                          |
 
 ## Telegram
 
