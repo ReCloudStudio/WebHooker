@@ -4,7 +4,12 @@ const regexCache = new Map<string, RegExp>();
 const keywordBodyCache = new WeakMap<WebhookEvent, string>();
 const MAX_PATTERN_LENGTH = 200;
 
-function compileKeywordRegex(pattern: string): RegExp | null {
+/** True when a pattern is wrapped in `/.../` and should be parsed as a RegExp. */
+function isWrappedRegex(pattern: string): boolean {
+  return pattern.length >= 2 && pattern.startsWith("/") && pattern.endsWith("/");
+}
+
+function compileRegex(pattern: string): RegExp | null {
   if (pattern.length > MAX_PATTERN_LENGTH) return null;
   const cached = regexCache.get(pattern);
   if (cached) return cached;
@@ -15,6 +20,65 @@ function compileKeywordRegex(pattern: string): RegExp | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Compile a `*` / `?` glob into a RegExp. `*` matches any sequence of
+ * characters, `?` matches exactly one; everything else matches literally
+ * (case-insensitive). Anchored globs are full-value matches (`^...$`),
+ * unanchored ones behave as a search within the value (keyword semantics).
+ */
+function compileGlob(pattern: string, anchored: boolean): RegExp | null {
+  if (pattern.length > MAX_PATTERN_LENGTH) return null;
+  const key = `${anchored ? "a" : "s"}:${pattern}`;
+  const cached = regexCache.get(key);
+  if (cached) return cached;
+  try {
+    const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+    const body = escaped.replace(/\*/g, ".*").replace(/\?/g, ".");
+    const re = new RegExp(anchored ? `^${body}$` : body, "i");
+    regexCache.set(key, re);
+    return re;
+  } catch {
+    return null;
+  }
+}
+
+function isGlob(pattern: string): boolean {
+  return pattern.includes("*") || pattern.includes("?");
+}
+
+/**
+ * Unified pattern syntax shared by every filter type:
+ * - wrapped in `//` → parsed as a regular expression (case-insensitive)
+ * - contains `*` or `?` → glob matching (`*` = any run, `?` = one character)
+ * - anything else → plain text
+ */
+
+/** Match a pattern against a whole field value (event/repo/actor/action/branch). */
+function matchField(pattern: string, value: string): boolean {
+  if (isWrappedRegex(pattern)) {
+    const re = compileRegex(pattern.slice(1, -1));
+    return !!re && re.test(value);
+  }
+  if (isGlob(pattern)) {
+    const re = compileGlob(pattern, true);
+    return !!re && re.test(value);
+  }
+  return value.toLowerCase() === pattern.toLowerCase();
+}
+
+/** Match a pattern against the lowercased JSON payload body (keyword search). */
+function matchKeyword(pattern: string, body: string): boolean {
+  if (isWrappedRegex(pattern)) {
+    const re = compileRegex(pattern.slice(1, -1));
+    return !!re && re.test(body);
+  }
+  if (isGlob(pattern)) {
+    const re = compileGlob(pattern, false);
+    return !!re && re.test(body);
+  }
+  return body.includes(pattern.toLowerCase());
 }
 
 function getKeywordBody(event: WebhookEvent): string {
@@ -90,11 +154,7 @@ function matchFilter(filter: Filter, event: WebhookEvent, keywordBody?: string):
     case "keyword": {
       const body = keywordBody ?? getKeywordBody(event);
       const patterns = Array.isArray(filter.match) ? filter.match : [filter.match];
-      const matches = patterns.some((p) => {
-        const re = compileKeywordRegex(p);
-        if (!re) return body.includes(p.toLowerCase());
-        return re.test(body);
-      });
+      const matches = patterns.some((p) => matchKeyword(p, body));
       return filter.exclude ? !matches : matches;
     }
     default:
@@ -104,7 +164,7 @@ function matchFilter(filter: Filter, event: WebhookEvent, keywordBody?: string):
   if (!value) return false;
 
   const patterns = Array.isArray(filter.match) ? filter.match : [filter.match];
-  const matches = patterns.some((p) => value!.toLowerCase() === p.toLowerCase());
+  const matches = patterns.some((p) => matchField(p, value));
 
   return filter.exclude ? !matches : matches;
 }

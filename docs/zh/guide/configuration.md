@@ -296,21 +296,22 @@ owner（及超级管理员）可在分组的「成员」面板创建一次性邀
 
 实操指南见[过滤器教程](./filters)，包含完整示例。
 
-| 类型      | 匹配对象         | 示例                             |
-| --------- | ---------------- | -------------------------------- |
-| `event`   | GitHub 事件名称  | `push`, `pull_request`, `issues` |
-| `repo`    | 仓库全名         | `org/repo`                       |
-| `actor`   | 发送者登录名     | `username`, `[bot]`              |
-| `action`  | 事件操作         | `opened`, `closed`, `published`  |
-| `branch`  | 分支名称         | `main`, `develop`                |
-| `keyword` | 载荷正文中的文本 | `deploy`, `/fix\s+\d+/` (正则)   |
+| 类型      | 匹配对象         | 示例                                      |
+| --------- | ---------------- | ----------------------------------------- |
+| `event`   | GitHub 事件名称  | `push`, `pull_*`, `pull_request`          |
+| `repo`    | 仓库全名         | `org/repo`, `org/*`                       |
+| `actor`   | 发送者登录名     | `username`, `[bot]`, `*[bot]`             |
+| `action`  | 事件操作         | `opened`, `closed`, `published`           |
+| `branch`  | 分支名称         | `main`, `feature-?`, `/^release-/`        |
+| `keyword` | 载荷正文中的文本 | `deploy`, `*release-*`, `/fix\s+\d+/`     |
 
 ### 过滤器行为
 
 - 路由中的所有过滤器必须都匹配才触发路由（AND 逻辑）
 - 在任何过滤器上设置 `"exclude": true` 可反转匹配逻辑（NOT 逻辑）
-- 非 keyword 过滤器为**精确、不区分大小写**的匹配——不支持通配符（`repo: "org/*"` 不会匹配任何内容）
-- `keyword` 过滤器支持正则表达式——正则有误或超过 200 个字符时回退到子串匹配
+- 所有过滤器类型支持相同的模式形式：纯文本、`*`/`?` **通配符**（`*` 任意长度、`?` 单字符）以及 `/正则表达式/`——均不区分大小写
+- 字段过滤器（`event`/`repo`/`actor`/`action`/`branch`）的通配符匹配整个值；`keyword` 的通配符和正则搜索载荷任意位置；`keyword` 的纯文本为子串搜索
+- 超过 200 个字符的模式不编译为通配符/正则；`//` 包裹的非法正则匹配不到任何内容
 - `branch` 过滤器适用于 push、pull_request、pull_request_review、pull_request_review_comment、create/delete、workflow_run、workflow_job、check_suite、deployment 和 code_scanning_alert 事件
 
 ### 匹配值

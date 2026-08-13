@@ -51,7 +51,7 @@ server/                  # Nitro server
     ├── core/
     │   └── dispatch.ts  # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter + per-group webhook log)
     ├── events/
-    │   └── match.ts     # matchRoute, eventOwners, extractBranch, keyword regex filtering
+    │   └── match.ts     # matchRoute, eventOwners, extractBranch; unified pattern syntax (*/? globs + //-wrapped regex)
     ├── providers/       # Forge webhook providers (verify + parse/normalize to GitHub-shaped events)
     │   ├── types.ts     # Provider interface (matches/verify/parse)
     │   ├── hmac.ts      # HMAC-SHA256 + timing-safe compare helpers
@@ -116,7 +116,7 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
 - Normalize Gitea webhook payloads to a GitHub-shaped `WebhookEvent` (push `compare_url` → `compare`, `pull_request_comment` → `pull_request_review_comment`, ...)
 - Verify Discord interactions (Web Crypto Ed25519, X-Signature-Ed25519 over timestamp + body)
 - Verify Telegram webhook calls (X-Telegram-Bot-Api-Secret-Token when configured)
-- Filter events by: event type, repo name, actor, action, branch, keyword (regex supported)
+- Filter events by: event type, repo name, actor, action, branch, keyword — every filter type supports `*`/`?` glob matching and `//`-wrapped regular expressions (case-insensitive)
 - Filter routes by group owner restriction (`Group.owners`), group source-platform restriction (`Group.providers`: github/gitea), GitHub App installation restriction (`Group.installationId`), and skip fallback routes whenever a regular route matched; stop evaluating further routes when a matched route has `stop: true`
 - Auto-provision GitHub App installs: the App's Setup URL flow (`/auth/github/install` choice page + `POST /auth/github/install/bind`, owner-role verified for existing groups) and the `installation.created` webhook fallback both create `inst-{installationId}` groups or bind existing groups
 - Enforce role-based access on every admin API: super admins bypass, `owner` manages the group (routes/members/invites/settings), `admin` edits routes, `viewer` is read-only; legacy `adminIds` groups resolve to `owner` members

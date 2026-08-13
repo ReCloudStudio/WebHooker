@@ -9,7 +9,7 @@ GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare W
 - **分组级 webhook 入口** — 每个分组可拥有独立的 `POST /webhook/{groupId}` URL + secret（Gitea、classic GitHub webhook，以及用 `X-WebHooker-Signature` 签名的任意自定义 JSON）
 - **GitHub App 租户隔离** — 将分组绑定到 GitHub App 安装 ID，只有该组织/用户的事件才能进入该分组
 - HMAC-SHA256 签名验证（Web Crypto API）
-- 按事件类型、仓库、操作人、操作、分支、关键词（支持正则）过滤
+- 按事件类型、仓库、操作人、操作、分支、关键词过滤（支持 `*`/`?` 通配符与 `/正则/`）
 - 富消息：颜色编码、作者头像、字段、时间戳——渲染为 Discord embed 与 Telegram HTML
 - 路由到 Discord 频道/子区与 Telegram 群组/话题（一条路由可多目标）
 - `workflow_run` / `check_run` 进度**原地编辑**同一条消息（运行推进时更新），两个平台均支持
@@ -136,9 +136,9 @@ npx wrangler dev     # 启动本地开发服务器
 | `actor`   | 发送者登录名                        |                                                                                                               |
 | `action`  | `opened`、`closed`、`published` 等  |                                                                                                               |
 | `branch`  | 分支名                              | 支持 push、PR/review、create/delete、workflow_run、workflow_job、check_suite、deployment、code_scanning_alert |
-| `keyword` | payload 中的文本                    | 支持正则表达式；无效正则回退为子串匹配                                                                        |
+| `keyword` | payload 中的文本                    | 所有过滤器均支持 `*`/`?` 通配符与 `/正则/`（不区分大小写）                                                    |
 
-设置 `exclude: true` 可取反过滤器。
+设置 `exclude: true` 可取反过滤器。模式语法见[过滤器教程](https://webhooker.docs.worldexecute.me/zh/guide/filters)。
 
 ## API
 

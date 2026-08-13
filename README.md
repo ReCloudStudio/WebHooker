@@ -9,7 +9,7 @@ GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook event
 - **Per-group webhook ingress** — every group can get its own `POST /webhook/{groupId}` URL + secret (Gitea, classic GitHub webhooks, and arbitrary custom JSON posts signed with `X-WebHooker-Signature`)
 - **GitHub App tenant isolation** — bind a group to a GitHub App installation id so only that org/user's events enter it
 - HMAC-SHA256 signature verification (Web Crypto API)
-- Filter by event type, repo, actor, action, branch, keyword (supports regex)
+- Filter by event type, repo, actor, action, branch, keyword (supports `*`/`?` globs and `/regex/`)
 - Rich messages with color coding, author avatars, fields, and timestamps — rendered as Discord embeds and Telegram HTML
 - Route to Discord channels/threads and Telegram chats/topics (multi-target routes)
 - `workflow_run` / `check_run` progress is edited **in place** (single message updated as the run advances) on both platforms
@@ -136,9 +136,9 @@ See `config.example.yaml` for full syntax examples.
 | `actor`   | Sender login                           |                                                                                                                    |
 | `action`  | `opened`, `closed`, `published`, etc.  |                                                                                                                    |
 | `branch`  | Branch name                            | Works for push, PR/review, create/delete, workflow_run, workflow_job, check_suite, deployment, code_scanning_alert |
-| `keyword` | Text in payload body                   | Supports regex patterns; falls back to substring match                                                             |
+| `keyword` | Text in payload body                   | All filters support `*`/`?` globs and `/regex/` patterns (case-insensitive)                                        |
 
-Set `exclude: true` to invert any filter.
+Set `exclude: true` to invert any filter. See the [Filter Tutorial](https://webhooker.docs.worldexecute.me/guide/filters) for the pattern syntax.
 
 ## API
 

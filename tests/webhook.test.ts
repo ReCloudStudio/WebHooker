@@ -123,10 +123,10 @@ describe("matchRoute", () => {
     ).toBe(false);
   });
 
-  it("matches keyword filter with regex", () => {
+  it("matches keyword filter with regex (//-wrapped)", () => {
     const route = {
       ...baseRoute,
-      filters: [{ type: "keyword" as const, match: "fix(es|ed)\\s+bug" }],
+      filters: [{ type: "keyword" as const, match: "/fix(es|ed)\\s+bug/" }],
     };
     const event: WebhookEvent = {
       event: "push",
@@ -145,6 +145,70 @@ describe("matchRoute", () => {
       payload: { commits: [{ message: "deploy to prod" }] },
     };
     expect(matchRoute(route, event)).toBe(true);
+  });
+
+  it("matches keyword filter with glob search", () => {
+    const route = { ...baseRoute, filters: [{ type: "keyword" as const, match: "*deploy*" }] };
+    const event: WebhookEvent = {
+      event: "push",
+      payload: { commits: [{ message: "auto deploy pipeline" }] },
+    };
+    expect(matchRoute(route, event)).toBe(true);
+    expect(
+      matchRoute(route, { event: "push", payload: { commits: [{ message: "build only" }] } }),
+    ).toBe(false);
+  });
+
+  it("matches event filter with glob", () => {
+    const route = { ...baseRoute, filters: [{ type: "event" as const, match: "pull_*" }] };
+    expect(matchRoute(route, { event: "pull_request", payload: {} })).toBe(true);
+    expect(matchRoute(route, { event: "pull_request_review", payload: {} })).toBe(true);
+    expect(matchRoute(route, { event: "push", payload: {} })).toBe(false);
+  });
+
+  it("matches repo filter with glob across slashes", () => {
+    const route = { ...baseRoute, filters: [{ type: "repo" as const, match: "myorg/*" }] };
+    expect(
+      matchRoute(route, {
+        event: "push",
+        payload: { repository: { full_name: "myorg/backend" } },
+      }),
+    ).toBe(true);
+    expect(
+      matchRoute(route, {
+        event: "push",
+        payload: { repository: { full_name: "other/backend" } },
+      }),
+    ).toBe(false);
+  });
+
+  it("matches branch filter with single-char ? wildcard", () => {
+    const route = { ...baseRoute, filters: [{ type: "branch" as const, match: "feature-?" }] };
+    expect(
+      matchRoute(route, { event: "push", payload: { ref: "refs/heads/feature-x" } }),
+    ).toBe(true);
+    expect(
+      matchRoute(route, { event: "push", payload: { ref: "refs/heads/feature-xy" } }),
+    ).toBe(false);
+  });
+
+  it("matches branch filter with //-wrapped regex", () => {
+    const route = { ...baseRoute, filters: [{ type: "branch" as const, match: "/^feat/" }] };
+    expect(
+      matchRoute(route, { event: "push", payload: { ref: "refs/heads/feature-x" } }),
+    ).toBe(true);
+    expect(
+      matchRoute(route, { event: "push", payload: { ref: "refs/heads/main" } }),
+    ).toBe(false);
+  });
+
+  it("treats glob special chars literally when not wrapped", () => {
+    const route = {
+      ...baseRoute,
+      filters: [{ type: "event" as const, match: "release-" }],
+    };
+    expect(matchRoute(route, { event: "release-x", payload: {} })).toBe(false);
+    expect(matchRoute(route, { event: "release-", payload: {} })).toBe(true);
   });
 
   it("matches multiple filters (AND logic)", () => {

@@ -296,21 +296,22 @@ With `ALLOW_SELF_SIGNUP=1`, a GitHub user who has no group access gets a persona
 
 See the [Filter Tutorial](./filters) for a hands-on guide with worked examples.
 
-| Type      | Matches              | Example                          |
-| --------- | -------------------- | -------------------------------- |
-| `event`   | GitHub event name    | `push`, `pull_request`, `issues` |
-| `repo`    | Repository full name | `org/repo`                       |
-| `actor`   | Sender login         | `username`, `[bot]`              |
-| `action`  | Event action         | `opened`, `closed`, `published`  |
-| `branch`  | Branch name          | `main`, `develop`                |
-| `keyword` | Text in payload body | `deploy`, `/fix\s+\d+/` (regex)  |
+| Type      | Matches              | Example                            |
+| --------- | -------------------- | ---------------------------------- |
+| `event`   | GitHub event name    | `push`, `pull_*`, `pull_request`   |
+| `repo`    | Repository full name | `org/repo`, `org/*`                |
+| `actor`   | Sender login         | `username`, `[bot]`, `*[bot]`      |
+| `action`  | Event action         | `opened`, `closed`, `published`    |
+| `branch`  | Branch name          | `main`, `feature-?`, `/^release-/` |
+| `keyword` | Text in payload body | `deploy`, `/fix\s+\d+/`            |
 
 ### Filter Behavior
 
 - All filters in a route must match for the route to trigger (AND logic)
 - Set `"exclude": true` on any filter to invert it (NOT logic)
-- Non-keyword filters are **exact, case-insensitive matches** — no wildcards (`repo: "org/*"` does not match anything)
-- `keyword` filter supports regex patterns — falls back to substring match if regex is invalid or longer than 200 characters
+- Every filter type supports the same pattern forms: plain text, `*`/`?` **globs** (`*` = any run, `?` = one character), and `/regular expression/` — all case-insensitive
+- Field filters (`event`/`repo`/`actor`/`action`/`branch`) glob-match the whole value; `keyword` globs and regexes search anywhere in the payload; plain `keyword` text is a substring search
+- Patterns longer than 200 characters are not compiled as glob/regex; an invalid `//`-wrapped regex matches nothing
 - `branch` filter works for push, pull_request, pull_request_review, pull_request_review_comment, create/delete, workflow_run, workflow_job, check_suite, deployment, and code_scanning_alert events
 
 ### Match Values
