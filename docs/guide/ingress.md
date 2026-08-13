@@ -5,7 +5,7 @@
 WebHooker ingests webhooks from multiple forges through the same `POST /webhook` endpoint; the provider is auto-detected from the request headers, so point every forge's webhook at `{BASE_URL}/webhook`.
 
 | Provider | Event header     | Signature header      | Signature format           | Secret                  |
-|----------|------------------|-----------------------|----------------------------|-------------------------|
+| -------- | ---------------- | --------------------- | -------------------------- | ----------------------- |
 | GitHub   | `X-GitHub-Event` | `X-Hub-Signature-256` | `sha256=<hex>` HMAC-SHA256 | `GITHUB_WEBHOOK_SECRET` |
 | Gitea    | `X-Gitea-Event`  | `X-Gitea-Signature`   | plain hex HMAC-SHA256      | `GITEA_WEBHOOK_SECRET`  |
 
@@ -51,7 +51,7 @@ Payload schema:
 ```
 
 | Field         | Type     | Description                                                                                                      |
-|---------------|----------|------------------------------------------------------------------------------------------------------------------|
+| ------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
 | `title`       | string   | Message title (falls back to "Custom message")                                                                   |
 | `description` | string   | Optional message body                                                                                            |
 | `color`       | string   | Optional embed color: a word (`red`, `green`, `yellow`, `blue`, `purple`, `orange`, `cyan`, `gray`) or `#rrggbb` |

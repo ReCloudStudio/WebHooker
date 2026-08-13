@@ -3,7 +3,7 @@
 ## KV Storage Layout
 
 | Key Pattern                    | Value                                                                         | TTL                |
-|--------------------------------|-------------------------------------------------------------------------------|--------------------|
+| ------------------------------ | ----------------------------------------------------------------------------- | ------------------ |
 | `config:routes`                | JSON array of routes                                                          | Permanent          |
 | `config:groups`                | JSON array of groups                                                          | Permanent          |
 | `session:{id}`                 | Admin session `{ userId, login }`                                             | 7 days             |
@@ -26,7 +26,7 @@
 The D1 database (`DB` binding, database `webhooker`) holds four tables:
 
 | Table            | Purpose                                                                                        |
-|------------------|------------------------------------------------------------------------------------------------|
+| ---------------- | ---------------------------------------------------------------------------------------------- |
 | `send_logs`      | One row per dispatch attempt (route id, event, target, ok/error, duration, error code, detail) |
 | `audit_logs`     | One row per admin operation (login/logout, group/route/member/invite changes)                  |
 | `discord_links`  | Maps `discord_user_id` → `github_user_id` for `/gh` Discord commands                           |

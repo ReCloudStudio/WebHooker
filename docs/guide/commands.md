@@ -7,7 +7,7 @@ After [linking your GitHub account](#linking-your-account), you can act on GitHu
 You must link your GitHub account once before using any command:
 
 | Platform | Command                           | Effect                                                           |
-|----------|-----------------------------------|------------------------------------------------------------------|
+| -------- | --------------------------------- | ---------------------------------------------------------------- |
 | Discord  | `/gh login`                       | Returns an ephemeral OAuth link to authorize your GitHub account |
 | Discord  | `/gh logout`                      | Unlinks your GitHub account                                      |
 | Telegram | `/gh login` (reply to a message)  | Returns an OAuth link                                            |
@@ -44,7 +44,7 @@ Notifications for open PRs include **合并 / 关闭** (merge/close) buttons:
 ### Requirements
 
 | Item         | How                                                                                                |
-|--------------|----------------------------------------------------------------------------------------------------|
+| ------------ | -------------------------------------------------------------------------------------------------- |
 | Public key   | `DISCORD_PUBLIC_KEY` set + Interactions Endpoint URL configured                                    |
 | Invite scope | Bot invited with `applications.commands` (see [Discord Bot Setup](./deployment#discord-bot-setup)) |
 | OAuth        | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` and `BASE_URL` configured                              |

@@ -284,9 +284,7 @@ export function validateGroups(
     if (
       g.providers !== undefined &&
       (!Array.isArray(g.providers) ||
-        !g.providers.every(
-          (p) => typeof p === "string" && ["github", "gitea"].includes(p),
-        ))
+        !g.providers.every((p) => typeof p === "string" && ["github", "gitea"].includes(p)))
     ) {
       return {
         ok: false,

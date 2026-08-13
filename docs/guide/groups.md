@@ -21,7 +21,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 ```
 
 | Field            | Type     | Required | Description                                                                                                                                                                                  |
-|------------------|----------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`             | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`. Editable: renaming a group re-points its routes, per-group webhook secret and pending invites                            |
 | `name`           | string   | Yes      | Human-readable group name                                                                                                                                                                    |
 | `members`        | object[] | No       | `{ login, role }` entries; role is `owner`, `admin`, or `viewer`                                                                                                                             |
@@ -38,7 +38,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 Every group member has one of three roles. Super admins (`ADMIN_USER_IDS`) always bypass them.
 
 | Role     | View routes/logs | Edit routes | Manage members & invites | Edit group settings |
-|----------|------------------|-------------|--------------------------|---------------------|
+| -------- | ---------------- | ----------- | ------------------------ | ------------------- |
 | `owner`  | ✓                | ✓           | ✓                        | ✓ (except `owners`) |
 | `admin`  | ✓                | ✓           | ✗                        | ✗                   |
 | `viewer` | ✓ (read-only)    | ✗           | ✗                        | ✗                   |
