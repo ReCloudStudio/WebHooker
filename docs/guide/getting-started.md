@@ -63,7 +63,7 @@ curl http://localhost:8787/health
 ## Available Scripts
 
 | Script                 | Description                                 |
-|------------------------|---------------------------------------------|
+| ---------------------- | ------------------------------------------- |
 | `bun run dev`          | Start Nuxt dev server (HMR)                 |
 | `bun run build`        | Production build (cloudflare_module preset) |
 | `bun run deploy`       | Deploy to Cloudflare                        |

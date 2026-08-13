@@ -1,6 +1,4 @@
-import defaultNitroErrorHandler, {
-  defineNitroErrorHandler,
-} from "nitropack/runtime/error";
+import defaultNitroErrorHandler, { defineNitroErrorHandler } from "nitropack/runtime/error";
 import { setResponseStatus } from "h3";
 
 /**

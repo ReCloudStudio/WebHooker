@@ -1,9 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import {
-  adminGroupRename,
-  adminGroupRoutesGet,
-  adminApiMe,
-} from "../server/lib/web/admin";
+import { adminGroupRename, adminGroupRoutesGet, adminApiMe } from "../server/lib/web/admin";
 import { createAdminSession, adminCookie } from "../server/lib/web/session";
 import { loadGroups } from "../server/lib/web/groups";
 import { loadRoutes } from "../server/lib/config";

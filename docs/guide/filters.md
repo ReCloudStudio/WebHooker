@@ -26,14 +26,14 @@ The route above matches both `push` and `pull_request` events.
 
 Every filter type shares the same three pattern forms:
 
-| Pattern                | Meaning                                                        |
-| ---------------------- | -------------------------------------------------------------- |
-| `plain text`           | Field filters: **exact** match. `keyword`: search anywhere.    |
-| `*` / `?`              | **Glob wildcards** — `*` any run, `?` one char.                |
-| `/regular expression/` | Compiled as a **regular expression** (case-insensitive flag).  |
+| Pattern                | Meaning                                                       |
+| ---------------------- | ------------------------------------------------------------- |
+| `plain text`           | Field filters: **exact** match. `keyword`: search anywhere.   |
+| `*` / `?`              | **Glob wildcards** — `*` any run, `?` one char.               |
+| `/regular expression/` | Compiled as a **regular expression** (case-insensitive flag). |
 
 - On field filters (`event`/`repo`/`actor`/`action`/`branch`), plain text and globs match the whole value; on `keyword` they search anywhere in the payload.
-- Regexes always search: `/^feat/` matches values *starting* with `feat`, `/feat/` matches anywhere.
+- Regexes always search: `/^feat/` matches values _starting_ with `feat`, `/feat/` matches anywhere.
 
 Examples:
 
@@ -259,5 +259,5 @@ Forward workflow runs that ended in failure on any branch, to a `#ci` channel:
 - **A `//`-wrapped invalid regex never matches.** Unlike plain text, an unwrapped invalid pattern is matched literally — wrap patterns only when they are real regular expressions.
 - **An `action` filter on an action-less event never matches.** Check the event has an `action` field first (see [Filter Compatibility](../events/supported#filter-compatibility)).
 - **`branch` on an event without a branch never matches.** A `branch` filter on an `issues` event will always be false. Use `keyword` if you need branch-like matching there.
-- **`keyword` searches everything.** Because it scans the whole payload, a pattern like `"fix"` can match commit messages, issue titles, *and* repository names. Be as specific as possible.
-- **Forgetting `exclude` semantics.** `exclude: true` negates the whole filter — one non-matching value in an array does not "block" the route; the negated filter matches only when *none* of the values match.
+- **`keyword` searches everything.** Because it scans the whole payload, a pattern like `"fix"` can match commit messages, issue titles, _and_ repository names. Be as specific as possible.
+- **Forgetting `exclude` semantics.** `exclude: true` negates the whole filter — one non-matching value in an array does not "block" the route; the negated filter matches only when _none_ of the values match.

@@ -296,14 +296,14 @@ owner（及超级管理员）可在分组的「成员」面板创建一次性邀
 
 实操指南见[过滤器教程](./filters)，包含完整示例。
 
-| 类型      | 匹配对象         | 示例                                      |
-| --------- | ---------------- | ----------------------------------------- |
-| `event`   | GitHub 事件名称  | `push`, `pull_*`, `pull_request`          |
-| `repo`    | 仓库全名         | `org/repo`, `org/*`                       |
-| `actor`   | 发送者登录名     | `username`, `[bot]`, `*[bot]`             |
-| `action`  | 事件操作         | `opened`, `closed`, `published`           |
-| `branch`  | 分支名称         | `main`, `feature-?`, `/^release-/`        |
-| `keyword` | 载荷正文中的文本 | `deploy`, `*release-*`, `/fix\s+\d+/`     |
+| 类型      | 匹配对象         | 示例                                  |
+| --------- | ---------------- | ------------------------------------- |
+| `event`   | GitHub 事件名称  | `push`, `pull_*`, `pull_request`      |
+| `repo`    | 仓库全名         | `org/repo`, `org/*`                   |
+| `actor`   | 发送者登录名     | `username`, `[bot]`, `*[bot]`         |
+| `action`  | 事件操作         | `opened`, `closed`, `published`       |
+| `branch`  | 分支名称         | `main`, `feature-?`, `/^release-/`    |
+| `keyword` | 载荷正文中的文本 | `deploy`, `*release-*`, `/fix\s+\d+/` |
 
 ### 过滤器行为
 

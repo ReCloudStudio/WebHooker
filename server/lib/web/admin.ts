@@ -402,7 +402,10 @@ export async function adminInvite(event: H3Event): Promise<void> {
   }
   const session = await getAdminSession(env.KV, getHeader(event, "cookie"));
   if (!session) {
-    await sendRedirect(event, `/auth/github?redirect=${encodeURIComponent(`/admin/invite?token=${token}`)}`);
+    await sendRedirect(
+      event,
+      `/auth/github?redirect=${encodeURIComponent(`/admin/invite?token=${token}`)}`,
+    );
     return;
   }
   const result = await acceptInvite(env.KV, token, session.userId, session.login);
@@ -480,8 +483,7 @@ export async function adminApiGroupsPut(event: H3Event): Promise<Record<string, 
       const members = g.members ?? normalizeGroupMembers(g);
       const stillMine = members.some(
         (m) =>
-          m.role === "owner" &&
-          identityMatches([m.login], auth.session.userId, auth.session.login),
+          m.role === "owner" && identityMatches([m.login], auth.session.userId, auth.session.login),
       );
       const otherOwner = ownerCount(members) > 1;
       if (!stillMine && !otherOwner) {
@@ -648,7 +650,10 @@ export async function adminApiLogs(event: H3Event): Promise<Record<string, unkno
 }
 
 /** GET /admin/api/logs/:id */
-export async function adminApiLogsById(event: H3Event, id: number): Promise<Record<string, unknown>> {
+export async function adminApiLogsById(
+  event: H3Event,
+  id: number,
+): Promise<Record<string, unknown>> {
   const auth = await requireAnyAccess(event);
   const env = cfEnv(event);
   if (!Number.isInteger(id) || id <= 0) return respondError(event, 400, "Invalid log id");
@@ -783,7 +788,10 @@ export async function adminGroupInvitesGet(
 }
 
 /** DELETE /admin/api/invites/:token */
-export async function adminInviteDelete(event: H3Event, token: string): Promise<Record<string, unknown>> {
+export async function adminInviteDelete(
+  event: H3Event,
+  token: string,
+): Promise<Record<string, unknown>> {
   await requireAnyAccess(event);
   const env = cfEnv(event);
   const invite = await getInvite(env.KV, token);

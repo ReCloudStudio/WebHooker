@@ -269,7 +269,10 @@ describe("POST /auth/github/install/bind", () => {
     const env = createEnv({ KV: kv });
     const sessionId = await createAdminSession(kv, "1001", "alice");
 
-    const event = bindEvent(env, adminCookie(sessionId), { installation_id: "555", group: "theirs" });
+    const event = bindEvent(env, adminCookie(sessionId), {
+      installation_id: "555",
+      group: "theirs",
+    });
     await handleInstallBind(event);
     expect(responseStatus(event)).toBe(302);
     expect(responseHeader(event, "location")).toBe("/admin?error=forbidden");
@@ -329,7 +332,10 @@ describe("oauth misc", () => {
   it("starts the OAuth flow with a state token", async () => {
     const kv = createMockKV();
     const env = createEnv({ KV: kv, GITHUB_CLIENT_ID: "client-1" });
-    const event = makeEvent("/auth/github?redirect=/admin", { headers: { accept: "text/html" }, env });
+    const event = makeEvent("/auth/github?redirect=/admin", {
+      headers: { accept: "text/html" },
+      env,
+    });
     await handleOAuthStart(event);
     expect(responseStatus(event)).toBe(302);
     const location = responseHeader(event, "location") ?? "";

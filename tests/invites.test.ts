@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { createInvite, getInvite, listInvites, revokeInvite, acceptInvite } from "../server/lib/web/invites";
+import {
+  createInvite,
+  getInvite,
+  listInvites,
+  revokeInvite,
+  acceptInvite,
+} from "../server/lib/web/invites";
 import { saveGroups, loadGroups } from "../server/lib/web/groups";
 import type { Group } from "../server/lib/types";
 

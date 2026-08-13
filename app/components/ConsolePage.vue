@@ -258,12 +258,7 @@ if (view.value === null) {
   throw createError({ statusCode: 404, statusMessage: "Page not found", fatal: false });
 }
 
-const {
-  logs,
-  loading: logsLoading,
-  error: logsError,
-  load: loadLogs,
-} = useSendLogs();
+const { logs, loading: logsLoading, error: logsError, load: loadLogs } = useSendLogs();
 const {
   entries: auditEntries,
   loading: auditLoading,
