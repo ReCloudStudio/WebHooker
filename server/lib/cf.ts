@@ -14,6 +14,25 @@ export function cfEnv(event: H3Event): Env {
   return env;
 }
 
+/**
+ * The raw web `Request` for this event. On the Cloudflare module preset it
+ * lives in `event.context.cloudflare.request`; on other web runtimes h3
+ * exposes it as `event.web.request`.
+ *
+ * NOTE: nitro pre-reads the request body into its internal buffers, so the
+ * returned Request's body stream is already consumed — use `readRawBody()`
+ * (or `readBody()`) to get the payload instead of `request.text()`.
+ */
+export function rawRequest(event: H3Event): Request {
+  const cf = (event.context.cloudflare as { request?: Request } | undefined)?.request;
+  const web = event.web?.request;
+  const req = cf ?? web;
+  if (!req) {
+    throw new Error("Raw request unavailable — run via wrangler dev/deploy");
+  }
+  return req;
+}
+
 /** `waitUntil` from the CF execution context (no-op outside workers). */
 export function cfWaitUntil(event: H3Event): (promise: Promise<unknown>) => void {
   const cloudflare = event.context.cloudflare as
