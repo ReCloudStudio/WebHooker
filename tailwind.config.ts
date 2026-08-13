@@ -47,8 +47,8 @@ export default <Partial<Config>>{
         card: "var(--shadow)",
         "card-hover": "0 8px 24px -12px rgba(15, 23, 42, 0.25)",
         "accent-lg": "0 12px 28px -10px var(--accent)",
-        "drawer": "-16px 0 48px rgba(15, 23, 42, 0.12)",
-        "modal": "0 12px 40px rgba(15, 23, 42, 0.25)",
+        drawer: "-16px 0 48px rgba(15, 23, 42, 0.12)",
+        modal: "0 12px 40px rgba(15, 23, 42, 0.25)",
       },
       keyframes: {
         rise: {

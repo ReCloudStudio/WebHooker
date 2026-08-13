@@ -57,7 +57,10 @@ const updated = computed(() => "2026-08-01");
 const t = (zh: string, en: string): string => (lang.value === "zh" ? zh : en);
 const q = (p: string): string => `${p}?lang=${lang.value}`;
 const altLink = computed(() =>
-  q(props.active === "terms" ? "/terms" : "/privacy").replace(`lang=${lang.value}`, `lang=${altLang.value}`),
+  q(props.active === "terms" ? "/terms" : "/privacy").replace(
+    `lang=${lang.value}`,
+    `lang=${altLang.value}`,
+  ),
 );
 
 useHead({ title: `${props.title} · WebHooker` });

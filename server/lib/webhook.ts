@@ -117,10 +117,7 @@ export async function processWebhook(
 }
 
 /** h3 wrapper for `POST /webhook` / `POST /webhook/:groupId`. */
-export async function handleWebhookRequest(
-  event: H3Event,
-  tenantId?: string,
-): Promise<unknown> {
+export async function handleWebhookRequest(event: H3Event, tenantId?: string): Promise<unknown> {
   const contentLength = Number(getHeader(event, "content-length") ?? 0);
   if (contentLength > MAX_BODY_SIZE) {
     setResponseStatus(event, 413);

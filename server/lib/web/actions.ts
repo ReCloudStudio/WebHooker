@@ -21,7 +21,10 @@ async function readJsonBody(event: H3Event): Promise<Record<string, unknown> | n
   }
 }
 
-async function userOctokit(event: H3Event, userId: string): Promise<Awaited<ReturnType<typeof getUserOctokit>>> {
+async function userOctokit(
+  event: H3Event,
+  userId: string,
+): Promise<Awaited<ReturnType<typeof getUserOctokit>>> {
   return getUserOctokit(userId, cfEnv(event).KV);
 }
 
@@ -123,16 +126,7 @@ export async function apiClose(event: H3Event): Promise<Record<string, unknown>>
 export async function apiReact(event: H3Event): Promise<Record<string, unknown>> {
   const userId = await bearerUserId(event);
   const body = await readJsonBody(event);
-  const reactions = [
-    "+1",
-    "-1",
-    "laugh",
-    "confused",
-    "heart",
-    "hooray",
-    "rocket",
-    "eyes",
-  ] as const;
+  const reactions = ["+1", "-1", "laugh", "confused", "heart", "hooray", "rocket", "eyes"] as const;
   if (
     !body ||
     !isNonEmptyString(body.owner) ||
@@ -151,14 +145,7 @@ export async function apiReact(event: H3Event): Promise<Record<string, unknown>>
       repo: body.repo,
       issue_number: body.issueNumber,
       content: body.reaction as
-        | "+1"
-        | "-1"
-        | "laugh"
-        | "confused"
-        | "heart"
-        | "hooray"
-        | "rocket"
-        | "eyes",
+        "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes",
     });
   } catch (err) {
     log.error({ err }, "Failed to create reaction");

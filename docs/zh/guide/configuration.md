@@ -2,13 +2,13 @@
 
 本页是密钥与 Web 控制台的参考。核心概念在独立页面中说明：
 
-| 主题                                             | 页面                                                                 |
-|--------------------------------------------------|----------------------------------------------------------------------|
-| 路由、目标、`fallback` / `stop`、身份组提醒      | [路由与目标](./routes)                                               |
-| 分组、角色、邀请、自助注册、日志频道             | [分组与访问控制](./groups)                                           |
-| Webhook 提供方、分组入口、自定义 webhook         | [Webhook 接入与租户隔离](./ingress)                                  |
-| KV / D1 键布局                                   | [存储布局](./storage)                                                |
-| 过滤器（模式语法参考）                           | 下方[过滤器类型](#过滤器类型) / [过滤器教程](./filters)              |
+| 主题                                        | 页面                                                    |
+| ------------------------------------------- | ------------------------------------------------------- |
+| 路由、目标、`fallback` / `stop`、身份组提醒 | [路由与目标](./routes)                                  |
+| 分组、角色、邀请、自助注册、日志频道        | [分组与访问控制](./groups)                              |
+| Webhook 提供方、分组入口、自定义 webhook    | [Webhook 接入与租户隔离](./ingress)                     |
+| KV / D1 键布局                              | [存储布局](./storage)                                   |
+| 过滤器（模式语法参考）                      | 下方[过滤器类型](#过滤器类型) / [过滤器教程](./filters) |
 
 ## 密钥
 
@@ -16,14 +16,14 @@ WebHooker 的运行需要若干密钥。本地开发时放入 `.dev.vars`，生�
 
 ### 必需密钥
 
-| 变量                    | 说明                                                              |
-|-------------------------|-------------------------------------------------------------------|
-| `GITHUB_WEBHOOK_SECRET` | GitHub App 设置中的 webhook 密钥                                  |
-| `GITEA_WEBHOOK_SECRET`  | Gitea 实例的 webhook 密钥（仅接收 Gitea webhook 时需要）          |
-| `GITHUB_CLIENT_ID`      | App 设置中的 OAuth 客户端 ID                                      |
-| `GITHUB_CLIENT_SECRET`  | App 设置中的 OAuth 客户端密钥                                     |
-| `DISCORD_TOKEN`         | Discord 机器人 Token                                              |
-| `TELEGRAM_TOKEN`        | Telegram 机器人 Token（BotFather 获取）—— Telegram 路由必需       |
+| 变量                    | 说明                                                        |
+| ----------------------- | ----------------------------------------------------------- |
+| `GITHUB_WEBHOOK_SECRET` | GitHub App 设置中的 webhook 密钥                            |
+| `GITEA_WEBHOOK_SECRET`  | Gitea 实例的 webhook 密钥（仅接收 Gitea webhook 时需要）    |
+| `GITHUB_CLIENT_ID`      | App 设置中的 OAuth 客户端 ID                                |
+| `GITHUB_CLIENT_SECRET`  | App 设置中的 OAuth 客户端密钥                               |
+| `DISCORD_TOKEN`         | Discord 机器人 Token                                        |
+| `TELEGRAM_TOKEN`        | Telegram 机器人 Token（BotFather 获取）—— Telegram 路由必需 |
 
 > [!NOTE]
 > `GITHUB_APP_ID` 与 `GITHUB_PRIVATE_KEY`（PKCS#8 PEM）用于 GitHub App **安装流程**
@@ -33,19 +33,19 @@ WebHooker 的运行需要若干密钥。本地开发时放入 `.dev.vars`，生�
 
 ### 可选密钥
 
-| 变量                        | 说明                                                                                             | 默认值                  |
-|-----------------------------|--------------------------------------------------------------------------------------------------|-------------------------|
-| `DISCORD_PUBLIC_KEY`        | Discord 应用的公钥（开发者门户获取），交互功能必需                                               | 未设置时交互返回 401    |
-| `DISCORD_APPLICATION_ID`    | Discord 应用 ID；省略时自动获取                                                                  | 自动获取                |
-| `TELEGRAM_WEBHOOK_SECRET`   | `POST /telegram/webhook` 验签密钥（X-Telegram-Bot-Api-Secret-Token）                             | 未设置时不校验          |
-| `TELEGRAM_RICH_HEADER_HOST` | 外部 rich-header 服务的基础 URL；未设置时使用内置 `GET /api/richheader` 提供 Telegram 头像卡片   | 内置 `/api/richheader`  |
-| `BASE_URL`                  | OAuth 回调的公共 URL                                                                             | `http://localhost:8787` |
-| `ADMIN_USER_IDS`            | 允许访问 WebUI 的 GitHub 用户 ID（或登录名），逗号分隔                                           | 未设置时 WebUI 关闭     |
-| `ALLOW_SELF_SIGNUP`         | 开启（`1`/`true`）后，没有任何分组权限的 GitHub 用户首次登录会自动获得个人分组而非 403           | 关闭                    |
-| `AUDIT_RETENTION_DAYS`      | 定时清理时审计日志的保留天数                                                                     | `90`                    |
-| `NUXT_PUBLIC_DOCS_URL`      | 落地页使用的文档站 URL（客户端运行时配置）                                                       | 落地页默认值            |
-| `NUXT_PUBLIC_REPO_URL`      | 落地页使用的 GitHub 仓库 URL                                                                     | 落地页默认值            |
-| `NUXT_PUBLIC_LEGAL_CONTACT` | `/terms` 与 `/privacy` 页面展示的联系方式                                                        | 未设置时显示占位文本    |
+| 变量                        | 说明                                                                                           | 默认值                  |
+| --------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------- |
+| `DISCORD_PUBLIC_KEY`        | Discord 应用的公钥（开发者门户获取），交互功能必需                                             | 未设置时交互返回 401    |
+| `DISCORD_APPLICATION_ID`    | Discord 应用 ID；省略时自动获取                                                                | 自动获取                |
+| `TELEGRAM_WEBHOOK_SECRET`   | `POST /telegram/webhook` 验签密钥（X-Telegram-Bot-Api-Secret-Token）                           | 未设置时不校验          |
+| `TELEGRAM_RICH_HEADER_HOST` | 外部 rich-header 服务的基础 URL；未设置时使用内置 `GET /api/richheader` 提供 Telegram 头像卡片 | 内置 `/api/richheader`  |
+| `BASE_URL`                  | OAuth 回调的公共 URL                                                                           | `http://localhost:8787` |
+| `ADMIN_USER_IDS`            | 允许访问 WebUI 的 GitHub 用户 ID（或登录名），逗号分隔                                         | 未设置时 WebUI 关闭     |
+| `ALLOW_SELF_SIGNUP`         | 开启（`1`/`true`）后，没有任何分组权限的 GitHub 用户首次登录会自动获得个人分组而非 403         | 关闭                    |
+| `AUDIT_RETENTION_DAYS`      | 定时清理时审计日志的保留天数                                                                   | `90`                    |
+| `NUXT_PUBLIC_DOCS_URL`      | 落地页使用的文档站 URL（客户端运行时配置）                                                     | 落地页默认值            |
+| `NUXT_PUBLIC_REPO_URL`      | 落地页使用的 GitHub 仓库 URL                                                                   | 落地页默认值            |
+| `NUXT_PUBLIC_LEGAL_CONTACT` | `/terms` 与 `/privacy` 页面展示的联系方式                                                      | 未设置时显示占位文本    |
 
 ## Web 控制台
 
@@ -65,14 +65,14 @@ WebHooker 在 `/admin` 提供内置配置控制台，可在浏览器中管理路
 
 实操指南见[过滤器教程](./filters)，包含完整示例。
 
-| 类型      | 匹配对象         | 示例                                 |
-|-----------|------------------|--------------------------------------|
-| `event`   | GitHub 事件名称  | `push`, `pull_*`, `pull_request`     |
-| `repo`    | 仓库全名         | `org/repo`, `org/*`                  |
-| `actor`   | 发送者登录名     | `username`, `[bot]`, `*[bot]`        |
-| `action`  | 事件操作         | `opened`, `closed`, `published`      |
-| `branch`  | 分支名称         | `main`, `feature-?`, `/^release-/`   |
-| `keyword` | 载荷正文中的文本 | `deploy`, `/fix\s+\d+/`              |
+| 类型      | 匹配对象         | 示例                               |
+| --------- | ---------------- | ---------------------------------- |
+| `event`   | GitHub 事件名称  | `push`, `pull_*`, `pull_request`   |
+| `repo`    | 仓库全名         | `org/repo`, `org/*`                |
+| `actor`   | 发送者登录名     | `username`, `[bot]`, `*[bot]`      |
+| `action`  | 事件操作         | `opened`, `closed`, `published`    |
+| `branch`  | 分支名称         | `main`, `feature-?`, `/^release-/` |
+| `keyword` | 载荷正文中的文本 | `deploy`, `/fix\s+\d+/`            |
 
 ### 过滤器行为
 

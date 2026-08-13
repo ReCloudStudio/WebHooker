@@ -184,22 +184,20 @@ describe("matchRoute", () => {
 
   it("matches branch filter with single-char ? wildcard", () => {
     const route = { ...baseRoute, filters: [{ type: "branch" as const, match: "feature-?" }] };
-    expect(
-      matchRoute(route, { event: "push", payload: { ref: "refs/heads/feature-x" } }),
-    ).toBe(true);
-    expect(
-      matchRoute(route, { event: "push", payload: { ref: "refs/heads/feature-xy" } }),
-    ).toBe(false);
+    expect(matchRoute(route, { event: "push", payload: { ref: "refs/heads/feature-x" } })).toBe(
+      true,
+    );
+    expect(matchRoute(route, { event: "push", payload: { ref: "refs/heads/feature-xy" } })).toBe(
+      false,
+    );
   });
 
   it("matches branch filter with //-wrapped regex", () => {
     const route = { ...baseRoute, filters: [{ type: "branch" as const, match: "/^feat/" }] };
-    expect(
-      matchRoute(route, { event: "push", payload: { ref: "refs/heads/feature-x" } }),
-    ).toBe(true);
-    expect(
-      matchRoute(route, { event: "push", payload: { ref: "refs/heads/main" } }),
-    ).toBe(false);
+    expect(matchRoute(route, { event: "push", payload: { ref: "refs/heads/feature-x" } })).toBe(
+      true,
+    );
+    expect(matchRoute(route, { event: "push", payload: { ref: "refs/heads/main" } })).toBe(false);
   });
 
   it("treats glob special chars literally when not wrapped", () => {

@@ -64,11 +64,7 @@ export function requireGroup(event: H3Event, groupId: string): GroupAccess {
 }
 
 /** Requires at least `min` role in the group (owner|admin|viewer). */
-export function requireGroupRole(
-  event: H3Event,
-  groupId: string,
-  min: GroupRole,
-): GroupAccess {
+export function requireGroupRole(event: H3Event, groupId: string, min: GroupRole): GroupAccess {
   const access = requireGroup(event, groupId);
   if (!access.ok) return access;
   const auth = currentAuth(event);
@@ -98,7 +94,6 @@ export async function bearerUserId(event: H3Event): Promise<string> {
   if (!auth?.startsWith("Bearer "))
     throw createError({ statusCode: 401, statusMessage: "Missing authorization" });
   const userId = await findUserIdByToken(env.KV, auth.slice(7));
-  if (!userId)
-    throw createError({ statusCode: 401, statusMessage: "Invalid or expired token" });
+  if (!userId) throw createError({ statusCode: 401, statusMessage: "Invalid or expired token" });
   return userId;
 }

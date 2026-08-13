@@ -157,8 +157,11 @@ export async function handleInstallPage(event: H3Event): Promise<string | void> 
     return;
   }
   const accountLogin =
-    (await getInstallationAccount(env.GITHUB_APP_ID ?? "", env.GITHUB_PRIVATE_KEY ?? "", installationId)) ??
-    "";
+    (await getInstallationAccount(
+      env.GITHUB_APP_ID ?? "",
+      env.GITHUB_PRIVATE_KEY ?? "",
+      installationId,
+    )) ?? "";
   const groups = await loadGroups(env.KV);
   const scope = resolveScope(env, groups, session.userId, session.login);
   const owned = groups.filter((g) => roleAt(scope, g.id) === "owner");
@@ -216,8 +219,11 @@ export async function handleInstallBind(event: H3Event): Promise<void> {
 
   // Default: auto-create a dedicated inst-{id} group.
   const accountLogin =
-    (await getInstallationAccount(env.GITHUB_APP_ID ?? "", env.GITHUB_PRIVATE_KEY ?? "", installationId)) ??
-    "";
+    (await getInstallationAccount(
+      env.GITHUB_APP_ID ?? "",
+      env.GITHUB_PRIVATE_KEY ?? "",
+      installationId,
+    )) ?? "";
   const group = await ensureInstallationGroup(env.KV, installationId, accountLogin);
   if (!group) {
     await sendRedirect(event, "/admin?error=install");
@@ -248,7 +254,10 @@ export async function handleInstallBind(event: H3Event): Promise<void> {
         adminIds: [...new Set([...(group.adminIds ?? []), session.login])],
       };
       const all = await loadGroups(env.KV);
-      await saveGroups(env.KV, all.map((g) => (g.id === group.id ? updated : g)));
+      await saveGroups(
+        env.KV,
+        all.map((g) => (g.id === group.id ? updated : g)),
+      );
       await recordAudit(env.DB, {
         ts: Date.now(),
         actorId: session.userId,

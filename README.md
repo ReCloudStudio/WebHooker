@@ -54,7 +54,7 @@ bunx wrangler dev    # Start local dev server
 ### Secrets (`.dev.vars` for local, Worker Secrets for production)
 
 | Variable                    | Description                                                                                    |
-|-----------------------------|------------------------------------------------------------------------------------------------|
+| --------------------------- | ---------------------------------------------------------------------------------------------- |
 | `GITHUB_WEBHOOK_SECRET`     | Webhook secret from GitHub                                                                     |
 | `GITEA_WEBHOOK_SECRET`      | Webhook secret from Gitea (required only to receive Gitea webhooks)                            |
 | `GITHUB_APP_ID`             | GitHub App ID (used by the App install flow to resolve the installing account)                 |

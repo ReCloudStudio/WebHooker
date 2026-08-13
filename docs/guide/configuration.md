@@ -2,13 +2,13 @@
 
 This page is the reference for secrets and the Web UI. Core concepts live in dedicated pages:
 
-| Topic                                             | Page                                                                 |
-|---------------------------------------------------|----------------------------------------------------------------------|
-| Routes, targets, `fallback` / `stop`, role pings  | [Routes & Targets](./routes)                                         |
-| Groups, roles, invites, self sign-up, log channel | [Groups & Access Control](./groups)                                  |
-| Webhook providers, per-group ingress, custom      | [Webhook Ingress & Tenancy](./ingress)                               |
-| KV / D1 key layout                                | [Storage Layout](./storage)                                          |
-| Filters (pattern syntax reference)                | [Filter Types](#filter-types) below / [Filter Tutorial](./filters)   |
+| Topic                                             | Page                                                               |
+| ------------------------------------------------- | ------------------------------------------------------------------ |
+| Routes, targets, `fallback` / `stop`, role pings  | [Routes & Targets](./routes)                                       |
+| Groups, roles, invites, self sign-up, log channel | [Groups & Access Control](./groups)                                |
+| Webhook providers, per-group ingress, custom      | [Webhook Ingress & Tenancy](./ingress)                             |
+| KV / D1 key layout                                | [Storage Layout](./storage)                                        |
+| Filters (pattern syntax reference)                | [Filter Types](#filter-types) below / [Filter Tutorial](./filters) |
 
 ## Secrets
 
@@ -17,7 +17,7 @@ WebHooker requires several secrets to function. For local development, store the
 ### Required Secrets
 
 | Variable                | Description                                                              |
-|-------------------------|--------------------------------------------------------------------------|
+| ----------------------- | ------------------------------------------------------------------------ |
 | `GITHUB_WEBHOOK_SECRET` | Webhook secret from your GitHub App settings                             |
 | `GITEA_WEBHOOK_SECRET`  | Webhook secret from your Gitea instance (only to receive Gitea webhooks) |
 | `GITHUB_CLIENT_ID`      | OAuth client ID from App settings                                        |
@@ -35,7 +35,7 @@ WebHooker requires several secrets to function. For local development, store the
 ### Optional Secrets
 
 | Variable                    | Description                                                                                                                 | Default                           |
-|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
 | `DISCORD_PUBLIC_KEY`        | Discord application public key (Developer Portal) — required for interactions                                               | Unset → interactions return `401` |
 | `DISCORD_APPLICATION_ID`    | Discord application id; auto-resolved when omitted                                                                          | Auto-resolved                     |
 | `TELEGRAM_WEBHOOK_SECRET`   | Secret token for `POST /telegram/webhook` verification (X-Telegram-Bot-Api-Secret-Token)                                    | Disabled (no verification)        |
@@ -67,7 +67,7 @@ All management endpoints (`/admin/api/*`) are documented in the [Admin API](../a
 See the [Filter Tutorial](./filters) for a hands-on guide with worked examples.
 
 | Type      | Matches              | Example                            |
-|-----------|----------------------|------------------------------------|
+| --------- | -------------------- | ---------------------------------- |
 | `event`   | GitHub event name    | `push`, `pull_*`, `pull_request`   |
 | `repo`    | Repository full name | `org/repo`, `org/*`                |
 | `actor`   | Sender login         | `username`, `[bot]`, `*[bot]`      |
