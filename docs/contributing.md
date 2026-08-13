@@ -5,9 +5,9 @@
 ```bash
 git clone https://github.com/ReCloudStudio/WebHooker.git
 cd WebHooker
-npm install
+bun install
 cp .env.example .dev.vars   # Fill in secrets
-npm run dev                  # Start local dev server
+bun run dev                  # Start local dev server
 ```
 
 ## Project Structure
@@ -81,15 +81,15 @@ tests/                   # Unit tests (bun test)
 
 | Command                | Description                     |
 | ---------------------- | ------------------------------- |
-| `npm run dev`          | Start Nuxt dev server (HMR)     |
-| `npm run typecheck`    | TypeScript type checking        |
-| `npm run lint`         | ESLint (TypeScript)             |
-| `npm run lint:md`      | Markdownlint (Markdown)         |
-| `npm test`             | Run unit tests (bun test)       |
-| `npm run format`       | Format all files with Prettier  |
-| `npm run format:check` | Check Prettier formatting       |
-| `npm run docs:dev`     | Start VitePress docs dev server |
-| `npm run docs:build`   | Build docs site                 |
+| `bun run dev`          | Start Nuxt dev server (HMR)     |
+| `bun run typecheck`    | TypeScript type checking        |
+| `bun run lint`         | ESLint (TypeScript)             |
+| `bun run lint:md`      | Markdownlint (Markdown)         |
+| `bun test`             | Run unit tests (bun test)       |
+| `bun run format`       | Format all files with Prettier  |
+| `bun run format:check` | Check Prettier formatting       |
+| `bun run docs:dev`     | Start VitePress docs dev server |
+| `bun run docs:build`   | Build docs site                 |
 
 ## Code Style
 
@@ -106,7 +106,7 @@ tests/                   # Unit tests (bun test)
 
 ```bash
 # Run the unit test suite (bun test)
-npm test
+bun test
 
 # Or manually check the health endpoint
 curl http://localhost:8787/health
@@ -127,5 +127,5 @@ curl http://localhost:8787/health
 
 - Keep changes focused and atomic
 - Include type annotations for all function returns
-- Run `npm run typecheck && npm run lint && npm run format:check` before submitting
+- Run `bun run typecheck && bun run lint && bun run format:check` before submitting
 - Update documentation if adding features (see the checklist in `AGENTS.md` → Documentation): README (`README.md` / `README.zh.md`), VitePress docs (`docs/` and `docs/zh/`), and example config files

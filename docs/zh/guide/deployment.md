@@ -5,7 +5,7 @@
 ### 1. 创建 KV 命名空间
 
 ```bash
-npx wrangler kv namespace create KV
+bunx wrangler kv namespace create KV
 ```
 
 这会输出一个命名空间 ID。更新 `wrangler.jsonc`，填入 ID：
@@ -24,13 +24,13 @@ npx wrangler kv namespace create KV
 ### 2. 设置密钥
 
 ```bash
-npx wrangler secret put GITHUB_WEBHOOK_SECRET
-npx wrangler secret put GITHUB_CLIENT_ID
-npx wrangler secret put GITHUB_CLIENT_SECRET
-npx wrangler secret put DISCORD_TOKEN
-npx wrangler secret put DISCORD_PUBLIC_KEY   # Discord 应用的公钥（开发者门户获取），交互功能必需
-npx wrangler secret put TELEGRAM_TOKEN       # Telegram Bot Token（BotFather 获取）—— Telegram 路由必需
-npx wrangler secret put ADMIN_USER_IDS       # 逗号分隔的 GitHub ID/登录名，允许进入 Web UI
+bunx wrangler secret put GITHUB_WEBHOOK_SECRET
+bunx wrangler secret put GITHUB_CLIENT_ID
+bunx wrangler secret put GITHUB_CLIENT_SECRET
+bunx wrangler secret put DISCORD_TOKEN
+bunx wrangler secret put DISCORD_PUBLIC_KEY   # Discord 应用的公钥（开发者门户获取），交互功能必需
+bunx wrangler secret put TELEGRAM_TOKEN       # Telegram Bot Token（BotFather 获取）—— Telegram 路由必需
+bunx wrangler secret put ADMIN_USER_IDS       # 逗号分隔的 GitHub ID/登录名，允许进入 Web UI
 ```
 
 ::: tip 目标频道按路由配置
@@ -47,7 +47,7 @@ Discord 交互通过 HTTPS Interactions Endpoint 送达，需要设置 `DISCORD_
 ### 3. 创建 D1 数据库并执行迁移
 
 ```bash
-npx wrangler d1 create webhooker
+bunx wrangler d1 create webhooker
 ```
 
 将返回的数据库 ID 填入 `wrangler.jsonc`：
@@ -67,8 +67,8 @@ npx wrangler d1 create webhooker
 然后执行迁移：
 
 ```bash
-npm run db:migrate:prod   # 将迁移应用到远端 D1 数据库
-npm run db:migrate        # 将迁移应用到本地（Miniflare）数据库
+bun run db:migrate:prod   # 将迁移应用到远端 D1 数据库
+bun run db:migrate        # 将迁移应用到本地（Miniflare）数据库
 ```
 
 `db:migrate` 脚本执行 `wrangler d1 migrations apply webhooker`（见 `package.json`），逐一应用 `migrations/` 下的 SQL 文件，并在 `d1_migrations` 表中记录已应用的版本。
@@ -77,11 +77,11 @@ npm run db:migrate        # 将迁移应用到本地（Miniflare）数据库
 如果数据库已有这些表/列（例如之前用 `wrangler d1 execute --file` 迁移过），可能缺少 `d1_migrations` 追踪表，`db:migrate:prod` 会尝试重新执行所有迁移；`0002_log_detail.sql` 中的 `ALTER TABLE ... ADD COLUMN` 语句会因列已存在而失败。此时请直接执行文件：
 
 ```bash
-npx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0004_add_group_id.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0004_add_group_id.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.sql
 ```
 
 :::
@@ -89,7 +89,7 @@ npx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.s
 ### 4. 部署
 
 ```bash
-npx wrangler deploy
+bunx wrangler deploy
 ```
 
 Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问。

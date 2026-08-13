@@ -36,7 +36,7 @@ jobs:
 
       - name: Apply fixes
         run: |
-          bunx eslint src/ --fix
+          bunx eslint . --fix
           bunx prettier --write .
           bunx markdownlint "**/*.md" --ignore node_modules --ignore dist --fix
 

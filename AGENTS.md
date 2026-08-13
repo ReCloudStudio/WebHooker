@@ -143,7 +143,8 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
   `splitMessageTitle`/`repoUrlFromMessage` (`server/lib/formatters/helpers.ts`): the Discord
   embed title is `{repo}{#number}` linked to the repository URL and `: {subject}` renders as
   the first description line; Telegram keeps the one-line title with an inline repo link and
-  a plain subject. Messages without a `: ` separator keep the legacy whole-title link.
+  a plain subject. Messages without a colon separator (a `:` followed by a space) keep the
+  legacy whole-title link — use colon-free wording for such titles.
 - Do NOT use `"Comment on org/repo"` / `"Review on org/repo"` prefixes. Comments, reviews
   and inline comments use the same `{repo}{#number}: {title}` title as their parent object.
 - All event-specific emoji live in `server/lib/formatters/` (via the `emojiPrefix` helper), never in
@@ -159,12 +160,16 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
 
 ## Development
 
+Package manager is **bun** — never use `npm`/`npx` (no `package-lock.json`, lockfile is `bun.lock`; CI runs `bun install --frozen-lockfile`).
+
 ```bash
-npm run dev           # Nuxt dev (HMR + Nitro dev server)
-npx wrangler dev      # Miniflare preview of a built worker (npm run build first)
-npm run typecheck     # Type checking (nuxt typecheck)
-npm run lint          # ESLint
-npm test              # Unit tests (bun test, under tests/)
+bun install           # Install dependencies (updates bun.lock)
+bun run dev           # Nuxt dev (HMR + Nitro dev server)
+bun run build         # Production build (nuxt build, cloudflare_module preset)
+bunx wrangler dev     # Miniflare preview of a built worker (bun run build first)
+bun run typecheck     # Type checking (nuxt typecheck)
+bun run lint          # ESLint
+bun test              # Unit tests (under tests/)
 ```
 
 ## Documentation
@@ -194,15 +199,15 @@ Rule: no functional change ships without its documentation; docs and code must n
 ## Deployment
 
 ```bash
-npx wrangler secret put GITHUB_WEBHOOK_SECRET
-npx wrangler secret put DISCORD_TOKEN
-npx wrangler secret put DISCORD_PUBLIC_KEY
-npx wrangler kv namespace create KV
+bunx wrangler secret put GITHUB_WEBHOOK_SECRET
+bunx wrangler secret put DISCORD_TOKEN
+bunx wrangler secret put DISCORD_PUBLIC_KEY
+bunx wrangler kv namespace create KV
 # Update wrangler.jsonc with KV ID
-npx wrangler d1 create webhooker
+bunx wrangler d1 create webhooker
 # Update wrangler.jsonc d1_databases with the database ID
-npm run db:migrate:prod   # wrangler d1 migrations apply webhooker --remote (migrations/0001..0005)
-npx wrangler deploy
+bun run db:migrate:prod   # wrangler d1 migrations apply webhooker --remote (migrations/0001..0005)
+bunx wrangler deploy
 ```
 
 Full list of secrets used: `GITHUB_WEBHOOK_SECRET`, `GITEA_WEBHOOK_SECRET`,

@@ -43,9 +43,10 @@ GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 ## Quick Start
 
 ```bash
-npm install          # or bun install
+bun install          # package manager is bun (lockfile: bun.lock)
 cp .env.example .dev.vars   # Fill in secrets for local dev
-npx wrangler dev     # Start local dev server
+bun run build        # Production build first (wrangler dev serves the built worker)
+bunx wrangler dev    # Start local dev server
 ```
 
 ## Configuration
@@ -293,34 +294,34 @@ Avatars are rendered as a link-preview card using the built-in `GET /api/richhea
 
 ```bash
 # Set secrets in Cloudflare
-npx wrangler secret put GITHUB_WEBHOOK_SECRET
-npx wrangler secret put GITHUB_CLIENT_ID
-npx wrangler secret put GITHUB_CLIENT_SECRET
-npx wrangler secret put DISCORD_TOKEN
-npx wrangler secret put DISCORD_PUBLIC_KEY
-npx wrangler secret put TELEGRAM_TOKEN
-npx wrangler secret put ADMIN_USER_IDS
+bunx wrangler secret put GITHUB_WEBHOOK_SECRET
+bunx wrangler secret put GITHUB_CLIENT_ID
+bunx wrangler secret put GITHUB_CLIENT_SECRET
+bunx wrangler secret put DISCORD_TOKEN
+bunx wrangler secret put DISCORD_PUBLIC_KEY
+bunx wrangler secret put TELEGRAM_TOKEN
+bunx wrangler secret put ADMIN_USER_IDS
 
 # Create KV namespace
-npx wrangler kv namespace create KV
+bunx wrangler kv namespace create KV
 # Update wrangler.jsonc with the KV namespace ID
 
 # Create D1 database and run migrations
-npx wrangler d1 create webhooker
+bunx wrangler d1 create webhooker
 # Update wrangler.jsonc d1_databases with the database ID
-npm run db:migrate:prod   # apply migrations to the remote D1 database
+bun run db:migrate:prod   # apply migrations to the remote D1 database
 
 # Deploy
-npx wrangler deploy
+bunx wrangler deploy
 ```
 
 ## Development
 
 ```bash
-npx wrangler dev      # Local dev server (Miniflare)
-npm run typecheck     # Type checking
-npm run lint          # ESLint
-npm test              # Unit tests (bun test)
+bun run dev           # Nuxt dev server (HMR)
+bun run typecheck     # Type checking
+bun run lint          # ESLint
+bun test              # Unit tests
 ```
 
 ## Supported Events

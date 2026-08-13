@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) 18+
+- [Bun](https://bun.sh/) 1.x (the only package manager; never use npm)
 - A [Cloudflare account](https://dash.cloudflare.com/) (free tier works)
 - A [GitHub App](https://github.com/settings/apps/new) (see [GitHub App Setup](/guide/deployment#github-app-setup))
 - A Discord bot token (see [Discord Bot Setup](/guide/deployment#discord-bot-setup))
@@ -12,7 +12,7 @@
 ```bash
 git clone https://github.com/ReCloudStudio/WebHooker.git
 cd WebHooker
-npm install
+bun install
 ```
 
 ## Local Development
@@ -48,7 +48,7 @@ BASE_URL=http://localhost:8787
 ### 2. Start Dev Server
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 This starts a local Miniflare environment at `http://localhost:8787`.
@@ -62,14 +62,16 @@ curl http://localhost:8787/health
 
 ## Available Scripts
 
-| Script                 | Description                       |
-| ---------------------- | --------------------------------- |
-| `npm run dev`          | Start local dev server (wrangler) |
-| `npm run deploy`       | Deploy to Cloudflare              |
-| `npm run typecheck`    | TypeScript type checking          |
-| `npm run lint`         | ESLint                            |
-| `npm run lint:md`      | Markdownlint                      |
-| `npm run format`       | Format with Prettier              |
-| `npm run format:check` | Check Prettier formatting         |
-| `npm run docs:dev`     | Start docs dev server             |
-| `npm run docs:build`   | Build docs site                   |
+| Script                 | Description                                 |
+|------------------------|---------------------------------------------|
+| `bun run dev`          | Start Nuxt dev server (HMR)                 |
+| `bun run build`        | Production build (cloudflare_module preset) |
+| `bun run deploy`       | Deploy to Cloudflare                        |
+| `bun run typecheck`    | TypeScript type checking                    |
+| `bun run lint`         | ESLint                                      |
+| `bun run lint:md`      | Markdownlint                                |
+| `bun run format`       | Format with Prettier                        |
+| `bun run format:check` | Check Prettier formatting                   |
+| `bun test`             | Unit tests                                  |
+| `bun run docs:dev`     | Start docs dev server                       |
+| `bun run docs:build`   | Build docs site                             |

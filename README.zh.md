@@ -43,9 +43,10 @@ GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 ## 快速开始
 
 ```bash
-npm install          # 或 bun install
+bun install          # 包管理器为 bun（锁文件：bun.lock）
 cp .env.example .dev.vars   # 填写本地开发密钥
-npx wrangler dev     # 启动本地开发服务器
+bun run build        # 先构建生产产物（wrangler dev 运行的是构建产物）
+bunx wrangler dev    # 启动本地开发服务器
 ```
 
 ## 配置
@@ -292,34 +293,34 @@ bot 通过定时任务（每 5 分钟）同步注册原生的**斜杠命令**与
 
 ```bash
 # 在 Cloudflare 设置密钥
-npx wrangler secret put GITHUB_WEBHOOK_SECRET
-npx wrangler secret put GITHUB_CLIENT_ID
-npx wrangler secret put GITHUB_CLIENT_SECRET
-npx wrangler secret put DISCORD_TOKEN
-npx wrangler secret put DISCORD_PUBLIC_KEY
-npx wrangler secret put TELEGRAM_TOKEN
-npx wrangler secret put ADMIN_USER_IDS
+bunx wrangler secret put GITHUB_WEBHOOK_SECRET
+bunx wrangler secret put GITHUB_CLIENT_ID
+bunx wrangler secret put GITHUB_CLIENT_SECRET
+bunx wrangler secret put DISCORD_TOKEN
+bunx wrangler secret put DISCORD_PUBLIC_KEY
+bunx wrangler secret put TELEGRAM_TOKEN
+bunx wrangler secret put ADMIN_USER_IDS
 
 # 创建 KV 命名空间
-npx wrangler kv namespace create KV
+bunx wrangler kv namespace create KV
 # 更新 wrangler.jsonc 中的 KV namespace ID
 
 # 创建 D1 数据库并执行迁移
-npx wrangler d1 create webhooker
+bunx wrangler d1 create webhooker
 # 更新 wrangler.jsonc d1_databases 中的数据库 ID
-npm run db:migrate:prod   # 将迁移应用到远端 D1 数据库
+bun run db:migrate:prod   # 将迁移应用到远端 D1 数据库
 
 # 部署
-npx wrangler deploy
+bunx wrangler deploy
 ```
 
 ## 开发命令
 
 ```bash
-npx wrangler dev      # 本地开发服务器（Miniflare）
-npm run typecheck     # 类型检查
-npm run lint          # ESLint
-npm test              # 单元测试（bun test）
+bunx wrangler dev      # 本地开发服务器（Miniflare）
+bun run typecheck     # 类型检查
+bun run lint          # ESLint
+bun test              # 单元测试
 ```
 
 ## 支持的事件

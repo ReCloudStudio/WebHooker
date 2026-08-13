@@ -5,7 +5,7 @@
 ### 1. Create KV Namespace
 
 ```bash
-npx wrangler kv namespace create KV
+bunx wrangler kv namespace create KV
 ```
 
 This outputs a namespace ID. Update `wrangler.jsonc` with the ID:
@@ -24,13 +24,13 @@ This outputs a namespace ID. Update `wrangler.jsonc` with the ID:
 ### 2. Set Secrets
 
 ```bash
-npx wrangler secret put GITHUB_WEBHOOK_SECRET
-npx wrangler secret put GITHUB_CLIENT_ID
-npx wrangler secret put GITHUB_CLIENT_SECRET
-npx wrangler secret put DISCORD_TOKEN
-npx wrangler secret put DISCORD_PUBLIC_KEY   # Discord app public key (Developer Portal) — required for interactions
-npx wrangler secret put TELEGRAM_TOKEN       # Telegram bot token (BotFather) — required for Telegram routes
-npx wrangler secret put ADMIN_USER_IDS       # comma-separated GitHub IDs/logins allowed into the Web UI
+bunx wrangler secret put GITHUB_WEBHOOK_SECRET
+bunx wrangler secret put GITHUB_CLIENT_ID
+bunx wrangler secret put GITHUB_CLIENT_SECRET
+bunx wrangler secret put DISCORD_TOKEN
+bunx wrangler secret put DISCORD_PUBLIC_KEY   # Discord app public key (Developer Portal) — required for interactions
+bunx wrangler secret put TELEGRAM_TOKEN       # Telegram bot token (BotFather) — required for Telegram routes
+bunx wrangler secret put ADMIN_USER_IDS       # comma-separated GitHub IDs/logins allowed into the Web UI
 ```
 
 ::: tip Target channels are configured per route
@@ -48,7 +48,7 @@ Discord interactions arrive via the HTTPS Interactions Endpoint, so set `DISCORD
 ### 3. Create D1 Database and Run Migrations
 
 ```bash
-npx wrangler d1 create webhooker
+bunx wrangler d1 create webhooker
 ```
 
 Copy the returned database ID into `wrangler.jsonc`:
@@ -68,8 +68,8 @@ Copy the returned database ID into `wrangler.jsonc`:
 Then apply the migrations:
 
 ```bash
-npm run db:migrate:prod   # apply migrations to the remote D1 database
-npm run db:migrate        # apply migrations to the local (Miniflare) database
+bun run db:migrate:prod   # apply migrations to the remote D1 database
+bun run db:migrate        # apply migrations to the local (Miniflare) database
 ```
 
 The `db:migrate` scripts run `wrangler d1 migrations apply webhooker` (see `package.json`), which applies each SQL file in `migrations/` and records applied versions in the `d1_migrations` table.
@@ -78,11 +78,11 @@ The `db:migrate` scripts run `wrangler d1 migrations apply webhooker` (see `pack
 If the database already has these tables/columns (e.g. previously migrated with `wrangler d1 execute --file`), the `d1_migrations` tracking table may be missing and `db:migrate:prod` will try to re-run every migration. The `ALTER TABLE ... ADD COLUMN` statements in `0002_log_detail.sql` then fail because the columns already exist. In that case run the files directly instead:
 
 ```bash
-npx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0004_add_group_id.sql
-npx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0001_init.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0004_add_group_id.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.sql
 ```
 
 :::
@@ -90,7 +90,7 @@ npx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.s
 ### 4. Deploy
 
 ```bash
-npx wrangler deploy
+bunx wrangler deploy
 ```
 
 Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
