@@ -1,5 +1,14 @@
 import type { FormattedMessage, NeutralActionStyle, NeutralMessage } from "../../types";
-import { repoUrlFromMessage, splitMessageTitle } from "../../formatters/helpers";
+import {
+  cap,
+  MAX_DESCRIPTION,
+  MAX_FIELDS,
+  MAX_FIELD_VALUE,
+  MAX_FOOTER,
+  MAX_TITLE,
+  repoUrlFromMessage,
+  splitMessageTitle,
+} from "../../formatters/helpers";
 
 function toStyle(style: NeutralActionStyle): number {
   switch (style) {
@@ -22,29 +31,37 @@ export function renderNeutralMessage(message: NeutralMessage): FormattedMessage 
   // rendered as the first line of the description, unlinked.
   const { head, subject } = splitMessageTitle(message.title);
   const repoUrl = repoUrlFromMessage(message.url);
-  const description = subject
+  const rawDescription = subject
     ? message.description
       ? `${subject}\n${message.description}`
       : subject
-    : message.description;
+    : (message.description ?? "");
 
+  // Safety net: clamp every embed part to the Discord API limits so a single
+  // oversized formatter or custom payload can never hard-fail the request.
   return {
     content,
     embeds: [
       {
-        title: head,
+        title: cap(head, MAX_TITLE),
         url: subject ? repoUrl : message.url,
         color: message.color,
-        description,
+        description: cap(rawDescription, MAX_DESCRIPTION) || undefined,
         author: message.author
           ? {
-              name: message.author.name,
+              name: cap(message.author.name, MAX_TITLE),
               icon_url: message.author.iconUrl,
               url: message.author.url,
             }
           : undefined,
-        fields: message.fields,
-        footer: message.footer ? { text: message.footer } : undefined,
+        fields: message.fields
+          ?.slice(0, MAX_FIELDS)
+          .map((f) => ({
+            name: cap(f.name, MAX_TITLE),
+            value: cap(f.value, MAX_FIELD_VALUE),
+            inline: f.inline,
+          })),
+        footer: message.footer ? { text: cap(message.footer, MAX_FOOTER) } : undefined,
         timestamp: message.timestamp,
       },
     ],

@@ -10,6 +10,30 @@ import {
   repoBaseUrl,
 } from "./helpers";
 
+/** Shared "branch/tag + commit" fields for deployment events. */
+function addDeploymentRefFields(
+  fields: Array<{ name: string; value: string; inline?: boolean }>,
+  deployment: { ref?: string; sha?: string },
+  baseUrl: string | undefined,
+  t: T,
+): void {
+  if (deployment.ref) {
+    const isTag = deployment.ref.startsWith("refs/tags/");
+    fields.push({
+      name: t("fields.branch_tag"),
+      value: isTag ? tagLink(baseUrl, deployment.ref) : branchLink(baseUrl, deployment.ref),
+      inline: true,
+    });
+  }
+  if (deployment.sha) {
+    fields.push({
+      name: t("fields.commit"),
+      value: commitLink(baseUrl, deployment.sha, deployment.sha.slice(0, 7)),
+      inline: true,
+    });
+  }
+}
+
 export function formatDeployment(
   payload: Record<string, unknown>,
   repo: string | undefined,
@@ -29,7 +53,6 @@ export function formatDeployment(
   const emoji = "🚀";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
   const env = deployment.environment ?? t("common.unknown");
-  const shortSha = deployment.sha?.slice(0, 7) ?? "???????";
   const baseUrl = repoBaseUrl(payload, repo);
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -45,22 +68,7 @@ export function formatDeployment(
     inline: true,
   });
 
-  if (deployment.ref) {
-    const isTag = deployment.ref.startsWith("refs/tags/");
-    fields.push({
-      name: t("fields.branch_tag"),
-      value: isTag ? tagLink(baseUrl, deployment.ref) : branchLink(baseUrl, deployment.ref),
-      inline: true,
-    });
-  }
-
-  if (deployment.sha) {
-    fields.push({
-      name: t("fields.commit"),
-      value: commitLink(baseUrl, deployment.sha, shortSha),
-      inline: true,
-    });
-  }
+  addDeploymentRefFields(fields, deployment, baseUrl, t);
 
   if (deployment.description) {
     fields.push({
@@ -116,7 +124,6 @@ export function formatDeploymentStatus(
   const emoji = state === "success" ? "✅" : state === "failure" ? "❌" : "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
   const env = status.environment ?? deployment.environment ?? t("common.unknown");
-  const shortSha = deployment.sha?.slice(0, 7) ?? "???????";
   const baseUrl = repoBaseUrl(payload, repo);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
@@ -133,22 +140,7 @@ export function formatDeploymentStatus(
     inline: true,
   });
 
-  if (deployment.ref) {
-    const isTag = deployment.ref.startsWith("refs/tags/");
-    fields.push({
-      name: t("fields.branch_tag"),
-      value: isTag ? tagLink(baseUrl, deployment.ref) : branchLink(baseUrl, deployment.ref),
-      inline: true,
-    });
-  }
-
-  if (deployment.sha) {
-    fields.push({
-      name: t("fields.commit"),
-      value: commitLink(baseUrl, deployment.sha, shortSha),
-      inline: true,
-    });
-  }
+  addDeploymentRefFields(fields, deployment, baseUrl, t);
 
   if (status.environment_url) {
     fields.push({

@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { emojiPrefix, type T, buildMessage } from "./helpers";
+import { cap, emojiPrefix, MAX_FIELD_VALUE, type T, buildMessage } from "./helpers";
 
 export function formatIssues(
   payload: Record<string, unknown>,
@@ -47,7 +47,7 @@ export function formatIssues(
   if (issue.labels && issue.labels.length > 0) {
     fields.push({
       name: t("fields.labels"),
-      value: issue.labels.map((l) => l.name).join(", "),
+      value: cap(issue.labels.map((l) => l.name).join(", "), MAX_FIELD_VALUE),
       inline: true,
     });
   }
@@ -55,7 +55,7 @@ export function formatIssues(
   if (issue.assignees && issue.assignees.length > 0) {
     fields.push({
       name: t("fields.assignees"),
-      value: issue.assignees.map((a) => a.login).join(", "),
+      value: cap(issue.assignees.map((a) => a.login).join(", "), MAX_FIELD_VALUE),
       inline: true,
     });
   }

@@ -1,6 +1,14 @@
 import type { NeutralMessage, NeutralAuthor, NeutralAction } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { branchLink, emojiPrefix, type T, buildMessage, repoBaseUrl } from "./helpers";
+import {
+  branchLink,
+  cap,
+  emojiPrefix,
+  MAX_FIELD_VALUE,
+  type T,
+  buildMessage,
+  repoBaseUrl,
+} from "./helpers";
 
 export function formatPullRequest(
   payload: Record<string, unknown>,
@@ -82,7 +90,7 @@ export function formatPullRequest(
   if (pr.labels && pr.labels.length > 0) {
     fields.push({
       name: t("fields.labels"),
-      value: pr.labels.map((l) => l.name).join(", "),
+      value: cap(pr.labels.map((l) => l.name).join(", "), MAX_FIELD_VALUE),
       inline: true,
     });
   }
@@ -91,8 +99,16 @@ export function formatPullRequest(
   const actionable = pr.state === "open" && !!repoOwner && !!repoName && pr.number != null;
   const actions: NeutralAction[] | undefined = actionable
     ? [
-        { id: `ghpr|merge|${repoOwner}|${repoName}|${pr.number}`, label: "合并", style: "primary" },
-        { id: `ghpr|close|${repoOwner}|${repoName}|${pr.number}`, label: "关闭", style: "danger" },
+        {
+          id: `ghpr|merge|${repoOwner}|${repoName}|${pr.number}`,
+          label: t("actions.merge"),
+          style: "primary",
+        },
+        {
+          id: `ghpr|close|${repoOwner}|${repoName}|${pr.number}`,
+          label: t("actions.close"),
+          style: "danger",
+        },
       ]
     : undefined;
 

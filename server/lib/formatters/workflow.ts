@@ -1,6 +1,18 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS, WORKFLOW_CONCLUSION_EMOJI } from "./colors";
-import { emojiPrefix, type T, buildMessage, branchLink, commitLink, repoBaseUrl } from "./helpers";
+import {
+  branchLink,
+  cap,
+  commitLink,
+  emojiPrefix,
+  MAX_FIELD_VALUE,
+  statusColorKey,
+  type T,
+  buildMessage,
+  repoBaseUrl,
+  workflowRunStatus,
+  workflowStatus,
+} from "./helpers";
 
 export function formatWorkflowJob(
   payload: Record<string, unknown>,
@@ -20,21 +32,11 @@ export function formatWorkflowJob(
     run_id?: number;
   };
 
-  const status =
-    job.status === "queued"
-      ? "queued"
-      : job.status === "in_progress"
-        ? "running"
-        : (job.conclusion ?? "pending");
+  const status = workflowStatus(job.status, job.conclusion ?? undefined);
   const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
   const baseUrl = repoBaseUrl(payload, repo);
-  const colorKey =
-    status === "success"
-      ? "workflow_run_success"
-      : status === "failure"
-        ? "workflow_run_failure"
-        : "workflow_run_other";
+  const colorKey = statusColorKey("workflow_run", status);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -114,21 +116,11 @@ export function formatWorkflowRun(
   };
 
   const action = payload.action as string | undefined;
-  const status =
-    action === "in_progress"
-      ? "running"
-      : action === "requested"
-        ? "queued"
-        : (workflow.conclusion ?? "pending");
+  const status = workflowRunStatus(action, workflow.conclusion);
   const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
   const baseUrl = repoBaseUrl(payload, repo);
-  const colorKey =
-    status === "success"
-      ? "workflow_run_success"
-      : status === "failure"
-        ? "workflow_run_failure"
-        : "workflow_run_other";
+  const colorKey = statusColorKey("workflow_run", status);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -139,12 +131,13 @@ export function formatWorkflowRun(
   });
 
   if (workflow.jobs?.length) {
+    // Many-jobs workflows must stay under the Discord field value limit.
     const jobLines = workflow.jobs.map(
-      (j) => `${em(WORKFLOW_CONCLUSION_EMOJI[j.conclusion ?? ""] ?? "⏳")}${j.name ?? ""}`,
+      (j) => `${em(WORKFLOW_CONCLUSION_EMOJI[j.conclusion ?? ""] ?? "⏳")}${cap(j.name ?? "", 200)}`,
     );
     fields.push({
       name: t("fields.job"),
-      value: jobLines.join("\n"),
+      value: cap(jobLines.join("\n"), MAX_FIELD_VALUE),
       inline: false,
     });
   }

@@ -33,8 +33,8 @@ export async function processWebhook(
   tenantId?: string,
 ): Promise<WebhookResult> {
   let effectiveEnv = env;
+  const groups = await loadGroups(env.KV);
   if (tenantId) {
-    const groups = await loadGroups(env.KV);
     if (!groups.some((g) => g.id === tenantId)) {
       return { status: 404, body: { error: "Group not found" } };
     }
@@ -51,6 +51,17 @@ export async function processWebhook(
   }
 
   if (!(await provider.verify(body, headers, effectiveEnv))) {
+    // Log the actual cause: a missing provider secret is a deployment problem,
+    // while a mismatched signature usually means the sender used the wrong secret.
+    const secret =
+      provider.id === "gitea"
+        ? effectiveEnv.GITEA_WEBHOOK_SECRET
+        : effectiveEnv.GITHUB_WEBHOOK_SECRET;
+    if (!secret) {
+      log.warn({ provider: provider.id }, "Webhook rejected: provider secret is not configured");
+    } else {
+      log.warn({ provider: provider.id }, "Webhook rejected: invalid signature");
+    }
     return { status: 401, body: { error: "Invalid signature" } };
   }
 
@@ -108,7 +119,7 @@ export async function processWebhook(
     config.routes = config.routes.filter((r) => r.groupId === tenantId);
   }
 
-  const dispatch = dispatchEvent(config, event, env).catch((err) =>
+  const dispatch = dispatchEvent(config, event, env, groups).catch((err) =>
     log.error(err, "Dispatch failed"),
   );
   waitUntil(dispatch);

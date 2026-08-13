@@ -1,6 +1,17 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS, WORKFLOW_CONCLUSION_EMOJI } from "./colors";
-import { branchLink, commitLink, emojiPrefix, type T, buildMessage, repoBaseUrl } from "./helpers";
+import {
+  branchLink,
+  cap,
+  commitLink,
+  emojiPrefix,
+  MAX_FIELD_VALUE,
+  statusColorKey,
+  type T,
+  buildMessage,
+  repoBaseUrl,
+  workflowStatus,
+} from "./helpers";
 
 export function formatCheckSuite(
   payload: Record<string, unknown>,
@@ -18,21 +29,11 @@ export function formatCheckSuite(
     html_url?: string;
   };
 
-  const status =
-    suite.status === "queued"
-      ? "queued"
-      : suite.status === "in_progress"
-        ? "running"
-        : (suite.conclusion ?? "pending");
+  const status = workflowStatus(suite.status, suite.conclusion);
   const baseUrl = repoBaseUrl(payload, repo);
   const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
-  const colorKey =
-    status === "success"
-      ? "check_run_success"
-      : status === "failure"
-        ? "check_run_failure"
-        : "check_run_other";
+  const colorKey = statusColorKey("check_run", status);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -172,20 +173,10 @@ export function formatCheckRun(
     output?: { title?: string; summary?: string };
   };
 
-  const status =
-    checkRun.status === "queued"
-      ? "queued"
-      : checkRun.status === "in_progress"
-        ? "running"
-        : (checkRun.conclusion ?? "pending");
+  const status = workflowStatus(checkRun.status, checkRun.conclusion);
   const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
-  const colorKey =
-    status === "success"
-      ? "check_run_success"
-      : status === "failure"
-        ? "check_run_failure"
-        : "check_run_other";
+  const colorKey = statusColorKey("check_run", status);
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
@@ -198,7 +189,7 @@ export function formatCheckRun(
   if (checkRun.output?.title) {
     fields.push({
       name: t("fields.details"),
-      value: checkRun.output.title,
+      value: cap(checkRun.output.title, MAX_FIELD_VALUE),
       inline: false,
     });
   }

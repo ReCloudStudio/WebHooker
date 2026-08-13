@@ -38,6 +38,8 @@ export const zh = {
     appeared_in_branch: "出现在分支中",
     reopened_by_user: "用户重新打开",
     closed_by_user: "用户关闭",
+    merge: "合并",
+    close: "关闭",
   },
   fields: {
     branch: "分支",
@@ -88,12 +90,13 @@ export const zh = {
     push: {
       force_push: "**强制推送**",
       branch_created: "分支已创建",
+      tag_created: "标签已创建",
       commits_pushed: "**{count}** 个提交已推送到 {ref}",
       view_comparison: "[查看比较]({url})",
       added: "+{count} 新增",
       removed: "-{count} 删除",
       modified: "~{count} 修改",
-      title: "{repo}: 推送了 {count} 个提交",
+      title: "{repo}: 推送了 {count} 个提交到 {ref}",
     },
     pr: {
       action_pr: "{emoji}**{action}** 拉取请求",
@@ -155,6 +158,7 @@ export const zh = {
     commit_comment: {
       action_comment: "{emoji}**{action}**",
       title: "{repo}: 提交 {sha} 的评论",
+      title_plain: "{repo}: 提交评论",
     },
     deployment: {
       title: "{repo}: 部署到 `{env}` — {state}",
@@ -202,7 +206,7 @@ export const zh = {
     title: "{repo}: {event}{action}",
     routes: "路由",
     delivery: "投递",
-    route_ok: "✅ {route} → {target}",
-    route_fail: "❌ {route} → {target}: {error}",
+    route_ok: "{route} → {target}",
+    route_fail: "{route} → {target}: {error}",
   },
 };

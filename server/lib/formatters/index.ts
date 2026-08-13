@@ -1,6 +1,6 @@
 import type { Route, WebhookEvent, NeutralMessage, NeutralAuthor } from "../types";
 import type { Translations } from "../lib/i18n";
-import { makeT, type T } from "./helpers";
+import { makeT, senderProfileUrl, type T } from "./helpers";
 import { formatPush } from "./push";
 import { formatPullRequest } from "./pull-request";
 import { formatPullRequestReview, formatPullRequestReviewComment } from "./review";
@@ -41,7 +41,7 @@ export function formatEvent(
   const author: NeutralAuthor = {
     name: sender ?? t("common.unknown"),
     iconUrl: senderAvatar,
-    url: senderUrl ?? (sender ? `https://github.com/${sender}` : undefined),
+    url: senderUrl ?? (sender ? senderProfileUrl(repoUrl, sender) : undefined),
   };
 
   switch (eventType) {

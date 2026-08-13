@@ -1,5 +1,6 @@
-import type { Config, WebhookEvent, Env, Route, NeutralMessage } from "../types";
+import type { Config, WebhookEvent, Env, Route, Group, NeutralMessage } from "../types";
 import { formatEvent } from "../formatters";
+import { emojiPrefix } from "../formatters/helpers";
 import { matchRoute, eventOwners } from "../events/match";
 import { log } from "../lib/log";
 import { loadTranslations, t as translate, type Translations } from "../lib/i18n";
@@ -23,12 +24,17 @@ interface DispatchAttempt {
   error?: string;
 }
 
-export async function dispatchEvent(config: Config, event: WebhookEvent, env: Env): Promise<void> {
-  const groups = await loadGroups(env.KV);
-  const groupById = new Map(groups.map((g) => [g.id, g]));
+export async function dispatchEvent(
+  config: Config,
+  event: WebhookEvent,
+  env: Env,
+  groups?: Group[],
+): Promise<void> {
+  const loadedGroups = groups ?? (await loadGroups(env.KV));
+  const groupById = new Map(loadedGroups.map((g) => [g.id, g]));
 
   // Message language is configured per group (Group.lang), not per route.
-  const langs = [...new Set(groups.map((g) => g.lang ?? "en"))];
+  const langs = [...new Set(loadedGroups.map((g) => g.lang ?? "en"))];
   const trMap = new Map<string, Translations>();
   await Promise.all(
     langs.map(async (lang) => {
@@ -89,8 +95,15 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
           .slice(0, 10)
           .map((a) =>
             a.ok
-              ? translate("log.route_ok", { route: a.routeName, target: a.target }, undefined, tr)
-              : translate(
+              ? emojiPrefix("✅", true) +
+                translate(
+                  "log.route_ok",
+                  { route: a.routeName, target: a.target },
+                  undefined,
+                  tr,
+                )
+              : emojiPrefix("❌", true) +
+                translate(
                   "log.route_fail",
                   { route: a.routeName, target: a.target, error: a.error ?? "?" },
                   undefined,

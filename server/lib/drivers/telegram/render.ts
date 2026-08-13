@@ -1,6 +1,9 @@
 import type { NeutralMessage } from "../../types";
 import { repoUrlFromMessage, splitMessageTitle } from "../../formatters/helpers";
 
+/** Telegram caps a single message at 4096 characters (HTML entities included). */
+const MAX_TEXT = 4096;
+
 function esc(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -28,6 +31,33 @@ function formatTimestamp(ts?: string): string {
   if (Number.isNaN(d.getTime())) return ts;
   const pad = (n: number): string => String(n).padStart(2, "0");
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
+}
+
+/**
+ * Truncate Telegram HTML to `max` characters without breaking markup: drops
+ * an incomplete trailing tag and closes every tag still open at the cut
+ * point, so parse_mode HTML never rejects the message.
+ */
+function capHtml(text: string, max: number): string {
+  if (text.length <= max) return text;
+  let cut = text.slice(0, max).replace(/<[^>]*$/u, "");
+  const stack: string[] = [];
+  const re = /<(\/?)([a-z]+)(?:\s[^>]*)?>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(cut)) !== null) {
+    const tag = m[2]!;
+    if (m[1] === "/") {
+      const open = stack.lastIndexOf(tag);
+      if (open >= 0) stack.splice(open);
+    } else {
+      stack.push(tag);
+    }
+  }
+  const closers = stack
+    .reverse()
+    .map((tag) => `</${tag}>`)
+    .join("");
+  return `${cut}…${closers}`;
 }
 
 export function renderNeutralMessage(message: NeutralMessage): string {
@@ -66,5 +96,5 @@ export function renderNeutralMessage(message: NeutralMessage): string {
     parts.push(`<i>${meta.join(" · ")}</i>`);
   }
 
-  return parts.join("\n");
+  return capHtml(parts.join("\n"), MAX_TEXT);
 }

@@ -38,6 +38,8 @@ export const en = {
     appeared_in_branch: "Appeared in Branch",
     reopened_by_user: "Reopened by User",
     closed_by_user: "Closed by User",
+    merge: "Merge",
+    close: "Close",
   },
   fields: {
     branch: "Branch",
@@ -88,6 +90,7 @@ export const en = {
     push: {
       force_push: "**Force push**",
       branch_created: "Branch created",
+      tag_created: "Tag created",
       view_comparison: "[View comparison]({url})",
       added: "+{count} added",
       removed: "-{count} removed",
@@ -154,6 +157,7 @@ export const en = {
     commit_comment: {
       action_comment: "{emoji}**{action}**",
       title: "{repo}: Comment on commit {sha}",
+      title_plain: "{repo}: Comment on commit",
     },
     deployment: {
       title: "{repo}: Deployment to `{env}` — {state}",
@@ -201,7 +205,7 @@ export const en = {
     title: "{repo}: {event}{action}",
     routes: "Routes",
     delivery: "Delivery",
-    route_ok: "✅ {route} → {target}",
-    route_fail: "❌ {route} → {target}: {error}",
+    route_ok: "{route} → {target}",
+    route_fail: "{route} → {target}: {error}",
   },
 };

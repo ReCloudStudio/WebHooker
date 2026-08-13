@@ -22,13 +22,14 @@ export function formatCommitComment(
   const truncated = comment.body && comment.body.length > 500;
   const baseUrl = repoBaseUrl(payload, repo);
   const shortSha = comment.commit_id?.slice(0, 7) ?? "???????";
+  const shaLink = comment.commit_id ? commitLink(baseUrl, comment.commit_id, shortSha) : undefined;
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
   if (comment.commit_id) {
     fields.push({
       name: t("fields.commit"),
-      value: commitLink(baseUrl, comment.commit_id, shortSha),
+      value: shaLink!,
       inline: true,
     });
   }
@@ -36,10 +37,14 @@ export function formatCommitComment(
   return buildMessage(
     {
       author,
-      title: t("events.commit_comment.title", {
-        repo: repo ?? t("common.repository"),
-        sha: commitLink(baseUrl, comment.commit_id ?? "", shortSha),
-      }),
+      title: shaLink
+        ? t("events.commit_comment.title", {
+            repo: repo ?? t("common.repository"),
+            sha: shaLink,
+          })
+        : t("events.commit_comment.title_plain", {
+            repo: repo ?? t("common.repository"),
+          }),
       url: comment.html_url,
       color: GITHUB_COLORS.commit_comment,
       description: `${t("events.commit_comment.action_comment", { emoji: em("💬"), action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,

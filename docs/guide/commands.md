@@ -36,7 +36,7 @@ Two equivalent ways:
 
 ### Merge / close a PR
 
-Notifications for open PRs include **合并 / 关闭** (merge/close) buttons:
+Notifications for open PRs include **Merge / Close** buttons (labels follow the group's message language):
 
 - Clicking a button merges (squash) or closes the PR as your linked GitHub account; GitHub enforces permission.
 - On success the buttons are removed from the notification and the result is shown in an ephemeral reply.

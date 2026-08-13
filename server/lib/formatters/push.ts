@@ -1,6 +1,14 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { branchLink, emojiPrefix, tagLink, type T, buildMessage, repoBaseUrl } from "./helpers";
+import {
+  branchLink,
+  emojiPrefix,
+  MAX_COMMIT_SUBJECT,
+  tagLink,
+  type T,
+  buildMessage,
+  repoBaseUrl,
+} from "./helpers";
 
 export function formatPush(
   payload: Record<string, unknown>,
@@ -55,7 +63,10 @@ export function formatPush(
     descriptionParts.push(em("⚠️") + t("events.push.force_push"));
   }
   if (created) {
-    descriptionParts.push(em("🆕") + t("events.push.branch_created"));
+    descriptionParts.push(
+      em("🆕") +
+        t(isTagPush ? "events.push.tag_created" : "events.push.branch_created"),
+    );
   }
 
   if (compareUrl) {
@@ -66,7 +77,8 @@ export function formatPush(
 
   const commitField = (c: (typeof commits)[number]): { name: string; value: string } => {
     const shortId = c.id?.slice(0, 7) ?? "???????";
-    const msg = (c.message?.split("\n")[0] ?? "").slice(0, 72) || t("common.no_message");
+    const msg = (c.message?.split("\n")[0] ?? "").slice(0, MAX_COMMIT_SUBJECT) ||
+      t("common.no_message");
     const url = baseUrl && c.id ? `${baseUrl}/commit/${c.id}` : null;
     const hash = url ? `[\`${shortId}\`](${url})` : `\`${shortId}\``;
     return { name: `\u200b`, value: `${hash} ${msg}` };

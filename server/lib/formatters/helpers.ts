@@ -99,3 +99,64 @@ export function tagLink(baseUrl: string | undefined, tag: string, label?: string
     ? `[\`${display}\`](${baseUrl}/releases/tag/${encodeRefPath(clean)})`
     : `\`${display}\``;
 }
+
+/* ---- Content size limits (mirror the Discord embed limits) ---- */
+export const MAX_TITLE = 256;
+export const MAX_DESCRIPTION = 4096;
+export const MAX_FIELD_VALUE = 1024;
+export const MAX_FIELDS = 25;
+export const MAX_FOOTER = 2048;
+/** First-line commit message length (stays well under the field value budget). */
+export const MAX_COMMIT_SUBJECT = 200;
+
+/** Truncate a string to `max` characters. */
+export function cap(text: string, max: number): string {
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+/**
+ * Normalize a check/workflow status: `queued` / `in_progress` keep their
+ * value (the latter becomes `running`), anything else falls back to the
+ * conclusion and finally `pending`.
+ */
+export function workflowStatus(status?: string, conclusion?: string): string {
+  if (status === "queued") return "queued";
+  if (status === "in_progress") return "running";
+  return conclusion ?? "pending";
+}
+
+/** workflow_run events derive their progress from the action, not `status`. */
+export function workflowRunStatus(action?: string, conclusion?: string): string {
+  if (action === "in_progress") return "running";
+  if (action === "requested") return "queued";
+  return conclusion ?? "pending";
+}
+
+/** GITHUB_COLORS key for a success/failure/other status. */
+export function statusColorKey(
+  prefix: "check_run" | "workflow_run",
+  status: string,
+): `${typeof prefix}_${"success" | "failure" | "other"}` {
+  return status === "success"
+    ? `${prefix}_success`
+    : status === "failure"
+      ? `${prefix}_failure`
+      : `${prefix}_other`;
+}
+
+/**
+ * The sender's profile URL on the same forge as the repo (derived from the
+ * repo's html_url origin, e.g. `https://github.com/owner/repo` →
+ * `https://github.com/login`). Falls back to github.com when the repo URL is
+ * unavailable or unparseable.
+ */
+export function senderProfileUrl(repoUrl: string | undefined, login: string): string {
+  if (repoUrl) {
+    try {
+      return `${new URL(repoUrl).origin}/${encodeURIComponent(login)}`;
+    } catch {
+      // unparseable repo URL — fall through to github.com
+    }
+  }
+  return `https://github.com/${login}`;
+}

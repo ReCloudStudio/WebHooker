@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { formatEvent } from "../server/lib/formatters";
+import { MAX_COMMIT_SUBJECT } from "../server/lib/formatters/helpers";
 import type { Route, WebhookEvent } from "../server/lib/types";
 
 const route: Route = {
@@ -391,5 +392,129 @@ describe("group emoji toggle", () => {
     );
     expect(msg.fields![0].value).toBe("failure");
     expect(msg.fields![1].value).toBe("build");
+  });
+});
+
+describe("limits and localization", () => {
+  it("pull_request buttons use localized labels", () => {
+    const msg = formatEvent(
+      route,
+      event("pull_request", {
+        action: "opened",
+        pull_request: {
+          title: "Add feature",
+          number: 7,
+          state: "open",
+          merged: false,
+          html_url: "https://github.com/acme/widget/pull/7",
+          head: { ref: "feat" },
+          base: { ref: "main" },
+        },
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(msg.actions?.map((a) => a.label)).toEqual(["Merge", "Close"]);
+  });
+
+  it("workflow_run job list is capped to the field value limit", () => {
+    const jobs = Array.from({ length: 60 }, (_, i) => ({
+      name: `job-${i}`,
+      conclusion: "success",
+    }));
+    const msg = formatEvent(
+      route,
+      event("workflow_run", {
+        action: "completed",
+        workflow_run: { name: "CI", conclusion: "success", run_number: 1, jobs },
+        repository: repo,
+        sender,
+      }),
+    );
+    const jobField = msg.fields!.find((f) => f.name === "Job");
+    expect(jobField!.value!.length).toBeLessThanOrEqual(1024);
+  });
+
+  it("commit message is truncated at the subject limit", () => {
+    const link = "[`abcd123`](https://github.com/acme/widget/commit/abcd1234ef)";
+    const msg = formatEvent(
+      route,
+      event("push", {
+        ref: "refs/heads/main",
+        created: false,
+        forced: false,
+        commits: [
+          { id: "abcd1234ef", message: "x".repeat(300), added: [], removed: [], modified: [] },
+        ],
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(msg.fields![0].value).toBe(`${link} ${"x".repeat(MAX_COMMIT_SUBJECT)}`);
+  });
+
+  it("tag push created mentions the tag", () => {
+    const msg = formatEvent(
+      route,
+      event("push", {
+        ref: "refs/tags/v1.0",
+        created: true,
+        forced: false,
+        deleted: false,
+        commits: [],
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(msg.description).toBe("🆕 Tag created");
+  });
+
+  it("commit_comment without a commit id omits the sha", () => {
+    const msg = formatEvent(
+      route,
+      event("commit_comment", {
+        action: "created",
+        comment: { body: "why?" },
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(msg.title).toBe("acme/widget: Comment on commit");
+    expect(msg.fields).toBeUndefined();
+  });
+
+  it("sender profile link follows the forge when html_url is missing", () => {
+    const msg = formatEvent(
+      route,
+      event("push", {
+        ref: "refs/heads/main",
+        created: false,
+        forced: false,
+        commits: [{ id: "abcd1234ef", message: "x", added: [], removed: [], modified: [] }],
+        repository: { full_name: "org/repo", html_url: "https://git.example.com/org/repo" },
+        sender: { login: "octo" },
+      }),
+    );
+    expect(msg.author?.url).toBe("https://git.example.com/octo");
+  });
+
+  it("custom payload fields and values are capped", () => {
+    const fields = Array.from({ length: 30 }, (_, i) => ({
+      name: `f${i}`,
+      value: "y".repeat(2000),
+    }));
+    const msg = formatEvent(
+      route,
+      event("custom", {
+        title: "Deploy failed",
+        repo: "acme/widget",
+        color: "red",
+        description: "x".repeat(5000),
+        fields,
+      }),
+    );
+    expect(msg.fields!.length).toBe(25);
+    expect(msg.fields!.every((f) => f.value.length <= 1024)).toBe(true);
+    expect(msg.description!.length).toBe(4096);
   });
 });

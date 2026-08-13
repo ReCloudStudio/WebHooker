@@ -1,5 +1,13 @@
 import type { NeutralAuthor, NeutralField, NeutralMessage } from "../types";
-import { type T, buildMessage } from "./helpers";
+import {
+  cap,
+  MAX_DESCRIPTION,
+  MAX_FIELDS,
+  MAX_FIELD_VALUE,
+  MAX_TITLE,
+  type T,
+  buildMessage,
+} from "./helpers";
 
 const COLOR_WORDS: Record<string, number> = {
   red: 0xf85149,
@@ -29,12 +37,12 @@ function parseFields(raw: unknown): NeutralField[] | undefined {
     const value = (f as Record<string, unknown>).value;
     if (typeof name !== "string" || typeof value !== "string") continue;
     fields.push({
-      name: name || "\u200b",
-      value,
+      name: cap(name || "\u200b", MAX_TITLE),
+      value: cap(value, MAX_FIELD_VALUE),
       inline: (f as Record<string, unknown>).inline === true,
     });
   }
-  return fields.length > 0 ? fields : undefined;
+  return fields.length > 0 ? fields.slice(0, MAX_FIELDS) : undefined;
 }
 
 /**
@@ -50,15 +58,18 @@ export function formatCustom(
   t: T,
   _showEmoji: boolean,
 ): NeutralMessage {
-  const title =
+  const title = cap(
     typeof payload.title === "string" && payload.title.trim()
       ? payload.title.trim()
-      : t("custom.title_fallback");
+      : t("custom.title_fallback"),
+    MAX_TITLE,
+  );
   const payloadRepo =
     typeof payload.repo === "string" && payload.repo.trim() ? payload.repo.trim() : undefined;
   const effectiveRepo = payloadRepo ?? repo;
   const fullTitle = effectiveRepo ? `${effectiveRepo}: ${title}` : title;
-  const description = typeof payload.description === "string" ? payload.description : undefined;
+  const description =
+    typeof payload.description === "string" ? cap(payload.description, MAX_DESCRIPTION) : undefined;
   const url = typeof payload.url === "string" ? payload.url : undefined;
   const footer = typeof payload.footer === "string" ? payload.footer : undefined;
 

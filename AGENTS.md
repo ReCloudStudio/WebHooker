@@ -155,6 +155,10 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
   (`commitLink`/`branchLink`/`tagLink` helpers in `server/lib/formatters/helpers.ts`, e.g.
   ``[`abc123d`](https://.../commit/abc123def456)``, ``[`main`](https://.../tree/main)``),
   falling back to plain inline code when the repo base URL is unavailable.
+- Content is clamped to the Discord embed limits (title 256, description 4096, field value
+  1024, 25 fields) both in the formatters and as a final safety net in the Discord render;
+  the Telegram render caps the whole message at 4096 chars with tag-safe truncation. Commit
+  subjects render only the first line, truncated to 200 chars.
 - Locale templates use a `{emoji}` placeholder immediately followed by the text (no space);
   the formatter injects `em(...)` which carries the trailing space.
 
