@@ -1,6 +1,6 @@
 # WebHooker
 
-GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook events via Cloudflare Workers, applies filters, and routes formatted messages to Discord channels/threads and Telegram chats/topics. Forge-specific adapters live under `src/providers/` (GitHub + Gitea today; GitLab etc. can be added later).
+GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook events via Cloudflare Workers, applies filters, and routes formatted messages to Discord channels/threads and Telegram chats/topics. Forge-specific adapters live under `server/lib/providers/` (GitHub + Gitea today; GitLab etc. can be added later).
 
 ## Features
 
@@ -24,7 +24,7 @@ GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook event
 ## Architecture
 
 ```text
-GitHub Webhook → Cloudflare Worker (Hono)
+GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
                  ├── POST /webhook → verify → dedup → filter → format → Discord (REST) / Telegram (Bot API)
                  ├── POST /discord/interactions → verify (Ed25519) → handle command/button/modal
                  ├── POST /telegram/webhook → verify (secret token) → handle /gh commands

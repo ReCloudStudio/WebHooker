@@ -1,11 +1,11 @@
 # 简介
 
-WebHooker 是一个基于 Cloudflare Workers 构建的 GitHub/Gitea webhook 调度器。它接收来自受支持 forge（GitHub、Gitea——更多可通过 `src/providers/` 扩展）的 webhook 事件，应用可配置的过滤器，将事件格式化为富消息，并通过各自 REST API 投递到 Discord 频道/子区（embed）与 Telegram 群组/话题（HTML）。Discord 内的 `/gh` 交互通过 HTTPS Interactions Endpoint（Ed25519 验签）送达；Telegram 的 `/gh` 命令通过 Telegram webhook 送达。路由与分组通过内置的 Web UI 管理。
+WebHooker 是一个基于 Cloudflare Workers 构建的 GitHub/Gitea webhook 调度器。它接收来自受支持 forge（GitHub、Gitea——更多可通过 `server/lib/providers/` 扩展）的 webhook 事件，应用可配置的过滤器，将事件格式化为富消息，并通过各自 REST API 投递到 Discord 频道/子区（embed）与 Telegram 群组/话题（HTML）。Discord 内的 `/gh` 交互通过 HTTPS Interactions Endpoint（Ed25519 验签）送达；Telegram 的 `/gh` 命令通过 Telegram webhook 送达。路由与分组通过内置的 Web UI 管理。
 
 ## 架构
 
 ```text
-GitHub / Gitea Webhook → Cloudflare Worker (Hono)
+GitHub / Gitea Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
                  ├── POST /webhook → 识别提供方 → 验证 → 去重 → 过滤 → 格式化 → Discord (REST) / Telegram (Bot API)
                  ├── POST /discord/interactions → 验证 (Ed25519) → 处理 /gh 斜杠与右键命令
                  ├── POST /telegram/webhook → 验证 (secret token) → 处理 /gh 命令
@@ -38,7 +38,7 @@ GitHub / Gitea Webhook → Cloudflare Worker (Hono)
 ## 技术栈
 
 - **运行时**: Cloudflare Workers
-- **HTTP 框架**: Hono
+- **HTTP 框架**: Nuxt 4 / Nitro (H3)
 - **Discord 投递**: Discord REST API（交互通过 Ed25519 验签的 HTTPS Interactions Endpoint）
 - **Telegram 投递**: Telegram Bot API（webhook 带可选 secret-token 校验）
 - **Web UI**: Nuxt 3 静态 SPA，由 Worker 资源托管

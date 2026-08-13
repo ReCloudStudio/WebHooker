@@ -13,61 +13,75 @@ npm run dev                  # Start local dev server
 ## Project Structure
 
 ```text
-src/
-├── index.ts              # CF Workers entry (fetch + scheduled), scheduled = Discord command sync + Telegram webhook sync
-├── types.ts              # Env, Config, Route, Filter, Group, WebhookEvent, NeutralMessage
-├── config.ts             # Loads routes from KV (returns [] if unset), builds Config from env
-├── server.ts             # Hono app: /health, /webhook, /discord/interactions, /telegram/webhook, mounts /auth, /admin + /
-├── core/
-│   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → getDriver().send/edit
-├── events/               # Provider-agnostic route matching
-│   └── match.ts          # matchRoute, eventOwners, extractBranch, keyword filtering
-├── providers/            # Forge webhook providers (verify + parse/normalize)
-│   ├── types.ts          # Provider interface (matches/verify/parse)
-│   ├── index.ts          # detectProvider() registry (github, gitea)
-│   ├── github/           # X-GitHub-Event + X-Hub-Signature-256
-│   └── gitea/            # X-Gitea-Event + X-Gitea-Signature (normalized payloads)
-├── formatters/           # Platform-neutral formatters (produce NeutralMessage)
-│   ├── index.ts          # formatEvent: 28-event switch → NeutralMessage + re-exports
-│   ├── colors.ts         # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
-│   ├── helpers.ts        # emojiPrefix, T, buildMessage
-│   └── *.ts              # push, pull-request, issues, comments, workflow, release, create, repo,
-│                         # check, review, commit-comment, deployment, member, label, milestone,
-│                         # discussion, repository, security, generic, ping
-├── drivers/              # Platform drivers (pluggable push targets)
-│   ├── types.ts          # PlatformDriver interface + SendResult (send + edit)
-│   ├── index.ts          # getDriver() registry (discord + telegram)
-│   ├── discord/          # index.ts (driver), render.ts (NeutralMessage → embed),
-│   │                     # rest.ts, interactions.ts, commands.ts
-│   └── telegram/         # index.ts (driver), render.ts (NeutralMessage → Telegram HTML),
-│                         # rest.ts (chat_id + message_thread_id), updates.ts (webhook verify),
-│                         # commands.ts (/gh login|logout|comment|merge|close + reply parsing)
-├── github/               # GitHub OAuth + as-user actions
-│   ├── oauth.ts          # OAuth URL, callback token exchange, getUserOctokit, comment/merge/close actions
-│   └── store.ts          # KV token CRUD + D1 discord-link/telegram-link mapping
-├── web/                  # HTTP UI/API routes
-│   ├── oauth-routes.ts   # GET /auth/github, callback (admin session / discord-link / telegram-link), DELETE /token/:userId
-│   ├── action-routes.ts  # POST /api/comment|merge|close|react (Bearer token auth via KV lookup)
-│   ├── admin-routes.ts   # /admin API: routes, groups, me, logs (session + scope auth)
-│   ├── session.ts        # Admin session CRUD (KV session:{id}), cookie helpers
-│   ├── groups.ts         # Group loading, group-admin access scoping
-│   ├── home-routes.ts    # Landing page routes
-│   ├── legal-routes.ts   # Legal page routes
-│   └── richheader-routes.ts # GET /api/richheader (Telegram avatar card)
-└── lib/                  # Shared infrastructure
-    ├── i18n.ts           # Message language overrides (en/zh)
-    ├── send-log.ts       # Send logging (D1 send_logs)
-    ├── log.ts            # JSON console logger (info/warn/error/fatal)
-    └── locales/          # en.ts, zh.ts translation dictionaries
+app/                     # Vue 3 UI (Nuxt app dir)
+├── app.vue              # Root component (NuxtPage)
+├── assets/css/main.css  # Tailwind CSS entry: theme tokens (RGB-triplet CSS variables) + @layer components (@apply)
+├── pages/               # index (landing), terms, privacy, admin/[...slug] (console SPA)
+├── components/          # ConsolePage, RouteCard/Editor, GroupEditor, MembersPanel, WebhookPanel,
+│                        # SendLogs, AuditLog, AppToasts, LegalLayout
+├── composables/         # useI18n, useToasts, useGroups, useGroupRoutes, useLogs, useAudit, useInvites, useWebhook
+├── types.ts             # Shared client types (Route, Group, Filter, ...)
+└── utils/legal.ts       # Terms/privacy HTML bodies (zh/en)
+server/                  # Nitro server (H3 handlers in server/routes/)
+├── routes/              # /health, /webhook[/:groupId], /discord/interactions, /telegram/webhook,
+│                        # /auth/github*, /admin/{login,logout,invite,api/**}, /api/{comment,merge,close,react,richheader}
+├── tasks/               # Scheduled (cron */5): discord-sync, telegram-sync, audit-prune
+├── error-handler.ts     # JSON error handler
+└── lib/
+    ├── types.ts         # Env, Config, Route, Filter, Group, WebhookEvent, NeutralMessage
+    ├── config.ts        # Loads routes from KV (returns [] if unset), builds Config from env
+    ├── core/
+    │   └── dispatch.ts  # Platform-neutral dispatch: match routes → formatEvent → getDriver().send/edit
+    ├── events/          # Provider-agnostic route matching
+    │   └── match.ts     # matchRoute, eventOwners, extractBranch, keyword filtering
+    ├── providers/       # Forge webhook providers (verify + parse/normalize)
+    │   ├── types.ts     # Provider interface (matches/verify/parse)
+    │   ├── index.ts     # detectProvider() registry (github, gitea, custom)
+    │   ├── github/      # X-GitHub-Event + X-Hub-Signature-256
+    │   └── gitea/       # X-Gitea-Event + X-Gitea-Signature (normalized payloads)
+    ├── formatters/      # Platform-neutral formatters (produce NeutralMessage)
+    │   ├── index.ts     # formatEvent: 29-event switch → NeutralMessage + re-exports
+    │   ├── colors.ts    # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
+    │   ├── helpers.ts   # emojiPrefix, T, buildMessage, commitLink/branchLink/tagLink
+    │   └── *.ts         # push, pull-request, issues, comments, workflow, release, create, repo,
+    │                    # check, review, commit-comment, deployment, member, label, milestone,
+    │                    # discussion, repository, security, generic, ping, custom
+    ├── drivers/         # Platform drivers (pluggable push targets)
+    │   ├── types.ts     # PlatformDriver interface + SendResult (send + edit)
+    │   ├── index.ts     # getDriver() registry (discord + telegram)
+    │   ├── discord/     # index.ts (driver), render.ts (NeutralMessage → embed),
+    │   │                # rest.ts, interactions.ts, commands.ts
+    │   └── telegram/    # index.ts (driver), render.ts (NeutralMessage → Telegram HTML),
+    │                    # rest.ts (chat_id + message_thread_id), updates.ts (webhook verify),
+    │                    # commands.ts (/gh login|logout|comment|merge|close + reply parsing)
+    ├── github/          # GitHub OAuth + as-user actions
+    │   ├── oauth.ts     # OAuth URL, callback token exchange, getUserOctokit, comment/merge/close actions
+    │   └── store.ts     # KV token CRUD + D1 discord-link/telegram-link mapping
+    ├── web/             # HTTP UI/API logic (called from server/routes)
+    │   ├── oauth.ts     # GET /auth/github, callback (admin session / discord-link / telegram-link / install bind)
+    │   ├── actions.ts   # POST /api/comment|merge|close|react (Bearer token auth via KV lookup)
+    │   ├── admin.ts     # /admin API: routes, groups, me, logs, invites, audit (session + scope auth)
+    │   ├── auth.ts      # Shared auth middleware + guards
+    │   ├── invites.ts   # Invite CRUD + acceptInvite
+    │   ├── session.ts   # Admin session CRUD (KV session:{id}), cookie helpers
+    │   ├── groups.ts    # Group loading, group-admin access scoping
+    │   ├── tenants.ts   # Per-group webhook secret CRUD
+    │   └── richheader.ts # GET /api/richheader (Telegram avatar card)
+    └── lib/             # Shared infrastructure
+        ├── i18n.ts      # Message language overrides (en/zh)
+        ├── send-log.ts  # Send logging (D1 send_logs)
+        ├── audit.ts     # Audit logging (D1 audit_logs)
+        ├── log.ts       # JSON console logger (info/warn/error/fatal)
+        └── locales/     # en.ts, zh.ts translation dictionaries
 
-src/__tests__/            # Unit tests (bun test)
+tests/                   # Unit tests (bun test)
 ```
 
 ## Scripts
 
 | Command                | Description                     |
 | ---------------------- | ------------------------------- |
-| `npm run dev`          | Start wrangler dev server       |
+| `npm run dev`          | Start Nuxt dev server (HMR)     |
 | `npm run typecheck`    | TypeScript type checking        |
 | `npm run lint`         | ESLint (TypeScript)             |
 | `npm run lint:md`      | Markdownlint (Markdown)         |
@@ -100,11 +114,11 @@ curl http://localhost:8787/health
 
 ## Adding a New Event Formatter
 
-1. Add the event type to `GITHUB_COLORS` in `src/formatters/colors.ts` (if new color needed)
-2. Add action labels to the locale dictionaries in `src/lib/locales/en.ts` and `src/lib/locales/zh.ts` (if new actions)
-3. Create a `formatEventType` function in `src/formatters/`
-4. Add the case to the `formatEvent` switch statement in `src/formatters/index.ts`
-5. Update `extractBranch` in `src/events/match.ts` if the event has branch info
+1. Add the event type to `GITHUB_COLORS` in `server/lib/formatters/colors.ts` (if new color needed)
+2. Add action labels to the locale dictionaries in `server/lib/lib/locales/en.ts` and `server/lib/lib/locales/zh.ts` (if new actions)
+3. Create a `formatEventType` function in `server/lib/formatters/`
+4. Add the case to the `formatEvent` switch statement in `server/lib/formatters/index.ts`
+5. Update `extractBranch` in `server/lib/events/match.ts` if the event has branch info
 6. Add the event to the documentation in `docs/events/supported.md` and `docs/zh/events/supported.md`
 7. Add the event to the README (`README.md` and `README.zh.md`) event tables and the GitHub App event subscription list
 8. Subscribe to the event in your GitHub App settings

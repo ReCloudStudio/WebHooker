@@ -2,18 +2,19 @@
 
 ## Project Purpose
 
-Cloudflare Worker that receives GitHub webhooks and dispatches processed events to Discord channels/threads and Telegram chats/topics, and receives Discord interactions (slash commands, buttons, modals) via the Interactions Endpoint plus Telegram bot `/gh` commands via the Telegram webhook.
+Nuxt 4 (Nitro) app deployed as a Cloudflare Worker that receives GitHub webhooks and dispatches processed events to Discord channels/threads and Telegram chats/topics, and receives Discord interactions (slash commands, buttons, modals) via the Interactions Endpoint plus Telegram bot `/gh` commands via the Telegram webhook.
 
 Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord (REST) / Telegram (Bot API)
 
 ## Key Decisions
 
-- Runtime: Cloudflare Workers
-- HTTP framework: Hono
+- Runtime: Cloudflare Workers via the Nitro `cloudflare_module` preset (`_worker.js`), H3 event handlers in `server/routes/`
+- UI: Vue 3 + Tailwind CSS v3 (`@nuxtjs/tailwindcss`); admin console is a client-side SPA (`routeRules: "/admin/**": { ssr: false }`), home/legal pages render server-side
+- Styling: all theme colors are RGB-triplet CSS variables in `app/assets/css/main.css` mapped into `tailwind.config.ts` (so `bg-accent/10` opacity modifiers work); the design tokens switch with `prefers-color-scheme` (unless `<html data-theme="light">`); repeated control patterns are `@apply` component classes in the CSS `@layer components`
 - Discord interactions: HTTPS Interactions Endpoint (`POST /discord/interactions`, Ed25519-signed) — no Discord Gateway / Durable Object; bot stays offline, messages always sent via REST
 - Storage: Cloudflare KV (tokens, OAuth state, route config `config:routes`, group config `config:groups`, admin sessions, delivery dedup, message-update tracking `msg:*`, i18n overrides `i18n:*`) + D1 (`send_logs`, `discord_links`, `telegram_links`)
 - Signature verification: Web Crypto API (HMAC-SHA256 for GitHub/Gitea, Ed25519 for Discord, timing-safe secret-token compare for Telegram)
-- Webhook providers: pluggable forge adapters under `src/providers/` (github, gitea) — each verifies its own signature format and normalizes its payload to a GitHub-shaped `WebhookEvent`; a `custom` provider accepts arbitrary signed JSON posts (`X-WebHooker-Signature`) as `custom` events; GitLab etc. can be added later
+- Webhook providers: pluggable forge adapters under `server/lib/providers/` (github, gitea) — each verifies its own signature format and normalizes its payload to a GitHub-shaped `WebhookEvent`; a `custom` provider accepts arbitrary signed JSON posts (`X-WebHooker-Signature`) as `custom` events; GitLab etc. can be added later
 - Per-group webhook ingress: optional `POST /webhook/{groupId}` with a per-group secret in KV (`tenant:{groupId}`) — Gitea/classic-GitHub/custom webhooks are verified against the group's secret instead of the operator's global ones; only that group's routes fire. The legacy `POST /webhook` (global secrets, all routes) stays untouched
 - GitHub App tenant isolation: `Group.installationId` binds a group to one GitHub App installation; events whose `payload.installation.id` differs are rejected at dispatch (hard isolation on top of the optional `owners` list). The App's Setup URL points at `GET /auth/github/install`, which renders a choice page (create `inst-{installationId}` or bind to a group the signed-in user owns, verified by role); `POST /auth/github/install/bind` performs the provisioning. `installation.created` webhook events auto-provision as a fallback (create `inst-{installationId}` or bind existing groups whose `owners` match the installing account)
 - GitHub OAuth: octokit (token is stored hashed for reverse lookup)
@@ -27,73 +28,84 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 ## Architecture
 
 ```text
-src/
-├── index.ts              # CF Workers entry (fetch + scheduled), scheduled = Discord command sync + Telegram webhook sync
-├── types.ts              # Env, Config, Route, Filter, Group, WebhookEvent, NeutralMessage
-├── config.ts             # loadRoutes/saveRoutes (KV config:routes, cache w/ 60s TTL), loadConfig from env
-├── server.ts             # Hono app: /health, /webhook, /webhook/:groupId, /discord/interactions, /telegram/webhook, mounts /auth, /admin + /
-├── webhook.ts            # processWebhook/handleWebhook: tenant lookup, provider detect/verify/parse, dedup, scoped dispatch
-├── core/
-│   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter + per-group webhook log)
-├── events/               # Provider-agnostic route matching
-│   └── match.ts          # matchRoute, eventOwners, extractBranch, keyword regex filtering
-├── providers/            # Forge webhook providers (verify + parse/normalize to GitHub-shaped events)
-│   ├── types.ts          # Provider interface (matches/verify/parse)
-│   ├── hmac.ts           # HMAC-SHA256 + timing-safe compare helpers
-│   ├── index.ts          # detectProvider() registry (gitea, github, custom)
-│   ├── github/           # X-GitHub-Event + X-Hub-Signature-256 ("sha256=" prefix); extracts installation.id
-│   │   ├── verify.ts     # HMAC signature verify
-│   │   └── parse.ts      # parseEvent (headers + body → WebhookEvent)
-│   ├── gitea/            # X-Gitea-Event + X-Gitea-Signature (plain hex HMAC)
-│   │   ├── verify.ts     # HMAC signature verify (no prefix)
-│   │   └── parse.ts      # parse + normalize Gitea payloads to GitHub shape
-│   └── custom/           # X-WebHooker-Signature (sha256= HMAC) + arbitrary JSON → `custom` events
-│       └── index.ts      # matches/verify/parse for non-forge senders
-├── formatters/           # Platform-neutral message formatters (was formatter.ts)
-│   ├── index.ts          # formatEvent: 29-event switch → NeutralMessage + re-exports
-│   ├── colors.ts         # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
-│   ├── helpers.ts        # emojiPrefix, T, buildMessage
-│   └── *.ts              # push, pull-request, issues, comments, workflow, release, create,
-│                         # repo, check, review, commit-comment, deployment, member, label,
-│                         # milestone, discussion, repository, security, generic, ping, custom
-├── drivers/              # Platform drivers (pluggable push targets)
-│   ├── types.ts          # PlatformDriver interface + SendResult (send + edit)
-│   ├── index.ts          # getDriver() registry (discord default + telegram)
-│   ├── discord/
-│   │   ├── index.ts      # DiscordDriver: send/edit → renderNeutralMessage + rest.sendMessage/editMessage
-│   │   ├── render.ts     # renderNeutralMessage: NeutralMessage → Discord FormattedMessage
-│   │   ├── rest.ts       # Discord REST sendMessage/editMessage with retry + rate-limit handling
-│   │   ├── interactions.ts # Ed25519 verify + interaction handlers (/gh, buttons, modals)
-│   │   └── commands.ts   # APP_COMMANDS + registerGlobalCommands/syncGuildCommands/syncCommands
-│   └── telegram/
-│       ├── index.ts      # TelegramDriver: send/edit → renderNeutralMessage + rest.sendMessage (avatar rich-header card)
-│       ├── render.ts     # renderNeutralMessage: NeutralMessage → Telegram HTML (parse_mode HTML)
-│       ├── rest.ts       # Telegram Bot API sendMessage/sendPhoto/editMessage* (chat_id + message_thread_id), retry
-│       ├── updates.ts    # POST /telegram/webhook: secret-token verify + handleTelegramUpdate
-│       └── commands.ts   # Telegram /gh login|logout|comment|merge|close + reply-message parsing + syncTelegramWebhook
-├── github/
-│   ├── oauth.ts          # OAuth URL, callback token exchange, getUserOctokit, comment/getComment/editComment/deleteComment/merge/close actions
-│   └── store.ts          # KV token CRUD + D1 discord-link/telegram-link mapping (was token-store.ts)
-├── web/                  # HTTP UI/API routes
-│   ├── oauth-routes.ts   # GET /auth/github, callback (admin session / invite accept / self-signup / discord-link / telegram-link), DELETE /token/:userId
-│   ├── action-routes.ts  # POST /api/comment|merge|close|react (Bearer token auth via shared middleware)
-│   ├── admin-routes.ts   # /admin UI + GET/PUT /admin/api/routes|groups|me|logs|invites|audit (auth middleware + role guards, validation)
-│   ├── auth.ts           # Shared auth middleware + guards: sessionMiddleware, requireAnyAccess, requireGroup(Role), bearerAuthMiddleware, clientIp
-│   ├── invites.ts        # Invite CRUD (KV invite:{token}, 7d TTL) + acceptInvite (join group as admin/viewer)
-│   ├── session.ts        # Session CRUD (KV session:{id}), isAdminUser, cookie helpers
-│   ├── groups.ts         # Group CRUD (config:groups), member roles (normalizeGroupMembers/memberRole), resolveScope + role helpers (roleAt/canEditRoutes/canEditGroup)
-│   ├── tenants.ts        # Per-group webhook secret CRUD (KV tenant:{groupId}, 32-byte random hex)
-│   ├── home-routes.ts    # landing page (zh/en)
-│   ├── legal-routes.ts   # /terms + /privacy pages (zh/en)
-│   └── richheader-routes.ts # GET /api/richheader: Open Graph page for Telegram avatar link-preview card
-└── lib/                  # shared infra
-    ├── i18n.ts           # loadTranslations (KV i18n:{lang} overrides), t() with param interpolation
-    ├── send-log.ts       # SendRecord, recordSend/getSendLog/getSendLogById (D1 send_logs)
-    ├── audit.ts          # recordAudit/getAuditLog/pruneAuditLogs (D1 audit_logs, best-effort writes)
-    ├── log.ts            # JSON console logger (info/warn/error/fatal)
-    └── locales/          # en.ts, zh.ts translation dictionaries
+app/                     # Vue 3 UI (Nuxt app dir)
+├── app.vue              # root component (NuxtPage)
+├── assets/css/main.css  # Tailwind entry: theme tokens (RGB-triplet vars) + @layer components (@apply) + Vue transition glue
+├── pages/               # index (landing), terms, privacy, admin/[...slug] (console SPA)
+├── components/          # ConsolePage, RouteCard/Editor, GroupEditor, MembersPanel, WebhookPanel,
+│                        # SendLogs, AuditLog, AppToasts, LegalLayout
+├── composables/         # useI18n, useToasts, useGroups, useGroupRoutes, useLogs, useAudit, useInvites, useWebhook
+├── types.ts             # shared client types (Route, Group, Filter, ...)
+└── utils/legal.ts       # terms/privacy HTML bodies (zh/en)
+server/                  # Nitro server
+├── routes/              # H3 handlers: /health, /webhook[/:groupId], /discord/interactions, /telegram/webhook,
+│                        # /auth/github*, /admin/{login,logout,invite,api/**}, /api/{comment,merge,close,react,richheader}
+├── tasks/               # scheduled (cron */5): discord-sync, telegram-sync, audit-prune
+├── error-handler.ts     # JSON error handler
+└── lib/
+    ├── types.ts         # Env, Config, Route, Filter, Group, WebhookEvent, NeutralMessage
+    ├── config.ts        # loadRoutes/saveRoutes (KV config:routes, cache w/ 60s TTL), loadConfig from env
+    ├── cf.ts            # cfEnv(event) — env bindings from event.context.cloudflare
+    ├── http.ts          # shared HTTP helpers
+    ├── webhook.ts       # processWebhook/handleWebhook: tenant lookup, provider detect/verify/parse, dedup, scoped dispatch
+    ├── core/
+    │   └── dispatch.ts  # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter + per-group webhook log)
+    ├── events/
+    │   └── match.ts     # matchRoute, eventOwners, extractBranch, keyword regex filtering
+    ├── providers/       # Forge webhook providers (verify + parse/normalize to GitHub-shaped events)
+    │   ├── types.ts     # Provider interface (matches/verify/parse)
+    │   ├── hmac.ts      # HMAC-SHA256 + timing-safe compare helpers
+    │   ├── index.ts     # detectProvider() registry (gitea, github, custom)
+    │   ├── github/      # X-GitHub-Event + X-Hub-Signature-256 ("sha256=" prefix); extracts installation.id
+    │   │   ├── verify.ts
+    │   │   └── parse.ts
+    │   ├── gitea/       # X-Gitea-Event + X-Gitea-Signature (plain hex HMAC)
+    │   │   ├── verify.ts
+    │   │   └── parse.ts # parse + normalize Gitea payloads to GitHub shape
+    │   └── custom/      # X-WebHooker-Signature (sha256= HMAC) + arbitrary JSON → `custom` events
+    ├── formatters/      # Platform-neutral message formatters (was formatter.ts)
+    │   ├── index.ts     # formatEvent: 29-event switch → NeutralMessage + re-exports
+    │   ├── colors.ts    # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
+    │   ├── helpers.ts   # emojiPrefix, T, buildMessage, commitLink/branchLink/tagLink
+    │   └── *.ts         # push, pull-request, issues, comments, workflow, release, create,
+    │                    # repo, check, review, commit-comment, deployment, member, label,
+    │                    # milestone, discussion, repository, security, generic, ping, custom
+    ├── drivers/         # Platform drivers (pluggable push targets)
+    │   ├── types.ts     # PlatformDriver interface + SendResult (send + edit)
+    │   ├── index.ts     # getDriver() registry (discord default + telegram)
+    │   ├── discord/
+    │   │   ├── index.ts       # DiscordDriver: send/edit → renderNeutralMessage + rest.sendMessage/editMessage
+    │   │   ├── render.ts      # renderNeutralMessage: NeutralMessage → Discord FormattedMessage
+    │   │   ├── rest.ts        # Discord REST sendMessage/editMessage with retry + rate-limit handling
+    │   │   ├── interactions.ts # Ed25519 verify + interaction handlers (/gh, buttons, modals)
+    │   │   └── commands.ts    # APP_COMMANDS + registerGlobalCommands/syncGuildCommands/syncCommands
+    │   └── telegram/
+    │       ├── index.ts      # TelegramDriver: send/edit → renderNeutralMessage + rest.sendMessage (avatar rich-header card)
+    │       ├── render.ts     # renderNeutralMessage: NeutralMessage → Telegram HTML (parse_mode HTML)
+    │       ├── rest.ts       # Telegram Bot API sendMessage/sendPhoto/editMessage* (chat_id + message_thread_id), retry
+    │       ├── updates.ts    # POST /telegram/webhook: secret-token verify + handleTelegramUpdate
+    │       └── commands.ts   # Telegram /gh login|logout|comment|merge|close + reply-message parsing + syncTelegramWebhook
+    ├── github/
+    │   ├── oauth.ts     # OAuth URL, callback token exchange, getUserOctokit, comment/getComment/editComment/deleteComment/merge/close actions
+    │   └── store.ts     # KV token CRUD + D1 discord-link/telegram-link mapping (was token-store.ts)
+    ├── web/             # HTTP UI/API logic (called from server/routes)
+    │   ├── oauth.ts     # handleOAuthStart/Callback, install page + bind, personal-group self-signup
+    │   ├── actions.ts   # POST /api/comment|merge|close|react (Bearer token auth via shared middleware)
+    │   ├── admin.ts     # adminLogin/Logout, adminApi* (routes|groups|me|logs|invites|audit|webhook)
+    │   ├── auth.ts      # Shared auth middleware + guards: requireAnyAccess, requireGroup(Role), bearerUserId, clientIp
+    │   ├── invites.ts   # Invite CRUD (KV invite:{token}, 7d TTL) + acceptInvite (join group as admin/viewer)
+    │   ├── session.ts   # Session CRUD (KV session:{id}), isAdminUser, cookie helpers
+    │   ├── groups.ts    # Group CRUD (config:groups), member roles (normalizeGroupMembers/memberRole), resolveScope + role helpers (roleAt/canEditRoutes/canEditGroup)
+    │   ├── tenants.ts   # Per-group webhook secret CRUD (KV tenant:{groupId}, 32-byte random hex)
+    │   └── richheader.ts # GET /api/richheader: Open Graph page for Telegram avatar link-preview card
+    └── lib/             # shared infra
+        ├── i18n.ts      # loadTranslations (KV i18n:{lang} overrides), t() with param interpolation
+        ├── send-log.ts  # SendRecord, recordSend/getSendLog/getSendLogById (D1 send_logs)
+        ├── audit.ts     # recordAudit/getAuditLog/pruneAuditLogs (D1 audit_logs, best-effort writes)
+        ├── log.ts       # JSON console logger (info/warn/error/fatal)
+        └── locales/     # en.ts, zh.ts translation dictionaries
 
-src/__tests__/            # bun test unit tests (webhook, formatter, discord, telegram, admin, groups, invites, audit, send-log, token-store)
+tests/                   # bun test unit tests (webhook, formatter, discord, telegram, admin, groups, invites, audit, send-log, token-store, ...)
 ```
 
 ## Responsibilities
@@ -129,12 +141,12 @@ src/__tests__/            # bun test unit tests (webhook, formatter, discord, te
   `payload.repository.full_name`; fall back to `t("common.repository")` when missing.
 - Do NOT use `"Comment on org/repo"` / `"Review on org/repo"` prefixes. Comments, reviews
   and inline comments use the same `{repo}{#number}: {title}` title as their parent object.
-- All event-specific emoji live in `src/formatters/` (via the `emojiPrefix` helper), never in
+- All event-specific emoji live in `server/lib/formatters/` (via the `emojiPrefix` helper), never in
   the locale files. Emoji is controlled per group through the `Group.emoji` toggle (default true);
   `showEmoji=false` must strip every emoji from titles, descriptions, fields and links.
 - Milestone progress bars (🟢🟡🟠⬜) are data visualization and are exempt from the emoji toggle.
 - Commit hashes, branches and tags render as inline code wrapped in a hyperlink
-  (`commitLink`/`branchLink`/`tagLink` helpers in `src/formatters/helpers.ts`, e.g.
+  (`commitLink`/`branchLink`/`tagLink` helpers in `server/lib/formatters/helpers.ts`, e.g.
   ``[`abc123d`](https://.../commit/abc123def456)``, ``[`main`](https://.../tree/main)``),
   falling back to plain inline code when the repo base URL is unavailable.
 - Locale templates use a `{emoji}` placeholder immediately followed by the text (no space);
@@ -143,10 +155,11 @@ src/__tests__/            # bun test unit tests (webhook, formatter, discord, te
 ## Development
 
 ```bash
-npx wrangler dev      # Local dev (Miniflare)
-npm run typecheck     # Type checking
+npm run dev           # Nuxt dev (HMR + Nitro dev server)
+npx wrangler dev      # Miniflare preview of a built worker (npm run build first)
+npm run typecheck     # Type checking (nuxt typecheck)
 npm run lint          # ESLint
-npm test              # Unit tests (bun test, under src/__tests__)
+npm test              # Unit tests (bun test, under tests/)
 ```
 
 ## Documentation

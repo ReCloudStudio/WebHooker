@@ -1,5 +1,7 @@
 node_modules
 dist
 data
+.output
+.nuxt
 wrangler.jsonc
 bun.lock

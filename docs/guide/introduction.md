@@ -1,11 +1,11 @@
 # Introduction
 
-WebHooker is a GitHub/Gitea webhook dispatcher built on Cloudflare Workers. It receives webhook events from supported forges (GitHub, Gitea — more can be added via `src/providers/`), applies configurable filters, formats them into rich messages, and delivers them to Discord channels/threads (embeds) and Telegram chats/topics (HTML) via their REST APIs. In-Discord `/gh` interactions arrive via an HTTPS Interactions Endpoint (Ed25519-verified); Telegram `/gh` commands arrive via the Telegram webhook. Routes and groups are managed through a built-in Web UI.
+WebHooker is a GitHub/Gitea webhook dispatcher built on Cloudflare Workers. It receives webhook events from supported forges (GitHub, Gitea — more can be added via `server/lib/providers/`), applies configurable filters, formats them into rich messages, and delivers them to Discord channels/threads (embeds) and Telegram chats/topics (HTML) via their REST APIs. In-Discord `/gh` interactions arrive via an HTTPS Interactions Endpoint (Ed25519-verified); Telegram `/gh` commands arrive via the Telegram webhook. Routes and groups are managed through a built-in Web UI.
 
 ## Architecture
 
 ```text
-GitHub / Gitea Webhook → Cloudflare Worker (Hono)
+GitHub / Gitea Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
                  ├── POST /webhook → detect provider → verify → dedup → filter → format → Discord (REST) / Telegram (Bot API)
                  ├── POST /discord/interactions → verify (Ed25519) → handle /gh slash & context commands
                  ├── POST /telegram/webhook → verify (secret token) → handle /gh commands
@@ -38,10 +38,10 @@ GitHub / Gitea Webhook → Cloudflare Worker (Hono)
 ## Tech Stack
 
 - **Runtime**: Cloudflare Workers
-- **HTTP Framework**: Hono
+- **HTTP Framework**: Nuxt 4 / Nitro (H3)
 - **Discord delivery**: Discord REST API (interactions via an Ed25519-verified HTTPS Interactions Endpoint)
 - **Telegram delivery**: Telegram Bot API (webhook with optional secret-token verification)
-- **Web UI**: Nuxt 3 static SPA served from Worker assets
+- **Web UI**: Nuxt 4 (Vue 3 + Tailwind CSS v3) — server-rendered home/legal pages, client-side `/admin` console
 - **Storage**: Cloudflare KV + D1
 - **Auth**: Web Crypto API (HMAC-SHA256, Ed25519), octokit (GitHub API)
 - **Language**: TypeScript

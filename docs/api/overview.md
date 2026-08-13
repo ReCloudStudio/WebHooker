@@ -1,6 +1,6 @@
 # API Overview
 
-WebHooker exposes an HTTP API via Hono on Cloudflare Workers.
+WebHooker exposes an HTTP API via Nitro on Cloudflare Workers.
 
 ## Base URL
 

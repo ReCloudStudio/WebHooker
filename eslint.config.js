@@ -4,7 +4,10 @@ import tsParser from "@typescript-eslint/parser";
 
 export default defineConfig([
   {
-    files: ["src/**/*.ts"],
+    ignores: ["docs/.vitepress/**", ".output/**", ".nuxt/**", "dist/**"],
+  },
+  {
+    files: ["server/lib/**/*.ts", "server/routes/**/*.ts", "server/tasks/**/*.ts", "tests/**/*.ts"],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

@@ -1,35 +1,46 @@
 {
   "name": "webhooker",
-  "version": "0.2.0",
+  "version": "0.3.0",
+  "private": true,
   "type": "module",
+  "description": "GitHub / Gitea webhook → Discord / Telegram dispatcher on Cloudflare Workers (Nuxt 4)",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "nuxt dev",
+    "build": "nuxt build",
     "deploy": "wrangler deploy",
-    "db:migrate": "wrangler d1 migrations apply webhooker --local",
-    "db:migrate:prod": "wrangler d1 migrations apply webhooker --remote",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src/",
+    "cf:dev": "nuxt build && wrangler dev",
+    "preview": "nuxt preview",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint .",
     "lint:md": "markdownlint '**/*.md' --ignore node_modules --ignore dist",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test": "bun test",
+    "db:migrate": "wrangler d1 migrations apply webhooker --local",
+    "db:migrate:prod": "wrangler d1 migrations apply webhooker --remote",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
-    "test": "bun test"
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
-    "hono": "^4.7.0",
-    "octokit": "^4.1.0"
+    "h3": "^1.15.3",
+    "nuxt": "^4.1.0",
+    "octokit": "^4.1.0",
+    "vue": "^3.5.13"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260801.1",
+    "@nuxtjs/tailwindcss": "^6.14.0",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
     "eslint": "^9.18.0",
     "markdownlint-cli": "^0.49.1",
     "prettier": "^3.9.6",
+    "tailwindcss": "^3.4.19",
     "typescript": "^5.7.0",
     "vitepress": "^1.6.4",
+    "vue-router": "^5.2.0",
+    "vue-tsc": "^3.0.0",
     "wrangler": "4"
   }
 }

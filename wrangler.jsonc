@@ -1,16 +1,15 @@
 {
 	"name": "webhooker",
-	"main": "src/index.ts",
+	"main": ".output/server/index.mjs",
 	"compatibility_date": "2025-01-01",
-	"compatibility_flags": [],
+	"compatibility_flags": ["nodejs_compat"],
 	"build": {
-		"command": "cd admin && bun install --frozen-lockfile && node node_modules/nuxt/bin/nuxt.mjs generate"
+		"command": "npm run build"
 	},
 	"assets": {
-		"directory": "./admin/.output/public",
+		"directory": "./.output/public",
 		"binding": "ASSETS",
-		"run_worker_first": true,
-		"not_found_handling": "single-page-application"
+		"run_worker_first": true
 	},
 	"triggers": {
 		"crons": [

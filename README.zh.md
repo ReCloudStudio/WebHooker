@@ -1,6 +1,6 @@
 # WebHooker
 
-GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare Workers 接收 webhook 事件，应用过滤器，将格式化消息路由到 Discord 频道/子区与 Telegram 群组/话题。各 forge 适配器位于 `src/providers/`（目前支持 GitHub + Gitea；GitLab 等可后续扩展）。
+GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare Workers 接收 webhook 事件，应用过滤器，将格式化消息路由到 Discord 频道/子区与 Telegram 群组/话题。各 forge 适配器位于 `server/lib/providers/`（目前支持 GitHub + Gitea；GitLab 等可后续扩展）。
 
 ## 功能特性
 
@@ -24,7 +24,7 @@ GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare W
 ## 架构
 
 ```text
-GitHub Webhook → Cloudflare Worker (Hono)
+GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
                  ├── POST /webhook → 验证 → 去重 → 过滤 → 格式化 → Discord (REST) / Telegram (Bot API)
                  ├── POST /discord/interactions → 验证 (Ed25519) → 处理命令/按钮/modal
                  ├── POST /telegram/webhook → 验证 (secret token) → 处理 /gh 命令

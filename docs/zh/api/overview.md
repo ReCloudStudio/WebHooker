@@ -1,6 +1,6 @@
 # API 概览
 
-WebHooker 通过 Hono 在 Cloudflare Workers 上提供 HTTP API。
+WebHooker 通过 Nitro（Nuxt 4）在 Cloudflare Workers 上提供 HTTP API。
 
 ## 基础 URL
 
