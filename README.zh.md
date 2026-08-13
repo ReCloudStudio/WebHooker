@@ -96,23 +96,7 @@ bunx wrangler dev    # 启动本地开发服务器
 ]
 ```
 
-`target.platform` 选择推送目标：`discord`（默认）或 `telegram`。Discord 目标需 `target.channelId`（可选 `threadId` 指向子区）；Telegram 目标需 `target.chatId`（可选 `topicId` 指向话题）。旧的单数 `target` 字段仍会被自动迁移。不存在默认频道回退。
-
-在路由上设置 `discordRoleIds`，可在该路由触发时 @提醒 Discord 身份组：
-
-```json
-{
-  "id": "release-notify",
-  "name": "发布时提醒",
-  "enabled": true,
-  "groupId": "default",
-  "discordRoleIds": ["111111111111111111"],
-  "filters": [{ "type": "event", "match": "release" }],
-  "targets": [{ "platform": "discord", "channelId": "频道ID" }]
-}
-```
-
-路由隶属于**分组**（KV `config:groups`），分组用于限定管理权限，并可限制哪些组织/用户的事件流入——包括来源平台（`providers`：`github` / `gitea`）。完整模式见 `config.example.yaml` 与 `docs/zh/guide/configuration.md`。
+`target.platform` 选择推送目标：`discord`（默认）或 `telegram`。Discord 目标需 `target.channelId`（可选 `threadId` 指向子区）；Telegram 目标需 `target.chatId`（可选 `topicId` 指向话题）。路由隶属于**分组**（KV `config:groups`），分组用于限定管理权限，并可限制哪些组织/用户的事件流入。完整模式见[路由与目标](https://webhooker.docs.worldexecute.me/zh/guide/routes)与[分组与访问控制](https://webhooker.docs.worldexecute.me/zh/guide/groups)指南。
 
 ### Web 控制台（`/admin`）
 
@@ -122,24 +106,11 @@ bunx wrangler dev    # 启动本地开发服务器
 2. 访问 `/admin` 并用 GitHub 登录。无任何权限的用户收到 `403`——除非开启 `ALLOW_SELF_SIGNUP=1`（自动获得个人分组）或通过分组邀请链接加入。
 3. 修改会立即写入 KV，webhook 管线随即生效。
 
-在 `/admin/logout` 退出登录。
-
-**权限模型。** 每个分组都有带角色的 `members`：`owner`（管理分组、成员、邀请；可编辑路由）、`admin`（编辑路由、查看日志）、`viewer`（只读）。超级管理员（`ADMIN_USER_IDS`）绕过所有角色限制。旧的 `adminIds` 字段按 owner 读取。owner 可从分组页面生成一次性、7 天有效的邀请链接；所有管理操作（登录、分组/路由/成员/邀请变更）都会写入 D1 `audit_logs` 表，并按 `AUDIT_RETENTION_DAYS`（默认 90 天）自动清理。
-
-完整语法示例见 `config.example.yaml`。
+在 `/admin/logout` 退出登录。每个分组都有带角色的 `members`（`owner` / `admin` / `viewer`）；所有管理操作（登录、分组/路由/成员/邀请变更）都会写入 D1 `audit_logs` 表。
 
 ### 过滤器类型
 
-| 类型      | 匹配内容                            | 备注                                                                                                          |
-|-----------|-------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `event`   | `push`、`pull_request`、`issues` 等 | GitHub 事件名                                                                                                 |
-| `repo`    | `org/repo` 全名                     |                                                                                                               |
-| `actor`   | 发送者登录名                        |                                                                                                               |
-| `action`  | `opened`、`closed`、`published` 等  |                                                                                                               |
-| `branch`  | 分支名                              | 支持 push、PR/review、create/delete、workflow_run、workflow_job、check_suite、deployment、code_scanning_alert |
-| `keyword` | payload 中的文本                    | 所有过滤器均支持 `*`/`?` 通配符与 `/正则/`（不区分大小写）                                                    |
-
-设置 `exclude: true` 可取反过滤器。模式语法见[过滤器教程](https://webhooker.docs.worldexecute.me/zh/guide/filters)。
+所有过滤器均支持纯文本、`*`/`?` 通配符与 `/正则/`（不区分大小写）；设置 `exclude: true` 可取反。模式语法与完整过滤器参考见[过滤器教程](https://webhooker.docs.worldexecute.me/zh/guide/filters)。
 
 ## API
 
@@ -180,61 +151,12 @@ bunx wrangler dev    # 启动本地开发服务器
 - `GET /admin/api/logs` — 发送日志（按权限过滤）
 - `GET /admin/api/logs/:id` — 单条发送日志
 
-## GitHub App 配置教程
+## 配置教程
 
-### 1. 创建 App
-
-1. 访问 <https://github.com/settings/apps/new>
-2. 填写信息：
-   - **GitHub App name**：`WebHooker`（或自定义名称）
-   - **Homepage URL**：你的域名
-   - **Webhook URL**：`https://your-domain/webhook`
-   - **Webhook secret**：生成并复制到 `GITHUB_WEBHOOK_SECRET`
-3. 设置权限：
-   - **Repository permissions**：Contents (read)、Issues (write)、Pull requests (write)、Metadata (read)、Checks (read)、Deployments (read)、Discussions (read)、Code scanning alerts (read)、Dependabot alerts (read)
-   - **Organization permissions**：Members (read) — 如需要
-4. 订阅事件：Push、Pull request、Issues、Issue comment、Workflow run、Workflow job、Status、Deployment、Deployment status、Ping、Release、Create、Delete、Star、Fork、Check run、Check suite、Pull request review、Pull request review comment、Commit comment、Member、Label、Milestone、Discussion、Discussion comment、Repository、Code scanning alert、Dependabot alert
-5. 生成私钥 — 可选；`GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` 仅用于 [App 安装流程](/zh/guide/deployment#github-app-设置)在安装后页面解析安装所属账号的登录名。
-
-### 2. 安装 App
-
-1. 创建后进入 App 设置页
-2. 点击 "Install App" → 选择组织/用户
-3. 选择要监控的仓库
-
-### 3. 配置 OAuth
-
-1. 进入 App → OAuth settings
-2. 设置 **Callback URL**：`https://your-domain/auth/github/callback`
-3. 复制 Client ID 和 Client Secret 到环境变量
-
-## Discord 机器人配置
-
-在 <https://discord.com/developers/applications> 创建机器人，将 Token 复制到 `DISCORD_TOKEN`。
-
-### OAuth2 邀请
-
-使用 `bot` scope 将机器人加入服务器，需要以下权限：
-
-| 权限                                        | 数值           | 用途                                     |
-|---------------------------------------------|----------------|------------------------------------------|
-| 查看频道 (View Channels)                    | `1024`         | 查看目标频道以发送消息                   |
-| 发送消息 (Send Messages)                    | `2048`         | 向频道发送 embed/消息                    |
-| 在线程中发送消息 (Send Messages in Threads) | `274877906944` | 当路由配置了 `threadId` 时向线程发送消息 |
-
-权限组合整数值：`274877910016`
-
-邀请链接（将 `CLIENT_ID` 替换为机器人的 Client ID）。需要 `applications.commands` scope，否则无法注册斜杠 / 右键菜单命令：
-
-```
-https://discord.com/oauth2/authorize?client_id=你的机器人CLIENT_ID&permissions=274877910016&scope=bot+applications.commands
-```
-
-### Interactions Endpoint
-
-将应用的 **Public Key**（开发者门户 → General Information）复制到 `DISCORD_PUBLIC_KEY`，并将 **Interactions Endpoint URL** 设为 `https://your-domain/discord/interactions`。所有交互（斜杠命令、按钮、modal）均通过 Ed25519 签名验证。
-
-bot 从不连接 Discord Gateway，因此显示为**离线**——消息推送不受影响（始终走 REST）。
+- **GitHub App** — 创建应用、订阅事件、配置 OAuth 与 _Setup URL_（租户隔离）：见 [GitHub App 配置](https://webhooker.docs.worldexecute.me/zh/guide/deployment#github-app-设置)
+- **Discord 机器人** — 创建机器人、以 `applications.commands` scope 邀请（组合权限整数 `274877910016`）、配置 Interactions Endpoint：见 [Discord Bot 配置](https://webhooker.docs.worldexecute.me/zh/guide/deployment#discord-bot-设置)。bot 从不连接 Discord Gateway，因此显示为**离线**——消息推送不受影响（始终走 REST）。
+- **Telegram 机器人** — 用 [@BotFather](https://t.me/BotFather) 创建机器人，设置 `TELEGRAM_TOKEN`（可选 `TELEGRAM_WEBHOOK_SECRET`）；webhook 由定时任务自动同步：见 [Telegram 机器人配置](https://webhooker.docs.worldexecute.me/zh/guide/deployment#telegram-机器人配置)
+- **部署** — KV 命名空间、D1 数据库与迁移、密钥、部署：见[部署指南](https://webhooker.docs.worldexecute.me/zh/guide/deployment)
 
 ### Bot 指令（以本人身份评论 GitHub）
 
@@ -247,46 +169,10 @@ bot 通过定时任务（每 5 分钟）同步注册原生的**斜杠命令**与
 
 完整参考见[机器人命令指南](https://webhooker.docs.worldexecute.me/zh/guide/commands)。
 
-## Telegram 机器人配置
-
-1. 用 [@BotFather](https://t.me/BotFather) 创建机器人，将 Token 复制到 `TELEGRAM_TOKEN`。
-2. （可选）设置 `TELEGRAM_WEBHOOK_SECRET`；webhook 注册时会作为 `secret_token` 传给 Telegram，`POST /telegram/webhook` 使用时间安全比较校验。
-3. Worker 会在定时任务中自动同步 webhook（`setWebhook` 指向 `{BASE_URL}/telegram/webhook`），因此无需手动调用 `setWebhook`——只需确保 `BASE_URL` 已设置。
-4. 将机器人加入群组（或启用话题），在路由配置中用 `chatId` / `topicId` 指定目标。
-
-在 Telegram 中，`/gh` 命令通过在通知消息上**回复**来使用：`/gh login`、`/gh logout`、`/gh comment <文本>`、`/gh merge`、`/gh close`。见[机器人命令指南](https://webhooker.docs.worldexecute.me/zh/guide/commands)。
-
-头像使用内置 `GET /api/richheader` 渲染为链接预览卡片（可用 `TELEGRAM_RICH_HEADER_HOST` 覆盖）。
-
-## 部署
-
-```bash
-# 在 Cloudflare 设置密钥
-bunx wrangler secret put GITHUB_WEBHOOK_SECRET
-bunx wrangler secret put GITHUB_CLIENT_ID
-bunx wrangler secret put GITHUB_CLIENT_SECRET
-bunx wrangler secret put DISCORD_TOKEN
-bunx wrangler secret put DISCORD_PUBLIC_KEY
-bunx wrangler secret put TELEGRAM_TOKEN
-bunx wrangler secret put ADMIN_USER_IDS
-
-# 创建 KV 命名空间
-bunx wrangler kv namespace create KV
-# 更新 wrangler.jsonc 中的 KV namespace ID
-
-# 创建 D1 数据库并执行迁移
-bunx wrangler d1 create webhooker
-# 更新 wrangler.jsonc d1_databases 中的数据库 ID
-bun run db:migrate:prod   # 将迁移应用到远端 D1 数据库
-
-# 部署
-bunx wrangler deploy
-```
-
 ## 开发命令
 
 ```bash
-bunx wrangler dev      # 本地开发服务器（Miniflare）
+bun run dev           # Nuxt 开发服务器（HMR）
 bun run typecheck     # 类型检查
 bun run lint          # ESLint
 bun test              # 单元测试
@@ -294,37 +180,7 @@ bun test              # 单元测试
 
 ## 支持的事件
 
-| 事件                          | 格式化内容                           |
-|-------------------------------|--------------------------------------|
-| `push`                        | 提交列表、分支、作者                 |
-| `pull_request`                | PR 标题、分支、差异统计              |
-| `issues`                      | Issue 标题、标签、指派人             |
-| `issue_comment`               | 评论内容、Issue 引用                 |
-| `workflow_run`                | 工作流状态、结论、耗时（原地更新）   |
-| `workflow_job`                | 作业名、状态、结论                   |
-| `status`                      | 提交状态、上下文、状态值             |
-| `deployment`                  | 环境、引用、任务                     |
-| `deployment_status`           | 环境、状态、commit ref               |
-| `check_run`                   | 状态、结论、详情链接（原地更新）     |
-| `check_suite`                 | 套件结论、head 分支、提交            |
-| `ping`                        | Webhook 确认                         |
-| `release`                     | Tag、内容、资产                      |
-| `create` / `delete`           | 分支/tag 创建或删除                  |
-| `star`                        | Star 数量、仓库                      |
-| `fork`                        | Fork 来源 → 目标                     |
-| `pull_request_review`         | 审查状态、内容预览                   |
-| `pull_request_review_comment` | 行内代码评论、文件路径、行号         |
-| `commit_comment`              | Commit SHA、评论内容                 |
-| `member`                      | 协作者添加/移除                      |
-| `label`                       | 标签名、颜色、描述                   |
-| `milestone`                   | 进度条、open/closed 计数、截止日期   |
-| `discussion`                  | 讨论标题、分类、操作                 |
-| `discussion_comment`          | 评论内容、讨论引用                   |
-| `repository`                  | 仓库重命名/转移详情                  |
-| `code_scanning_alert`         | 严重程度、规则 ID、文件路径          |
-| `dependabot_alert`            | 严重程度、包名、受影响范围、修复版本 |
-
-任何其他事件类型回退到通用格式化器（事件类型、操作、操作人、仓库、原始载荷）。
+28 个事件格式化器（push、pull_request、issues、workflow_run、release 等）外加 `custom` webhook；不支持的事件回退到通用格式化器。带嵌入亮点的完整表格见[支持的事件](https://webhooker.docs.worldexecute.me/zh/events/supported)。
 
 ## 许可证
 

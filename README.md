@@ -96,23 +96,7 @@ Routes are stored in KV (`config:routes` as JSON). There are **no default routes
 ]
 ```
 
-`target.platform` selects the push target: `discord` (default) or `telegram`. Discord targets require `target.channelId` (optional `threadId` for a thread); Telegram targets require `target.chatId` (optional `topicId` for a topic). The legacy singular `target` field is still migrated automatically. There is no fallback to a default channel.
-
-Set `discordRoleIds` on a route to ping Discord roles (身份组) whenever it fires:
-
-```json
-{
-  "id": "release-notify",
-  "name": "Notify on Release",
-  "enabled": true,
-  "groupId": "default",
-  "discordRoleIds": ["111111111111111111"],
-  "filters": [{ "type": "event", "match": "release" }],
-  "targets": [{ "platform": "discord", "channelId": "CHANNEL_ID" }]
-}
-```
-
-Routes belong to **groups** (KV `config:groups`) that scope admin access and can restrict which org/user events flow in — including which source platform (`providers`: `github` / `gitea`). See `config.example.yaml` and `docs/guide/configuration.md` for the full schema.
+`target.platform` selects the push target: `discord` (default) or `telegram`. Discord targets require `target.channelId` (optional `threadId` for a thread); Telegram targets require `target.chatId` (optional `topicId` for a topic). Routes belong to **groups** (KV `config:groups`) that scope admin access and can restrict which org/user events flow in. See the [Routes & Targets](https://webhooker.docs.worldexecute.me/guide/routes) and [Groups & Access Control](https://webhooker.docs.worldexecute.me/guide/groups) guides for the full schema.
 
 ### Web UI (`/admin`)
 
@@ -122,24 +106,11 @@ The built-in config console lets you manage routes and groups in the browser (ad
 2. Visit `/admin` and sign in with GitHub. Users with no access get `403` — unless `ALLOW_SELF_SIGNUP=1` (they receive a personal group) or they follow a group invite link.
 3. Changes are written to KV immediately and picked up by the webhook pipeline.
 
-Sign out at `/admin/logout`.
-
-**Access model.** Every group has `members` with a role: `owner` (manage group, members, invites; edit routes), `admin` (edit routes, view logs), or `viewer` (read-only). Super admins (`ADMIN_USER_IDS`) bypass everything. Legacy `adminIds` are read as owners. Owners generate single-use, 7-day invite links from the group page; group admins and viewers can browse, admins edit, owners administer. All admin operations (logins, group/route/member/invite changes) are recorded in the D1 `audit_logs` table, pruned after `AUDIT_RETENTION_DAYS` (default 90).
-
-See `config.example.yaml` for full syntax examples.
+Sign out at `/admin/logout`. Every group has `members` with a role (`owner` / `admin` / `viewer`); all admin operations are recorded in the D1 `audit_logs` table.
 
 ### Filter Types
 
-| Type      | Matches                                | Notes                                                                                                              |
-|-----------|----------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| `event`   | `push`, `pull_request`, `issues`, etc. | GitHub event name                                                                                                  |
-| `repo`    | `org/repo` full name                   |                                                                                                                    |
-| `actor`   | Sender login                           |                                                                                                                    |
-| `action`  | `opened`, `closed`, `published`, etc.  |                                                                                                                    |
-| `branch`  | Branch name                            | Works for push, PR/review, create/delete, workflow_run, workflow_job, check_suite, deployment, code_scanning_alert |
-| `keyword` | Text in payload body                   | All filters support `*`/`?` globs and `/regex/` patterns (case-insensitive)                                        |
-
-Set `exclude: true` to invert any filter. See the [Filter Tutorial](https://webhooker.docs.worldexecute.me/guide/filters) for the pattern syntax.
+Every filter supports plain text, `*`/`?` globs, and `/regex/` patterns (case-insensitive); set `exclude: true` to invert. See the [Filter Tutorial](https://webhooker.docs.worldexecute.me/guide/filters) for the pattern syntax and the full filter reference.
 
 ## API
 
@@ -180,62 +151,12 @@ Set `exclude: true` to invert any filter. See the [Filter Tutorial](https://webh
 - `GET /admin/api/logs` — Send logs (scoped)
 - `GET /admin/api/logs/:id` — Single send-log entry
 
-## GitHub App Setup
+## Setup Guides
 
-### 1. Create App
-
-1. Go to <https://github.com/settings/apps/new>
-2. Fill in:
-   - **GitHub App name**: `WebHooker` (or your choice)
-   - **Homepage URL**: your domain
-   - **Webhook URL**: `https://your-domain/webhook`
-   - **Webhook secret**: generate and copy to `GITHUB_WEBHOOK_SECRET`
-3. Set permissions:
-   - **Repository permissions**: Contents (read), Issues (write), Pull requests (write), Metadata (read), Checks (read), Deployments (read), Discussions (read), Code scanning alerts (read), Dependabot alerts (read)
-   - **Organization permissions**: Members (read) — if needed
-4. Subscribe to events:
-   - Push, Pull request, Issues, Issue comment, Workflow run, Workflow job, Status, Deployment, Deployment status, Ping, Release, Create, Delete, Star, Fork, Check run, Check suite, Pull request review, Pull request review comment, Commit comment, Member, Label, Milestone, Discussion, Discussion comment, Repository, Code scanning alert, Dependabot alert
-5. Generate private key — optional; `GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` are only used by the [App install flow](/guide/deployment#github-app-setup) to resolve the installing account's login on the post-install page.
-
-### 2. Install App
-
-1. After creation, go to the App settings page
-2. Click "Install App" → select org/user
-3. Choose repositories to monitor
-
-### 3. Configure OAuth
-
-1. Go to App → OAuth settings
-2. Set **Callback URL**: `https://your-domain/auth/github/callback`
-3. Copy Client ID and Client Secret to env
-
-## Discord Bot Setup
-
-Create a bot at <https://discord.com/developers/applications>, copy its token to `DISCORD_TOKEN`.
-
-### OAuth2 Invite
-
-Add the bot to your server with the `bot` scope and the following permissions:
-
-| Permission               | Value          | Why                                             |
-|--------------------------|----------------|-------------------------------------------------|
-| View Channels            | `1024`         | See the target channel to post messages         |
-| Send Messages            | `2048`         | Send embeds/messages to channels                |
-| Send Messages in Threads | `274877906944` | Send to threads when a route targets `threadId` |
-
-Combined permission integer: `274877910016`
-
-Invite URL (replace `CLIENT_ID` with your bot's client ID). The `applications.commands` scope is required so the slash / context-menu commands can be registered:
-
-```
-https://discord.com/oauth2/authorize?client_id=YOUR_BOT_CLIENT_ID&permissions=274877910016&scope=bot+applications.commands
-```
-
-### Interactions Endpoint
-
-Copy the application **Public Key** (Developer Portal → General Information) to `DISCORD_PUBLIC_KEY` and set the **Interactions Endpoint URL** to `https://your-domain/discord/interactions`. All interactions (slash commands, buttons, modals) are verified with Ed25519 signatures.
-
-The bot never connects to the Discord Gateway, so it shows as **offline** — messaging is unaffected (always REST).
+- **GitHub App** — create the app, subscribe to events, configure OAuth, and set the _Setup URL_ for tenant isolation: see [GitHub App Setup](https://webhooker.docs.worldexecute.me/guide/deployment#github-app-setup)
+- **Discord bot** — create the bot, invite it with `applications.commands` (combined permission integer `274877910016`), and configure the Interactions Endpoint: see [Discord Bot Setup](https://webhooker.docs.worldexecute.me/guide/deployment#discord-bot-setup). The bot never connects to the Discord Gateway, so it shows as **offline** — messaging is unaffected (always REST).
+- **Telegram bot** — create the bot with [@BotFather](https://t.me/BotFather), set `TELEGRAM_TOKEN` (optional `TELEGRAM_WEBHOOK_SECRET`); the webhook is synced automatically by the scheduled trigger: see [Telegram Bot Setup](https://webhooker.docs.worldexecute.me/guide/deployment#telegram-bot-setup)
+- **Deployment** — KV namespace, D1 database + migrations, secrets, and deploy: see the [Deployment guide](https://webhooker.docs.worldexecute.me/guide/deployment)
 
 ### Bot Commands (comment on GitHub as yourself)
 
@@ -248,42 +169,6 @@ The bot registers native **slash** and **message context-menu** commands, synced
 
 See the full reference in the [Bot Commands guide](https://webhooker.docs.worldexecute.me/guide/commands).
 
-## Telegram Bot Setup
-
-1. Create a bot with [@BotFather](https://t.me/BotFather) and copy its token to `TELEGRAM_TOKEN`.
-2. (Optional) Set `TELEGRAM_WEBHOOK_SECRET`; the webhook registration passes it to Telegram as the `secret_token`, and `POST /telegram/webhook` verifies it with a timing-safe compare.
-3. The worker syncs the webhook from the scheduled trigger (`setWebhook` to `{BASE_URL}/telegram/webhook`), so no manual `setWebhook` call is needed — just make sure `BASE_URL` is set.
-4. Add the bot to a group (or enable topics) and route events to `chatId` / `topicId` in the route config.
-
-In Telegram, `/gh` commands work by **replying to a notification message**: `/gh login`, `/gh logout`, `/gh comment <text>`, `/gh merge`, `/gh close`. See the [Bot Commands guide](https://webhooker.docs.worldexecute.me/guide/commands).
-
-Avatars are rendered as a link-preview card using the built-in `GET /api/richheader` (overridable with `TELEGRAM_RICH_HEADER_HOST`).
-
-## Deployment
-
-```bash
-# Set secrets in Cloudflare
-bunx wrangler secret put GITHUB_WEBHOOK_SECRET
-bunx wrangler secret put GITHUB_CLIENT_ID
-bunx wrangler secret put GITHUB_CLIENT_SECRET
-bunx wrangler secret put DISCORD_TOKEN
-bunx wrangler secret put DISCORD_PUBLIC_KEY
-bunx wrangler secret put TELEGRAM_TOKEN
-bunx wrangler secret put ADMIN_USER_IDS
-
-# Create KV namespace
-bunx wrangler kv namespace create KV
-# Update wrangler.jsonc with the KV namespace ID
-
-# Create D1 database and run migrations
-bunx wrangler d1 create webhooker
-# Update wrangler.jsonc d1_databases with the database ID
-bun run db:migrate:prod   # apply migrations to the remote D1 database
-
-# Deploy
-bunx wrangler deploy
-```
-
 ## Development
 
 ```bash
@@ -295,37 +180,7 @@ bun test              # Unit tests
 
 ## Supported Events
 
-| Event                         | Formatter                                               |
-|-------------------------------|---------------------------------------------------------|
-| `push`                        | Commit list, branch, author                             |
-| `pull_request`                | PR title, branch, diff stats                            |
-| `issues`                      | Issue title, labels, assignees                          |
-| `issue_comment`               | Comment body, issue reference                           |
-| `workflow_run`                | Workflow status, conclusion, duration (edited in place) |
-| `workflow_job`                | Job name, status, conclusion                            |
-| `status`                      | Commit status, context, state                           |
-| `deployment`                  | Environment, ref, task                                  |
-| `deployment_status`           | Environment, status, commit ref                         |
-| `check_run`                   | Status, conclusion, details URL (edited in place)       |
-| `check_suite`                 | Suite conclusion, head branch, commit                   |
-| `ping`                        | Webhook confirmation                                    |
-| `release`                     | Tag, body, assets                                       |
-| `create` / `delete`           | Branch/tag creation/deletion                            |
-| `star`                        | Star count, repository                                  |
-| `fork`                        | Fork source → target                                    |
-| `pull_request_review`         | Review state, body preview                              |
-| `pull_request_review_comment` | Inline code comment, file path, line                    |
-| `commit_comment`              | Commit SHA, comment body                                |
-| `member`                      | Collaborator add/remove                                 |
-| `label`                       | Label name, color, description                          |
-| `milestone`                   | Progress bar, open/closed counts, due date              |
-| `discussion`                  | Discussion title, category, action                      |
-| `discussion_comment`          | Comment body, discussion reference                      |
-| `repository`                  | Repo rename/transfer details                            |
-| `code_scanning_alert`         | Severity, rule ID, file path                            |
-| `dependabot_alert`            | Severity, package, vulnerable range, fix version        |
-
-Any other event type falls back to the generic formatter (event type, action, actor, repo, raw payload).
+28 event formatters (push, pull_request, issues, workflow_run, release, ...) plus `custom` webhooks; unsupported events fall back to a generic formatter. See the full table with embed highlights in [Supported Events](https://webhooker.docs.worldexecute.me/events/supported).
 
 ## License
 

@@ -26,7 +26,7 @@ Branch deletions via `git push --delete` arrive as push events with `deleted: tr
 
 ## How do I point a group at its own webhook endpoint?
 
-See [Per-group endpoint](./configuration#per-group-endpoint) — generate a secret from the group's **Webhook endpoint** panel (owner role), then use `POST /webhook/{groupId}` with the group secret.
+See [Per-group endpoint](./ingress#per-group-endpoint) — generate a secret from the group's **Webhook endpoint** panel (owner role), then use `POST /webhook/{groupId}` with the group secret.
 
 ## Can I run this outside Cloudflare Workers?
 
@@ -34,4 +34,4 @@ No — the worker requires the KV and D1 bindings declared in `wrangler.jsonc` a
 
 ## Where is data stored?
 
-Configuration lives in Cloudflare KV (`config:routes`, `config:groups`); send/audit logs and platform↔GitHub links live in D1. See [Storage Layout](./configuration#kv-storage-layout).
+Configuration lives in Cloudflare KV (`config:routes`, `config:groups`); send/audit logs and platform↔GitHub links live in D1. See [Storage Layout](./storage#kv-storage-layout).

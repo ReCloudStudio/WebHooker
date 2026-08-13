@@ -34,4 +34,4 @@
 
 ## Webhook 日志频道
 
-分组还可以在 Discord 频道/子区或 Telegram 群组/话题中接收每条 webhook 的摘要消息——见[分组 → Webhook 日志频道](./configuration#webhook-日志频道)。这些摘要是尽力发送的，**不会**记录到 `send_logs`。
+分组还可以在 Discord 频道/子区或 Telegram 群组/话题中接收每条 webhook 的摘要消息——见[分组 → Webhook 日志频道](./groups#webhook-日志频道)。这些摘要是尽力发送的，**不会**记录到 `send_logs`。

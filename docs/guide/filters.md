@@ -1,6 +1,6 @@
 # Filter Tutorial
 
-Filters decide which webhook events a [route](./configuration#routes) forwards. A route fires only when **every** filter in its `filters` array matches (AND logic). This page is a hands-on tutorial: it explains how each filter type behaves and how to combine them into real-world routing rules.
+Filters decide which webhook events a [route](./routes) forwards. A route fires only when **every** filter in its `filters` array matches (AND logic). This page is a hands-on tutorial: it explains how each filter type behaves and how to combine them into real-world routing rules.
 
 See [Filter Types](./configuration#filter-types) in the configuration guide for the reference table, and [Supported Events](../events/supported) for the full event list.
 

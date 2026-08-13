@@ -34,7 +34,15 @@ export default defineConfig({
                 { text: "Introduction", link: "/guide/introduction" },
                 { text: "Getting Started", link: "/guide/getting-started" },
                 { text: "Configuration", link: "/guide/configuration" },
-                { text: "Filter Tutorial", link: "/guide/filters" },
+              ],
+            },
+            {
+              text: "Core Concepts",
+              items: [
+                { text: "Routes & Targets", link: "/guide/routes" },
+                { text: "Groups & Access Control", link: "/guide/groups" },
+                { text: "Webhook Ingress & Tenancy", link: "/guide/ingress" },
+                { text: "Storage Layout", link: "/guide/storage" },
               ],
             },
             {
@@ -43,6 +51,7 @@ export default defineConfig({
                 { text: "Bot Commands", link: "/guide/commands" },
                 { text: "Message Format", link: "/guide/message-format" },
                 { text: "Message Language (i18n)", link: "/guide/i18n" },
+                { text: "Filter Tutorial", link: "/guide/filters" },
               ],
             },
             {
@@ -59,7 +68,8 @@ export default defineConfig({
             {
               text: "API Reference",
               items: [
-                { text: "Overview", link: "/api/overview" },
+                { text: "Overview (Public)", link: "/api/overview" },
+                { text: "Admin API", link: "/api/admin" },
                 { text: "OAuth", link: "/api/oauth" },
                 { text: "Actions", link: "/api/actions" },
               ],
@@ -112,7 +122,15 @@ export default defineConfig({
                 { text: "简介", link: "/zh/guide/introduction" },
                 { text: "快速开始", link: "/zh/guide/getting-started" },
                 { text: "配置", link: "/zh/guide/configuration" },
-                { text: "过滤器教程", link: "/zh/guide/filters" },
+              ],
+            },
+            {
+              text: "核心概念",
+              items: [
+                { text: "路由与目标", link: "/zh/guide/routes" },
+                { text: "分组与访问控制", link: "/zh/guide/groups" },
+                { text: "Webhook 接入与租户隔离", link: "/zh/guide/ingress" },
+                { text: "存储布局", link: "/zh/guide/storage" },
               ],
             },
             {
@@ -121,6 +139,7 @@ export default defineConfig({
                 { text: "机器人命令", link: "/zh/guide/commands" },
                 { text: "消息格式", link: "/zh/guide/message-format" },
                 { text: "消息语言 (i18n)", link: "/zh/guide/i18n" },
+                { text: "过滤器教程", link: "/zh/guide/filters" },
               ],
             },
             {
@@ -137,7 +156,8 @@ export default defineConfig({
             {
               text: "API 参考",
               items: [
-                { text: "概览", link: "/zh/api/overview" },
+                { text: "概览（公共 API）", link: "/zh/api/overview" },
+                { text: "Admin API", link: "/zh/api/admin" },
                 { text: "OAuth", link: "/zh/api/oauth" },
                 { text: "用户操作", link: "/zh/api/actions" },
               ],

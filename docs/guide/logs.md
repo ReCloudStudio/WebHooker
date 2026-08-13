@@ -34,4 +34,4 @@ Entries are pruned automatically by the scheduled trigger after `AUDIT_RETENTION
 
 ## Webhook Log Channel
 
-Groups can additionally receive a per-webhook summary message in a Discord channel/thread or Telegram chat/topic — see [Groups → Webhook Log Channel](./configuration#webhook-log-channel). These summaries are best-effort and are **not** recorded in `send_logs`.
+Groups can additionally receive a per-webhook summary message in a Discord channel/thread or Telegram chat/topic — see [Groups → Webhook Log Channel](./groups#webhook-log-channel). These summaries are best-effort and are **not** recorded in `send_logs`.

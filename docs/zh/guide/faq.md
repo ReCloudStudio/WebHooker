@@ -26,7 +26,7 @@
 
 ## 如何让分组使用自己的 webhook 端点？
 
-见[分组端点](./configuration#分组端点)——在分组的 **Webhook 端点**面板（owner 角色）生成密钥，然后用 `POST /webhook/{groupId}` 与分组密钥发送。
+见[分组端点](./ingress#分组端点)——在分组的 **Webhook 端点**面板（owner 角色）生成密钥，然后用 `POST /webhook/{groupId}` 与分组密钥发送。
 
 ## 可以脱离 Cloudflare Workers 运行吗？
 
@@ -34,4 +34,4 @@
 
 ## 数据存储在哪里？
 
-配置存于 Cloudflare KV（`config:routes`、`config:groups`）；发送/审计日志与平台↔GitHub 绑定存于 D1。见[存储布局](./configuration#kv-存储布局)。
+配置存于 Cloudflare KV（`config:routes`、`config:groups`）；发送/审计日志与平台↔GitHub 绑定存于 D1。见[存储布局](./storage#kv-存储布局)。
