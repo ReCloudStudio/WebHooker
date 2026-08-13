@@ -5,6 +5,69 @@ export function getOAuthURL(clientId: string, state: string): string {
   return `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo&state=${state}`;
 }
 
+function b64url(buf: ArrayBuffer | string): string {
+  const bytes = typeof buf === "string" ? new TextEncoder().encode(buf) : new Uint8Array(buf);
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+function pemToBinary(pem: string): ArrayBuffer {
+  const base64 = pem
+    .replace(/-----BEGIN [^-]+-----/, "")
+    .replace(/-----END [^-]+-----/, "")
+    .replace(/\s+/g, "");
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+/** GitHub App JWT (RS256, PKCS#8 PEM key), valid ~10 minutes. */
+async function createAppJwt(appId: string, privateKey: string): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = b64url(JSON.stringify({ iat: now - 60, exp: now + 600, iss: appId }));
+  const data = `${header}.${payload}`;
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToBinary(privateKey),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(data));
+  return `${data}.${b64url(sig)}`;
+}
+
+/**
+ * Look up the account (org/user login) that owns a GitHub App installation,
+ * using an App JWT. Returns null when the App credentials are missing or the
+ * lookup fails (the caller falls back to an anonymous installation group).
+ */
+export async function getInstallationAccount(
+  appId: string,
+  privateKey: string,
+  installationId: number,
+): Promise<string | null> {
+  if (!appId || !privateKey) return null;
+  try {
+    const jwt = await createAppJwt(appId, privateKey);
+    const res = await fetch(`https://api.github.com/app/installations/${installationId}`, {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { account?: { login?: string } };
+    return data.account?.login ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function handleOAuthCallback(
   clientId: string,
   clientSecret: string,

@@ -138,7 +138,7 @@ Payload schema:
 
 When the GitHub App is installed, its events arrive at the global endpoint for **every** installation. To keep tenants apart, bind each group to the installation id that should feed it: `"installationId": 12345678`. The id is visible in the App's installation webhook payload (`installation.id`) or on the GitHub App installation page URL. Events from any other installation are rejected for that group even if its `owners` list is empty. Groups without `installationId` keep the legacy behavior (`owners` filtering).
 
-Binding is **auto-configured**: the `installation.created` webhook event creates a dedicated `inst-{installationId}` group (name = the installing account) bound to the installation, or automatically binds every existing group whose `owners` match the installing account. No manual id entry is needed — just install the app, then add routes/members to the auto-created group in the console.
+Binding is **auto-configured** — the GitHub App's _Setup URL_ should point to `{BASE_URL}/auth/github/install`. Right after a user installs the App, the browser lands there and they choose where the installation binds: a **new group** (`inst-{installationId}`, default) or any **existing group they own** (owner role checked again on submit; `POST /auth/github/install/bind` performs the provisioning). No manual id entry is needed. As a fallback (e.g. when the Setup URL is not configured), the `installation.created` webhook event creates/binds the group automatically — existing groups whose `owners` match the installing account are bound, otherwise a dedicated `inst-{installationId}` group is created. Then just add routes/members in the console.
 
 ## Routes
 

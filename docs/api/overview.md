@@ -104,7 +104,14 @@ Any JSON payload signed with `X-WebHooker-Signature: sha256=<hex>` (HMAC-SHA256 
 
 ### GitHub App Installation Events
 
-`installation` webhook events (`created`, ...) are auto-provisioned: a group named after the installing account (`inst-{installationId}`, bound via `installationId`) is created automatically, or existing groups whose `owners` match the installing account are bound to the installation. See [Configuration → GitHub App tenant isolation](../guide/configuration.md#github-app-tenant-isolation).
+`installation` webhook events (`created`, ...) are auto-provisioned as a fallback: a group named after the installing account (`inst-{installationId}`, bound via `installationId`) is created automatically, or existing groups whose `owners` match the installing account are bound to the installation. See [Configuration → GitHub App tenant isolation](../guide/configuration.md#github-app-tenant-isolation).
+
+The primary flow is the App's **Setup URL** — set it to `{BASE_URL}/auth/github/install`. After a user installs the App, the browser lands on:
+
+| Method | Path                        | Description                                                                                    |
+| ------ | --------------------------- | ---------------------------------------------------------------------------------------------- |
+| `GET`  | `/auth/github/install`      | Choice page: bind the installation to a new group or an existing group the signed-in user owns |
+| `POST` | `/auth/github/install/bind` | Provisions the binding (owner role re-checked) and redirects to `/admin?install=ok`            |
 
 ## Error Format
 

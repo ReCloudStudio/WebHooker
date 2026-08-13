@@ -303,6 +303,7 @@ onMounted(() => {
     const invite = params.get("invite");
     if (invite === "ok") push(t("members.inviteOk"));
     else if (invite != null && invite !== "ok") push(t("members.inviteBad"), "bad");
+    if (params.get("install") === "ok") push(t("install.ok"));
   }
   loadGroups();
   loadLogs(50, logFilterGroup.value || undefined);

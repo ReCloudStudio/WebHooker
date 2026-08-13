@@ -50,6 +50,8 @@ const en: Dict = {
   "members.errLastOwner": "Cannot remove the last owner.",
   "members.inviteOk": "Invite accepted — welcome!",
   "members.inviteBad": "This invite is invalid or expired.",
+  "install.ok":
+    "GitHub App installation registered — the group has been created and bound to this installation.",
   "webhook.title": "Webhook endpoint",
   "webhook.note": "(per-group URL + secret)",
   "webhook.empty": "Not configured. Generate a secret to enable the group's own webhook endpoint.",
@@ -302,6 +304,7 @@ const zh: Dict = {
   "members.errLastOwner": "不能移除最后一位 owner。",
   "members.inviteOk": "邀请已接受 —— 欢迎！",
   "members.inviteBad": "该邀请无效或已过期。",
+  "install.ok": "GitHub App 安装已注册 —— 分组已创建并绑定到该安装。",
   "webhook.title": "Webhook 入口",
   "webhook.note": "（分组独立的 URL + secret）",
   "webhook.empty": "未配置。生成 secret 即可启用该分组的独立 webhook 入口。",

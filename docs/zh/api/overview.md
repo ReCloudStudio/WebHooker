@@ -104,7 +104,14 @@ POST /webhook
 
 ### GitHub App 安装事件
 
-`installation` webhook 事件（`created` 等）会自动配置：按安装账号自动创建分组（`inst-{installationId}`，绑定 `installationId`）；或把 `owners` 匹配该账号的现有分组自动绑定到该安装。参见[配置 → GitHub App 租户隔离](../guide/configuration.md#github-app-租户隔离)。
+`installation` webhook 事件（`created` 等）作为兜底会自动配置：按安装账号自动创建分组（`inst-{installationId}`，绑定 `installationId`）；或把 `owners` 匹配该账号的现有分组自动绑定到该安装。参见[配置 → GitHub App 租户隔离](../guide/configuration.md#github-app-租户隔离)。
+
+主要流程是 App 的 **Setup URL** —— 将其设置为 `{BASE_URL}/auth/github/install`。用户安装 App 后浏览器会跳转到：
+
+| 方法   | 路径                        | 说明                                                          |
+| ------ | --------------------------- | ------------------------------------------------------------- |
+| `GET`  | `/auth/github/install`      | 选择页：将安装绑定到新分组或登录用户拥有 owner 权限的已有分组 |
+| `POST` | `/auth/github/install/bind` | 执行绑定（再次校验 owner 角色）并跳转 `/admin?install=ok`     |
 
 ## 错误格式
 

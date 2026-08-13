@@ -138,7 +138,7 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 GitHub App 安装后，**所有**安装方的事件都会到达全局端点。要让租户互相隔离，请把每个分组绑定到应当为其提供事件的安装 ID：`"installationId": 12345678`。该 ID 可从 App 安装 webhook 载荷（`installation.id`）或 GitHub App 安装页 URL 看到。即使分组的 `owners` 为空，来自其它安装的事件也会被拒绝。未设置 `installationId` 的分组保持旧行为（`owners` 过滤）。
 
-绑定是**自动配置**的：`installation.created` webhook 事件会自动创建绑定到该安装的专用分组 `inst-{installationId}`（名称为安装账号），或自动把 `owners` 匹配该账号的现有分组绑定到该安装。无需手动填写 ID——安装 App 后在控制台为自动创建的分组添加路由和成员即可。
+绑定是**自动配置**的 —— 将 GitHub App 的 _Setup URL_ 指向 `{BASE_URL}/auth/github/install`。用户安装 App 后浏览器立即跳转到该页面，可选择将安装绑定到：**新分组**（`inst-{installationId}`，默认）或任意**自己拥有 owner 权限的已有分组**（提交时再次校验角色；由 `POST /auth/github/install/bind` 完成配置）。无需手动填写 ID。作为兜底（例如未配置 Setup URL 时），`installation.created` webhook 事件也会自动创建/绑定分组 —— `owners` 匹配安装账号的现有分组会被绑定，否则创建独立的 `inst-{installationId}` 分组。之后在控制台为分组添加路由和成员即可。
 
 ## 路由
 
