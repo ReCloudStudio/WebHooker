@@ -689,6 +689,29 @@ main {
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
+.field select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--ui);
+  font-size: 13.5px;
+  cursor: pointer;
+  outline: none;
+}
+
+.field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.field select + input[type="text"],
+.field input[type="text"] + input[type="text"] {
+  margin-top: 8px;
+}
+
 .field .hint {
   font-size: 11px;
   color: var(--faint);

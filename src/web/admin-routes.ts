@@ -123,7 +123,7 @@ function validateRoutes(
     const rawTarget = r.target as Record<string, unknown> | undefined;
     const rawTargets = r.targets as unknown;
     if (rawTargets === undefined && rawTarget && typeof rawTarget === "object") {
-      const legacy = validateTarget(r, rawTarget);
+      const legacy = validateTarget(`route "${r.id}"`, rawTarget);
       if (!legacy.ok) return legacy;
       (r as Record<string, unknown>).targets = [legacy.target];
       delete (r as Record<string, unknown>).target;
@@ -137,7 +137,7 @@ function validateRoutes(
         if (!t || typeof t !== "object") {
           return { ok: false, error: `route "${r.id}".targets[${j}] is not an object` };
         }
-        const result = validateTarget(r, t);
+        const result = validateTarget(`route "${r.id}".targets[${j}]`, t);
         if (!result.ok) return result;
         normalized.push(result.target);
       }
@@ -150,24 +150,24 @@ function validateRoutes(
 }
 
 function validateTarget(
-  r: Record<string, unknown>,
+  label: string,
   target: Record<string, unknown>,
 ): { ok: true; target: Route["targets"][number] } | { ok: false; error: string } {
   const platform = target.platform === undefined ? "discord" : target.platform;
   if (platform !== "discord" && platform !== "telegram") {
-    return { ok: false, error: `route "${r.id}".target.platform must be "discord" or "telegram"` };
+    return { ok: false, error: `${label}.platform must be "discord" or "telegram"` };
   }
   if (platform === "telegram") {
     if (typeof target.chatId !== "string" || target.chatId.trim().length === 0)
-      return { ok: false, error: `route "${r.id}".target.chatId is required` };
+      return { ok: false, error: `${label}.chatId is required` };
     if (target.topicId !== undefined && typeof target.topicId !== "string") {
-      return { ok: false, error: `route "${r.id}".target.topicId must be a string` };
+      return { ok: false, error: `${label}.topicId must be a string` };
     }
   } else {
     if (typeof target.channelId !== "string" || target.channelId.trim().length === 0)
-      return { ok: false, error: `route "${r.id}".target.channelId is required` };
+      return { ok: false, error: `${label}.channelId is required` };
     if (target.threadId !== undefined && typeof target.threadId !== "string") {
-      return { ok: false, error: `route "${r.id}".target.threadId must be a string` };
+      return { ok: false, error: `${label}.threadId must be a string` };
     }
   }
   return {
@@ -234,7 +234,7 @@ function validateMembers(
   return { ok: true, members };
 }
 
-function validateGroups(
+export function validateGroups(
   groups: unknown,
 ): { ok: true; groups: Group[] } | { ok: false; error: string } {
   if (!Array.isArray(groups)) return { ok: false, error: "groups must be an array" };
@@ -282,6 +282,19 @@ function validateGroups(
     }
     if (g.lang !== undefined && typeof g.lang !== "string") {
       return { ok: false, error: `group "${g.id}".lang must be a string` };
+    }
+    if (g.logTarget !== undefined && g.logTarget !== null) {
+      if (typeof g.logTarget !== "object" || Array.isArray(g.logTarget)) {
+        return { ok: false, error: `group "${g.id}".logTarget must be an object` };
+      }
+      const tgt = validateTarget(
+        `group "${g.id}".logTarget`,
+        g.logTarget as Record<string, unknown>,
+      );
+      if (!tgt.ok) return tgt;
+      g.logTarget = tgt.target;
+    } else {
+      delete g.logTarget;
     }
   }
   return { ok: true, groups: groups as Group[] };
@@ -447,6 +460,8 @@ export function createAdminRoutes(): Hono<AuthEnv> {
       const fields: string[] = [];
       if (prev.name !== g.name) fields.push("name");
       if (prev.emoji !== g.emoji) fields.push("emoji");
+      if (prev.lang !== g.lang) fields.push("lang");
+      if (!deepEqual(prev.logTarget, g.logTarget)) fields.push("logTarget");
       if (!deepEqual(prev.providers ?? [], g.providers ?? [])) fields.push("providers");
       if (!deepEqual(prev.owners ?? [], g.owners ?? [])) fields.push("owners");
       if (!deepEqual(prev.members ?? normalizeGroupMembers(prev), g.members))

@@ -14,6 +14,16 @@ groups:
     # providers: ["github", "gitea"]  # restrict to source platforms (optional; empty = all)
     # emoji: true                  # include emoji in messages (default true)
     # lang: "en"                   # message language for this group's routes (en/zh, default en)
+    # Webhook log channel: a Discord channel/thread or Telegram chat/topic that
+    # receives a summary of every webhook this group's routes dispatch.
+    # logTarget:
+    #   platform: discord
+    #   channelId: "CHANNEL_ID_HERE"
+    #   threadId: ""               # optional
+    # logTarget:
+    #   platform: telegram
+    #   chatId: "-1001234567890"
+    #   topicId: ""                # optional
 
 routes:
   - id: all-push

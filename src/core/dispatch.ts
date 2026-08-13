@@ -1,12 +1,22 @@
-import type { Config, WebhookEvent, Env, Route } from "../types";
+import type { Config, WebhookEvent, Env, Route, NeutralMessage } from "../types";
 import { formatEvent } from "../formatters";
 import { matchRoute, eventOwners } from "../events/match";
 import { log } from "../lib/log";
-import { loadTranslations, type Translations } from "../lib/i18n";
+import { loadTranslations, t as translate, type Translations } from "../lib/i18n";
 import { recordSend } from "../lib/send-log";
 import { loadGroups, groupAcceptsOwners, groupAcceptsProvider } from "../web/groups";
 import { getDriver } from "../drivers";
 import type { SendResult } from "../drivers/types";
+
+/** One dispatch attempt (route × target), collected for the group webhook log. */
+interface DispatchAttempt {
+  groupId?: string;
+  routeId: string;
+  routeName: string;
+  target: string;
+  ok: boolean;
+  error?: string;
+}
 
 export async function dispatchEvent(config: Config, event: WebhookEvent, env: Env): Promise<void> {
   const groups = await loadGroups(env.KV);
@@ -35,6 +45,7 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
   );
   const anyRegularMatched = matched.length > 0;
 
+  const attempts: DispatchAttempt[] = [];
   const tasks: Promise<void>[] = [];
   for (const route of config.routes) {
     if (!accepted(route)) continue;
@@ -50,6 +61,73 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
     }
   }
   await Promise.allSettled(tasks);
+
+  await sendGroupLogs(attempts);
+
+  async function sendGroupLogs(list: DispatchAttempt[]): Promise<void> {
+    const byGroup = new Map<string, DispatchAttempt[]>();
+    for (const a of list) {
+      if (!a.groupId) continue;
+      const bucket = byGroup.get(a.groupId);
+      if (bucket) bucket.push(a);
+      else byGroup.set(a.groupId, [a]);
+    }
+    for (const [groupId, entries] of byGroup) {
+      const group = groupById.get(groupId);
+      const target = group?.logTarget;
+      if (!group || !target) continue;
+      const tr = trMap.get(group.lang ?? "en")!;
+      try {
+        const allOk = entries.every((a) => a.ok);
+        const routeLines = entries
+          .slice(0, 10)
+          .map((a) =>
+            a.ok
+              ? translate("log.route_ok", { route: a.routeName, target: a.target }, undefined, tr)
+              : translate(
+                  "log.route_fail",
+                  { route: a.routeName, target: a.target, error: a.error ?? "?" },
+                  undefined,
+                  tr,
+                ),
+          );
+        if (entries.length > 10) routeLines.push(`… +${entries.length - 10}`);
+        const message: NeutralMessage = {
+          title: translate(
+            "log.title",
+            {
+              repo:
+                (event.payload.repository as { full_name?: string } | undefined)?.full_name ?? "-",
+              event: event.event,
+              action: event.payload.action ? `: ${String(event.payload.action)}` : "",
+            },
+            undefined,
+            tr,
+          ),
+          color: allOk ? 0x3fb950 : 0xf85149,
+          fields: [
+            {
+              name: translate("log.routes", {}, undefined, tr),
+              value: routeLines.join("\n"),
+              inline: false,
+            },
+            {
+              name: translate("log.delivery", {}, undefined, tr),
+              value: event.deliveryId ?? "-",
+              inline: true,
+            },
+          ],
+          timestamp: new Date().toISOString(),
+        };
+        const result = await getDriver(target).send(message, target, env);
+        if (!result.ok) {
+          log.warn({ groupId, error: result.error }, "Failed to send group webhook log");
+        }
+      } catch (err) {
+        log.error({ groupId, err }, "Group webhook log send failed");
+      }
+    }
+  }
 
   async function processRoute(route: Route): Promise<void> {
     const targets = route.targets && route.targets.length > 0 ? route.targets : [];
@@ -106,6 +184,13 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
           if (existingId) {
             result = await driver.edit(message, target, env, existingId);
             if (result.ok) {
+              attempts.push({
+                groupId: route.groupId,
+                routeId: route.id,
+                routeName: route.name,
+                target: targetStr,
+                ok: true,
+              });
               await recordSend(env.DB, {
                 ...base,
                 ok: true,
@@ -119,6 +204,13 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
               continue;
             }
             if (/not modified/i.test(result.error ?? "")) {
+              attempts.push({
+                groupId: route.groupId,
+                routeId: route.id,
+                routeName: route.name,
+                target: targetStr,
+                ok: true,
+              });
               await recordSend(env.DB, {
                 ...base,
                 ok: true,
@@ -142,6 +234,13 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
         }
         const durationMs = Date.now() - started;
         if (!result.ok) throw new Error(result.error ?? "Send failed");
+        attempts.push({
+          groupId: route.groupId,
+          routeId: route.id,
+          routeName: route.name,
+          target: targetStr,
+          ok: true,
+        });
         await recordSend(env.DB, {
           ...base,
           ok: true,
@@ -154,10 +253,19 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
         });
       } catch (err) {
         const durationMs = Date.now() - started;
+        const error = err instanceof Error ? err.message : String(err);
+        attempts.push({
+          groupId: route.groupId,
+          routeId: route.id,
+          routeName: route.name,
+          target: targetStr,
+          ok: false,
+          error,
+        });
         await recordSend(env.DB, {
           ...base,
           ok: false,
-          error: err instanceof Error ? err.message : String(err),
+          error,
           durationMs,
         });
         log.error({ routeId: route.id, target: targetStr, err }, "Route failed");

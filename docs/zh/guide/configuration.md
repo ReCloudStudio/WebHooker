@@ -181,20 +181,22 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
     { "login": "reader", "role": "viewer" }
   ],
   "owners": ["myorg"],
-  "providers": ["github", "gitea"]
+  "providers": ["github", "gitea"],
+  "logTarget": { "platform": "discord", "channelId": "123456789", "threadId": "987654321" }
 }
 ```
 
-| 字段        | 类型     | 必需 | 说明                                                                                 |
-| ----------- | -------- | ---- | ------------------------------------------------------------------------------------ |
-| `id`        | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用                                |
-| `name`      | string   | 是   | 可读的分组名称                                                                       |
-| `members`   | object[] | 否   | `{ login, role }` 列表；角色为 `owner`、`admin` 或 `viewer`                          |
-| `adminIds`  | string[] | 否   | 已废弃的旧字段；存在时按 role 为 `owner` 的成员处理                                  |
-| `owners`    | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制                                  |
-| `providers` | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部                          |
-| `emoji`     | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                                          |
-| `lang`      | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——默认 `en` |
+| 字段        | 类型     | 必需 | 说明                                                                                                                                                                 |
+| ----------- | -------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用                                                                                                                |
+| `name`      | string   | 是   | 可读的分组名称                                                                                                                                                       |
+| `members`   | object[] | 否   | `{ login, role }` 列表；角色为 `owner`、`admin` 或 `viewer`                                                                                                          |
+| `adminIds`  | string[] | 否   | 已废弃的旧字段；存在时按 role 为 `owner` 的成员处理                                                                                                                  |
+| `owners`    | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制                                                                                                                  |
+| `providers` | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部                                                                                                          |
+| `emoji`     | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                                                                                                                          |
+| `lang`      | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——默认 `en`                                                                                 |
+| `logTarget` | object   | 否   | Webhook 日志频道：Discord 目标 `{ platform, channelId, threadId? }` 或 Telegram 目标 `{ platform, chatId, topicId? }`，本分组路由每次投递 webhook 时都会向其发送摘要 |
 
 ### 角色
 
@@ -214,6 +216,10 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 - 分组管理端点通过 `/admin/api/groups/:id/routes` 一次只操作一个分组；`groupId` 由路径参数强制指定。
 - `owners` 列表限定哪些事件参与者（发送者登录名）的事件会被该分组的路由投递。
 - `providers` 列表限定哪个 forge（`github`、`gitea`）的事件会被该分组的路由投递。即使组织/用户同名，也可以借此将 GitHub 与 Gitea 分组区分开。
+
+### Webhook 日志频道
+
+分组可以设置 `logTarget` 指向一个 Discord 频道/子区或 Telegram 群组/话题。每当该分组的路由分发（dispatch）一个 webhook，就会向那里发送一条摘要消息：事件类型/动作、仓库、投递 ID，以及每条「路由 × 目标」一行的 ✅/❌ 结果（失败时附带错误信息）。全部成功时消息为绿色，任一失败则为红色。摘要使用分组的消息语言。日志消息尽力发送，本身不会被记入 D1 发送日志。
 
 ### 邀请
 

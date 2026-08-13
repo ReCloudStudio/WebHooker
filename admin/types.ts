@@ -40,6 +40,7 @@ export interface Group {
   providers?: ("github" | "gitea" | "gitlab")[];
   emoji?: boolean;
   lang?: string;
+  logTarget?: RouteTarget;
 }
 
 export interface GroupInvite {

@@ -8,6 +8,7 @@ import {
   clearAdminCookie,
 } from "../web/session";
 import { groupAcceptsProvider } from "../web/groups";
+import { validateGroups } from "../web/admin-routes";
 import { loadRoutes, saveRoutes, loadConfig } from "../config";
 import type { Env, Route, Group } from "../types";
 
@@ -129,6 +130,72 @@ describe("groupAcceptsProvider", () => {
 
   it("matches case-insensitively and trims whitespace", () => {
     expect(groupAcceptsProvider({ ...base, providers: [" Gitea "] }, "gitea")).toBe(true);
+  });
+});
+
+describe("validateGroups logTarget", () => {
+  const baseGroup = {
+    id: "g",
+    name: "G",
+    members: [{ login: "boss", role: "owner" }],
+  };
+
+  it("accepts and normalizes a discord log target", () => {
+    const res = validateGroups([
+      {
+        ...baseGroup,
+        logTarget: { platform: "discord", channelId: "111", threadId: "222" },
+      },
+    ]);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.groups[0]!.logTarget).toEqual({
+        platform: "discord",
+        channelId: "111",
+        threadId: "222",
+        chatId: undefined,
+        topicId: undefined,
+      });
+    }
+  });
+
+  it("accepts a telegram log target", () => {
+    const res = validateGroups([
+      {
+        ...baseGroup,
+        logTarget: { platform: "telegram", chatId: "-100123", topicId: "999" },
+      },
+    ]);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.groups[0]!.logTarget).toEqual({
+        platform: "telegram",
+        channelId: undefined,
+        threadId: undefined,
+        chatId: "-100123",
+        topicId: "999",
+      });
+    }
+  });
+
+  it("rejects a log target without a channel id", () => {
+    const res = validateGroups([
+      { ...baseGroup, logTarget: { platform: "discord", channelId: "" } },
+    ]);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toContain("logTarget.channelId");
+  });
+
+  it("rejects a log target with an unknown platform", () => {
+    const res = validateGroups([{ ...baseGroup, logTarget: { platform: "slack" } }]);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toContain("logTarget.platform");
+  });
+
+  it("drops a null log target", () => {
+    const res = validateGroups([{ ...baseGroup, logTarget: null }]);
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.groups[0]!.logTarget).toBeUndefined();
   });
 });
 

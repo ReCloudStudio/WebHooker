@@ -195,4 +195,11 @@ export const en = {
       title: "{repo}: {event}{action}",
     },
   },
+  log: {
+    title: "{repo}: {event}{action}",
+    routes: "Routes",
+    delivery: "Delivery",
+    route_ok: "✅ {route} → {target}",
+    route_fail: "❌ {route} → {target}: {error}",
+  },
 };

@@ -168,6 +168,13 @@ const en: Dict = {
   "groupEditor.providersHint":
     "Only webhook events from the checked forges (GitHub / Gitea) enter this group's routes.",
   "groupEditor.emoji": "Show emojis in messages",
+  "groupEditor.logTarget": "Webhook log channel",
+  "groupEditor.logTargetNote": "(optional)",
+  "groupEditor.logDisabled": "— Disabled —",
+  "groupEditor.logTargetHint":
+    "A Discord channel/thread or Telegram chat/topic that receives a summary of every webhook this group's routes dispatch.",
+  "groupEditor.errLogChannel": "Log channel ID is required when Discord is selected",
+  "groupEditor.errLogChat": "Log chat ID is required when Telegram is selected",
   "groupEditor.cancel": "Cancel",
   "groupEditor.save": "Save group",
   "groupEditor.errIdFormat": "ID must be a-z / 0-9 / dashes",
@@ -384,6 +391,13 @@ const zh: Dict = {
   "groupEditor.providersHint":
     "只有来自所勾选 forge（GitHub / Gitea）的 webhook 事件才会进入本分组的路由。",
   "groupEditor.emoji": "消息中显示表情符号",
+  "groupEditor.logTarget": "Webhook 日志频道",
+  "groupEditor.logTargetNote": "（可选）",
+  "groupEditor.logDisabled": "— 未启用 —",
+  "groupEditor.logTargetHint":
+    "一个 Discord 频道/子区或 Telegram 群组/话题，本分组路由分发（dispatch）的每个 webhook 都会向其发送摘要。",
+  "groupEditor.errLogChannel": "选择 Discord 时必须填写日志频道 ID",
+  "groupEditor.errLogChat": "选择 Telegram 时必须填写日志群组 ID",
   "groupEditor.cancel": "取消",
   "groupEditor.save": "保存分组",
   "groupEditor.errIdFormat": "ID 只能是 a-z / 0-9 / 短横线",

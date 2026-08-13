@@ -195,4 +195,11 @@ export const zh = {
       title: "{repo}: {event}{action}",
     },
   },
+  log: {
+    title: "{repo}: {event}{action}",
+    routes: "路由",
+    delivery: "投递",
+    route_ok: "✅ {route} → {target}",
+    route_fail: "❌ {route} → {target}: {error}",
+  },
 };

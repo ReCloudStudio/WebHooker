@@ -124,6 +124,11 @@ export interface Group {
    * via KV i18n:<lang>). Defaults to "en" when omitted.
    */
   lang?: string;
+  /**
+   * Discord channel/thread or Telegram chat/topic that receives a summary of
+   * every webhook this group's routes dispatch (the group's webhook log).
+   */
+  logTarget?: RouteTarget;
 }
 
 export interface Filter {

@@ -260,6 +260,153 @@ describe("dispatchEvent fallback routing", () => {
     expect(sent.filter((u) => u.includes("/111/"))).toHaveLength(0);
   });
 
+  it("sends a summary of dispatched webhooks to the group log target", async () => {
+    const sent: Array<{ url: string; body: string }> = [];
+    mockFetch((url, init) => {
+      sent.push({ url, body: String(init?.body ?? "") });
+      return new Response("{}", { status: 200 });
+    });
+    const kv = createMockKV();
+    await kv.put(
+      "config:groups",
+      JSON.stringify([
+        {
+          id: "gh",
+          name: "GH",
+          adminIds: [],
+          logTarget: { platform: "discord", channelId: "777" },
+        },
+      ]),
+    );
+    const env = createEnv({ KV: kv, DB: createMockDB() });
+    const routes: Route[] = [
+      {
+        id: "push-route",
+        name: "Push Route",
+        enabled: true,
+        groupId: "gh",
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "111" }],
+      },
+    ];
+
+    await dispatchEvent(
+      { ...baseConfig, routes },
+      {
+        event: "push",
+        deliveryId: "deliv-1",
+        payload: {
+          repository: { full_name: "owner/repo" },
+          ref: "refs/heads/main",
+          commits: [{ id: "abc", message: "fix", author: { name: "a" } }],
+        },
+      },
+      env,
+    );
+
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.url).toContain("/777/");
+    const logBody = JSON.parse(sent[1]!.body) as {
+      embeds?: Array<{ title?: string; color?: number; fields?: Array<{ value: string }> }>;
+    };
+    expect(logBody.embeds?.[0]?.title).toBe("owner/repo: push");
+    expect(logBody.embeds?.[0]?.color).toBe(0x3fb950);
+    expect(logBody.embeds?.[0]?.fields?.[0]?.value).toContain("✅ Push Route → 111");
+    expect(logBody.embeds?.[0]?.fields?.[1]?.value).toBe("deliv-1");
+  });
+
+  it("reports failed dispatches in the group log", async () => {
+    const sent: Array<{ url: string; body: string }> = [];
+    mockFetch((url, init) => {
+      if (url.includes("/111/")) return new Response("Missing Permissions", { status: 403 });
+      sent.push({ url, body: String(init?.body ?? "") });
+      return new Response("{}", { status: 200 });
+    });
+    const kv = createMockKV();
+    await kv.put(
+      "config:groups",
+      JSON.stringify([
+        {
+          id: "gh",
+          name: "GH",
+          adminIds: [],
+          logTarget: { platform: "discord", channelId: "777" },
+        },
+      ]),
+    );
+    const env = createEnv({ KV: kv, DB: createMockDB() });
+    const routes: Route[] = [
+      {
+        id: "push-route",
+        name: "Push Route",
+        enabled: true,
+        groupId: "gh",
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "111" }],
+      },
+    ];
+
+    await dispatchEvent(
+      { ...baseConfig, routes },
+      {
+        event: "push",
+        payload: {
+          repository: { full_name: "owner/repo" },
+          ref: "refs/heads/main",
+          commits: [{ id: "abc", message: "fix", author: { name: "a" } }],
+        },
+      },
+      env,
+    );
+
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.url).toContain("/777/");
+    const logBody = JSON.parse(sent[0]!.body) as {
+      embeds?: Array<{ color?: number; fields?: Array<{ value: string }> }>;
+    };
+    expect(logBody.embeds?.[0]?.color).toBe(0xf85149);
+    expect(logBody.embeds?.[0]?.fields?.[0]?.value).toContain("❌ Push Route → 111");
+  });
+
+  it("sends no group log when no route matched the event", async () => {
+    const sent: string[] = [];
+    mockFetch((url, init) => {
+      sent.push(String(init?.body ?? ""));
+      return new Response("{}", { status: 200 });
+    });
+    const kv = createMockKV();
+    await kv.put(
+      "config:groups",
+      JSON.stringify([
+        {
+          id: "gh",
+          name: "GH",
+          adminIds: [],
+          logTarget: { platform: "discord", channelId: "777" },
+        },
+      ]),
+    );
+    const env = createEnv({ KV: kv, DB: createMockDB() });
+    const routes: Route[] = [
+      {
+        id: "push-route",
+        name: "Push Route",
+        enabled: true,
+        groupId: "gh",
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "111" }],
+      },
+    ];
+
+    await dispatchEvent(
+      { ...baseConfig, routes },
+      { event: "issues", payload: { action: "opened", repository: { full_name: "o/r" } } },
+      env,
+    );
+
+    expect(sent).toHaveLength(0);
+  });
+
   it("uses the group's message language (not the route's)", async () => {
     const bodies: string[] = [];
     mockFetch((url, init) => {

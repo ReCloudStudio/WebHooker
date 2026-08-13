@@ -106,6 +106,42 @@
             </div>
             <div class="hint">{{ t("groupEditor.providersHint") }}</div>
           </div>
+          <div class="field">
+            <label
+              >{{ t("groupEditor.logTarget") }}
+              <span class="lbl-note">{{ t("groupEditor.logTargetNote") }}</span></label
+            >
+            <select v-model="form.logPlatform">
+              <option value="">{{ t("groupEditor.logDisabled") }}</option>
+              <option value="discord">Discord</option>
+              <option value="telegram">Telegram</option>
+            </select>
+            <template v-if="form.logPlatform === 'discord'">
+              <input
+                v-model="form.logChannelId"
+                type="text"
+                :placeholder="t('routeEditor.channelPlaceholder')"
+              />
+              <input
+                v-model="form.logThreadId"
+                type="text"
+                :placeholder="t('routeEditor.threadPlaceholder')"
+              />
+            </template>
+            <template v-else-if="form.logPlatform === 'telegram'">
+              <input
+                v-model="form.logChatId"
+                type="text"
+                :placeholder="t('routeEditor.chatPlaceholder')"
+              />
+              <input
+                v-model="form.logTopicId"
+                type="text"
+                :placeholder="t('routeEditor.topicPlaceholder')"
+              />
+            </template>
+            <div class="hint">{{ t("groupEditor.logTargetHint") }}</div>
+          </div>
           <div class="err">{{ formError }}</div>
         </form>
         <div class="editor-foot">
@@ -149,6 +185,11 @@ const form = reactive({
   providers: [] as ("github" | "gitea")[],
   emoji: true,
   lang: "",
+  logPlatform: "" as "" | "discord" | "telegram",
+  logChannelId: "",
+  logThreadId: "",
+  logChatId: "",
+  logTopicId: "",
 });
 
 function splitList(text: string): string[] {
@@ -170,6 +211,7 @@ watch(
   (open) => {
     if (!open) return;
     const g = props.group;
+    const lt = g?.logTarget;
     form.id = g?.id ?? "";
     form.name = g?.name ?? "";
     form.owners = (g?.owners ?? []).join(", ");
@@ -178,6 +220,11 @@ watch(
     );
     form.emoji = g?.emoji ?? true;
     form.lang = g?.lang ?? "";
+    form.logPlatform = lt?.platform ?? "";
+    form.logChannelId = lt?.channelId ?? "";
+    form.logThreadId = lt?.threadId ?? "";
+    form.logChatId = lt?.chatId ?? "";
+    form.logTopicId = lt?.topicId ?? "";
     formError.value = "";
   },
 );
@@ -198,6 +245,29 @@ function save(): void {
     formError.value = t("groupEditor.errName");
     return;
   }
+  let logTarget:
+    | { platform: "discord"; channelId: string; threadId?: string }
+    | {
+        platform: "telegram";
+        chatId: string;
+        topicId?: string;
+      }
+    | undefined;
+  if (form.logPlatform === "discord") {
+    const channelId = form.logChannelId.trim();
+    if (!channelId) {
+      formError.value = t("groupEditor.errLogChannel");
+      return;
+    }
+    logTarget = { platform: "discord", channelId, threadId: form.logThreadId.trim() || undefined };
+  } else if (form.logPlatform === "telegram") {
+    const chatId = form.logChatId.trim();
+    if (!chatId) {
+      formError.value = t("groupEditor.errLogChat");
+      return;
+    }
+    logTarget = { platform: "telegram", chatId, topicId: form.logTopicId.trim() || undefined };
+  }
   const owners = splitList(form.owners);
   const members = props.group?.members
     ? props.group.members.map((m) => ({ ...m }))
@@ -213,6 +283,7 @@ function save(): void {
     providers: form.providers.length ? form.providers : undefined,
     emoji: form.emoji,
     lang: form.lang.trim() || undefined,
+    logTarget,
   });
 }
 </script>

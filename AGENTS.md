@@ -19,6 +19,7 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Access control: every group has role-based members (`owner` / `admin` / `viewer`); super admins bypass; legacy `adminIds` are read as owners (backward compatible); owners manage members + invites; `owners` field stays super-only
 - Invites: single-use 7-day links (`invite:{token}`) for joining a group as admin/viewer; `ALLOW_SELF_SIGNUP=1` gives access-less users a personal group on first login (self-service SaaS entry)
 - Audit log: every admin operation (logins, group/route/member/invite changes) recorded in D1 `audit_logs`; pruned by the scheduled trigger after `AUDIT_RETENTION_DAYS` (default 90)
+- Group webhook log channel: optional `Group.logTarget` (Discord channel/thread or Telegram chat/topic) receives one summary message per webhook the group's routes dispatched (event, repo, delivery id, per route×target ✅/❌ outcome, green/red color); best-effort, not recorded in `send_logs`
 - Local dev: wrangler + Miniflare
 
 ## Architecture
@@ -30,7 +31,7 @@ src/
 ├── config.ts             # loadRoutes/saveRoutes (KV config:routes, cache w/ 60s TTL), loadConfig from env
 ├── server.ts             # Hono app: /health, /webhook, /discord/interactions, /telegram/webhook, mounts /auth, /admin + /
 ├── core/
-│   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter)
+│   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter + per-group webhook log)
 ├── events/               # Provider-agnostic route matching
 │   └── match.ts          # matchRoute, eventOwners, extractBranch, keyword regex filtering
 ├── providers/            # Forge webhook providers (verify + parse/normalize to GitHub-shaped events)
@@ -106,6 +107,7 @@ src/__tests__/            # bun test unit tests (webhook, formatter, discord, te
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
 - Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, KV `msg:*` tracking)
 - Record every dispatch attempt to D1 `send_logs` (route id, event, target, ok/error, duration, error code)
+- Send a per-event summary (event, repo, delivery id, per route×target ✅/❌ outcome) to the group's `logTarget` when configured
 - Serve `/gh` slash commands + message context-menu commands + PR merge/close buttons + comment modals
 - Serve Telegram `/gh` commands (login/logout/comment/merge/close) via reply-message parsing
 - Sync application commands from the scheduled trigger (global ~1h propagation + per-guild instant)
