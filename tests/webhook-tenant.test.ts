@@ -236,9 +236,9 @@ describe("processWebhook", () => {
     const parsed = JSON.parse(sent[0]!.body) as {
       embeds?: Array<{ title?: string; color?: number; description?: string }>;
     };
-    expect(parsed.embeds?.[0]?.title).toBe("acme/widget: Deploy failed");
+    expect(parsed.embeds?.[0]?.title).toBe("acme/widget");
     expect(parsed.embeds?.[0]?.color).toBe(0xf85149);
-    expect(parsed.embeds?.[0]?.description).toBe("prod down");
+    expect(parsed.embeds?.[0]?.description).toBe("Deploy failed\nprod down");
   });
 
   it("rejects custom webhooks without a signature header", async () => {

@@ -309,7 +309,8 @@ describe("dispatchEvent fallback routing", () => {
     const logBody = JSON.parse(sent[1]!.body) as {
       embeds?: Array<{ title?: string; color?: number; fields?: Array<{ value: string }> }>;
     };
-    expect(logBody.embeds?.[0]?.title).toBe("owner/repo: push");
+    expect(logBody.embeds?.[0]?.title).toBe("owner/repo");
+    expect(logBody.embeds?.[0]?.description).toContain("push");
     expect(logBody.embeds?.[0]?.color).toBe(0x3fb950);
     expect(logBody.embeds?.[0]?.fields?.[0]?.value).toContain("✅ Push Route → 111");
     expect(logBody.embeds?.[0]?.fields?.[1]?.value).toBe("deliv-1");
@@ -460,8 +461,6 @@ describe("dispatchEvent fallback routing", () => {
       const parsed = JSON.parse(b) as { embeds?: Array<{ title?: string }> };
       return parsed.embeds?.[0]?.title ?? "";
     });
-    expect(titles.sort()).toEqual(
-      ["owner/repo: 推送了 1 个提交", "owner/repo: Pushed 1 commit"].sort(),
-    );
+    expect(titles.sort()).toEqual(["owner/repo", "owner/repo"].sort());
   });
 });

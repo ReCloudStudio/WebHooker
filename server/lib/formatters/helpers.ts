@@ -12,6 +12,42 @@ export function makeT(tr?: Translations): T {
   return (key, params) => translate(key, params, undefined, tr);
 }
 
+export interface TitleParts {
+  /** `{repo}` or `{repo}#{number}` — what embed titles link (the repo). */
+  head: string;
+  /** Text after `": "`, undefined when the title has no `: ` separator. */
+  subject?: string;
+}
+
+/**
+ * Split a `{repo}{#number}: {subject}` title into the repo head and the
+ * subject. Discord embed titles can only link as a whole, so drivers render
+ * the head as the linked title and the subject as plain text (description /
+ * unlinked remainder) to avoid hyperlinking the whole title.
+ */
+export function splitMessageTitle(title: string): TitleParts {
+  const idx = title.indexOf(": ");
+  if (idx <= 0) return { head: title };
+  return { head: title.slice(0, idx), subject: title.slice(idx + 2) };
+}
+
+/**
+ * Repository URL derived from an event URL (origin + owner + repo). Returns
+ * undefined when there is no URL to derive from — callers then render the
+ * title without a link.
+ */
+export function repoUrlFromMessage(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    const segments = parsed.pathname.split("/").filter(Boolean);
+    if (segments.length >= 2) return `${parsed.origin}/${segments[0]}/${segments[1]}`;
+  } catch {
+    // not a parseable URL — no link
+  }
+  return undefined;
+}
+
 export function buildMessage(
   partial: Omit<Partial<NeutralMessage>, "title"> & { title: string },
   t: T,

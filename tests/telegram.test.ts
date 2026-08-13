@@ -25,7 +25,7 @@ describe("telegram renderNeutralMessage", () => {
     };
     const out = renderNeutralMessage(message);
     expect(out).toContain(
-      '<b><a href="https://github.com/acme/widget">acme/widget: Add feature</a></b>',
+      '<b><a href="https://github.com/acme/widget">acme/widget</a>: Add feature</b>',
     );
     expect(out).toContain("<b>Status</b>: success");
     expect(out).toContain("<i>acme/widget</i>");

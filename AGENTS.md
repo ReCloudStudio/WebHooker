@@ -136,9 +136,14 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
 
 ## Message Format Spec
 
-- Every embed title must start with the repo, then optional `#number`, then `: subject`:
+- Every message title must start with the repo, then optional `#number`, then `: subject`:
   `{repo}{#number}: {subject}` (e.g. `acme/widget#7: Add feature`). Repo comes from
   `payload.repository.full_name`; fall back to `t("common.repository")` when missing.
+- Only the repo head is hyperlinked (never the whole title). Drivers split the title via
+  `splitMessageTitle`/`repoUrlFromMessage` (`server/lib/formatters/helpers.ts`): the Discord
+  embed title is `{repo}{#number}` linked to the repository URL and `: {subject}` renders as
+  the first description line; Telegram keeps the one-line title with an inline repo link and
+  a plain subject. Messages without a `: ` separator keep the legacy whole-title link.
 - Do NOT use `"Comment on org/repo"` / `"Review on org/repo"` prefixes. Comments, reviews
   and inline comments use the same `{repo}{#number}: {title}` title as their parent object.
 - All event-specific emoji live in `server/lib/formatters/` (via the `emojiPrefix` helper), never in

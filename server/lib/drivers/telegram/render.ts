@@ -1,4 +1,5 @@
 import type { NeutralMessage } from "../../types";
+import { repoUrlFromMessage, splitMessageTitle } from "../../formatters/helpers";
 
 function esc(s: string): string {
   return s
@@ -32,10 +33,16 @@ function formatTimestamp(ts?: string): string {
 export function renderNeutralMessage(message: NeutralMessage): string {
   const parts: string[] = [];
 
-  const title = message.url
-    ? `<a href="${esc(message.url)}">${mdToHtml(message.title)}</a>`
-    : mdToHtml(message.title);
-  parts.push(`<b>${title}</b>`);
+  // HTML allows partial links, so keep the `{repo}{#number}: {subject}` line
+  // intact with only the repo head linked (the subject stays plain text).
+  const { head, subject } = splitMessageTitle(message.title);
+  const repoUrl = repoUrlFromMessage(message.url);
+  const title = subject
+    ? `<b>${repoUrl ? `<a href="${esc(repoUrl)}">${mdToHtml(head)}</a>` : mdToHtml(head)}: ${mdToHtml(subject)}</b>`
+    : message.url
+      ? `<b><a href="${esc(message.url)}">${mdToHtml(message.title)}</a></b>`
+      : `<b>${mdToHtml(message.title)}</b>`;
+  parts.push(title);
 
   if (message.author) {
     const name = mdToHtml(message.author.name);
