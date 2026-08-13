@@ -311,8 +311,17 @@ onMounted(() => {
   }
   loadGroups();
   loadLogs(50, logFilterGroup.value || undefined);
-  if (view.value === "audit") loadAudit(50, auditFilterGroup.value || undefined);
 });
+
+// Tab switches are client-side navigations (no remount), so load the audit
+// log whenever the audit view becomes active — including direct deep links.
+watch(
+  view,
+  (v) => {
+    if (v === "audit") loadAudit(50, auditFilterGroup.value || undefined);
+  },
+  { immediate: true },
+);
 
 function switchView(next: "groups" | "logs" | "audit"): void {
   const path = next === "groups" ? "/admin" : `/admin/${next}`;
@@ -469,7 +478,17 @@ async function onSaveGroup(group: Group): Promise<void> {
 }
 
 async function onDeleteGroup(group: Group): Promise<void> {
-  const used = groupRoutes.value.filter((r) => r.groupId === group.id).length;
+  // Fetch the real route count for this group instead of relying on the
+  // routes of whichever group happens to be open in the detail view.
+  let used = 0;
+  try {
+    const data = await apiFetch<{ routes?: Route[] }>(
+      `/admin/api/groups/${encodeURIComponent(group.id)}/routes`,
+    );
+    used = (data.routes ?? []).length;
+  } catch {
+    // Count is best-effort; proceed without the warning.
+  }
   const warn = used ? t("confirm.deleteGroupWarn", { n: used }) : "";
   if (!window.confirm(t("confirm.deleteGroup", { name: group.name || group.id }) + warn)) return;
   try {

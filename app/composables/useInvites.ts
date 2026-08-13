@@ -8,17 +8,10 @@ export function useInvitesApi() {
     loading.value = true;
     error.value = "";
     try {
-      const res = await fetch(`/admin/api/groups/${encodeURIComponent(groupId)}/invites`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ role }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      const data = (await res.json()) as { url?: string };
+      const data = await apiFetch<{ url?: string }>(
+        `/admin/api/groups/${encodeURIComponent(groupId)}/invites`,
+        { method: "POST", body: JSON.stringify({ role }) },
+      );
       return data.url ?? "";
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err);
@@ -32,12 +25,9 @@ export function useInvitesApi() {
     loading.value = true;
     error.value = "";
     try {
-      const res = await fetch(`/admin/api/groups/${encodeURIComponent(groupId)}/invites`, {
-        headers: { accept: "application/json" },
-        credentials: "same-origin",
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { invites?: GroupInvite[] };
+      const data = await apiFetch<{ invites?: GroupInvite[] }>(
+        `/admin/api/groups/${encodeURIComponent(groupId)}/invites`,
+      );
       return data.invites ?? [];
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err);
@@ -51,14 +41,7 @@ export function useInvitesApi() {
     loading.value = true;
     error.value = "";
     try {
-      const res = await fetch(`/admin/api/invites/${encodeURIComponent(token)}`, {
-        method: "DELETE",
-        credentials: "same-origin",
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
+      await apiFetch(`/admin/api/invites/${encodeURIComponent(token)}`, { method: "DELETE" });
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err);
       throw err;

@@ -1,9 +1,9 @@
 import type { AuditEntry } from "~/types";
 
 export function useAuditApi() {
+  const { needLogin } = useAuthState();
   const entries = ref<AuditEntry[]>([]);
   const loading = ref(false);
-  const needLogin = ref(false);
   const error = ref("");
 
   async function load(limit = 50, groupId?: string): Promise<void> {
@@ -13,19 +13,10 @@ export function useAuditApi() {
     try {
       let url = `/admin/api/audit?limit=${limit}`;
       if (groupId) url += `&groupId=${encodeURIComponent(groupId)}`;
-      const res = await fetch(url, {
-        headers: { accept: "application/json" },
-        credentials: "same-origin",
-      });
-      if (res.status === 401) {
-        needLogin.value = true;
-        return;
-      }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { audit?: AuditEntry[] };
+      const data = await apiFetch<{ audit?: AuditEntry[] }>(url);
       entries.value = data.audit ?? [];
     } catch (err) {
-      error.value = err instanceof Error ? err.message : String(err);
+      if (!needLogin.value) error.value = err instanceof Error ? err.message : String(err);
     } finally {
       loading.value = false;
     }

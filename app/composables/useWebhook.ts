@@ -12,16 +12,7 @@ export function useWebhookApi() {
     loading.value = true;
     error.value = "";
     try {
-      const res = await fetch(path, {
-        headers: { accept: "application/json" },
-        credentials: "same-origin",
-        ...init,
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      return (await res.json()) as T;
+      return await apiFetch<T>(path, init);
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err);
       throw err;

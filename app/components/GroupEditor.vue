@@ -216,13 +216,6 @@ const form = reactive({
   logTopicId: "",
 });
 
-function splitList(text: string): string[] {
-  return text
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
 function toggleProvider(p: "github" | "gitea", e: Event): void {
   const checked = (e.target as HTMLInputElement).checked;
   form.providers = checked

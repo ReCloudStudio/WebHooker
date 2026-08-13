@@ -210,15 +210,6 @@ const form = reactive({
   filters: [] as FilterForm[],
 });
 
-function parseMatch(text: string): string | string[] | null {
-  const parts = text
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (!parts.length) return null;
-  return parts.length === 1 ? parts[0]! : parts;
-}
-
 function blankFilter(): FilterForm {
   return { type: "event", match: "", exclude: false, matchText: "" };
 }

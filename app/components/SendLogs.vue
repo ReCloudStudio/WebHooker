@@ -137,10 +137,6 @@ const detailRows = computed(() => {
   return rows;
 });
 
-function fmtTime(ts: number): string {
-  return new Date(ts).toLocaleString();
-}
-
 function refresh(): void {
   emit("refresh");
 }

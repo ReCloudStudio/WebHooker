@@ -70,10 +70,6 @@ const emit = defineEmits<{
   (e: "update:selectedGroupId", value: string): void;
 }>();
 
-function fmtTime(ts: number): string {
-  return new Date(ts).toLocaleString();
-}
-
 function refresh(): void {
   emit("refresh");
 }

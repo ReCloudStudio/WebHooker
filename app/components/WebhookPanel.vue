@@ -12,7 +12,7 @@
         <span class="wh-label">{{ t("webhook.url") }}</span>
         <code class="wh-value">{{ info.url }}</code>
         <button class="btn btn-ghost btn-sm" @click="copy(info.url, 'url')">
-          {{ copiedUrl ? t("webhook.copied") : t("webhook.copy") }}
+          {{ copied === "url" ? t("webhook.copied") : t("webhook.copy") }}
         </button>
       </div>
 
@@ -26,7 +26,7 @@
           class="btn btn-ghost btn-sm"
           @click="copy(info.secret!, 'secret')"
         >
-          {{ copiedSecret ? t("webhook.copied") : t("webhook.copy") }}
+          {{ copied === "secret" ? t("webhook.copied") : t("webhook.copy") }}
         </button>
       </div>
       <p v-if="info.hasSecret && !info.secret" class="hint">{{ t("webhook.secretHidden") }}</p>
@@ -68,10 +68,9 @@ const props = defineProps<{ groupId: string; canEdit: boolean }>();
 
 const api = useWebhookApi();
 const info = ref<GroupWebhookInfo | null>(null);
-const copiedUrl = ref(false);
-const copiedSecret = ref(false);
 const busy = ref(false);
 const error = ref("");
+const { copied, copy } = useCopy();
 
 const maskedSecret = "••••••••••••••••";
 const customExample = [
@@ -112,7 +111,6 @@ async function onRegenerate(): Promise<void> {
   error.value = "";
   try {
     info.value = await api.regenerate(props.groupId);
-    copiedSecret.value = false;
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
   } finally {
@@ -130,25 +128,6 @@ async function onDisable(): Promise<void> {
     error.value = err instanceof Error ? err.message : String(err);
   } finally {
     busy.value = false;
-  }
-}
-
-async function copy(text: string, which: "url" | "secret"): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text);
-    if (which === "url") {
-      copiedUrl.value = true;
-      window.setTimeout(() => {
-        copiedUrl.value = false;
-      }, 1500);
-    } else {
-      copiedSecret.value = true;
-      window.setTimeout(() => {
-        copiedSecret.value = false;
-      }, 1500);
-    }
-  } catch {
-    // ignore clipboard failures
   }
 }
 </script>

@@ -72,7 +72,7 @@
           <span class="role-pill" :class="inv.role">{{ t("roles." + inv.role) }}</span>
           <span class="invite-exp">{{ fmtExp(inv.expiresAt) }}</span>
           <button class="btn btn-ghost btn-sm" @click="copyInvite(inv)">
-            {{ copiedToken === inv.token ? t("members.copied") : t("members.copyLink") }}
+            {{ copied === inv.token ? t("members.copied") : t("members.copyLink") }}
           </button>
           <button class="icon-btn danger" @click="revoke(inv)">{{ t("members.revoke") }}</button>
         </li>
@@ -101,8 +101,8 @@ const newLogin = ref("");
 const newRole = ref<GroupRole>("admin");
 const inviteRole = ref<"admin" | "viewer">("admin");
 const inviting = ref(false);
-const copiedToken = ref("");
 const formError = ref("");
+const { copied, copy } = useCopy(2000);
 
 watch(
   () => props.group,
@@ -175,11 +175,7 @@ async function createInvite(): Promise<void> {
         ...invites.value,
       ];
     }
-    copyText(`${window.location.origin}${url}`);
-    copiedToken.value = token;
-    window.setTimeout(() => {
-      copiedToken.value = "";
-    }, 2000);
+    copy(`${window.location.origin}${url}`, token);
     await loadInvites();
   } catch (err) {
     formError.value = err instanceof Error ? err.message : String(err);
@@ -190,11 +186,7 @@ async function createInvite(): Promise<void> {
 
 async function copyInvite(inv: GroupInvite): Promise<void> {
   const url = `${window.location.origin}/admin/invite?token=${inv.token}`;
-  copyText(url);
-  copiedToken.value = inv.token;
-  window.setTimeout(() => {
-    copiedToken.value = "";
-  }, 2000);
+  await copy(url, inv.token);
 }
 
 async function revoke(inv: GroupInvite): Promise<void> {
@@ -203,19 +195,6 @@ async function revoke(inv: GroupInvite): Promise<void> {
     invites.value = invites.value.filter((i) => i.token !== inv.token);
   } catch (err) {
     formError.value = err instanceof Error ? err.message : String(err);
-  }
-}
-
-async function copyText(text: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
   }
 }
 
