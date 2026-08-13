@@ -1,10 +1,12 @@
 import { describe, it, expect } from "bun:test";
 import { createHmac } from "crypto";
 import { detectProvider } from "../providers";
+import { customProvider } from "../providers/custom";
 import { verifyGiteaSignature } from "../providers/gitea/verify";
 import { parseGiteaEvent } from "../providers/gitea/parse";
+import { parseEvent } from "../providers/github/parse";
 import { formatEvent } from "../formatters";
-import type { Route } from "../types";
+import type { Env, Route } from "../types";
 
 function giteaSign(body: string, secret: string): string {
   return createHmac("sha256", secret).update(body).digest("hex");
@@ -149,5 +151,76 @@ describe("gitea event parsing", () => {
     expect(msg.fields![0].value).toBe(
       "[`abcd123`](https://git.example.com/org/repo/commit/abcd1234ef) fix stuff",
     );
+  });
+});
+
+describe("custom provider", () => {
+  const secret = "tenant-secret";
+  const body = JSON.stringify({
+    title: "Deploy failed",
+    repo: "acme/widget",
+    color: "red",
+    description: "prod down",
+  });
+
+  function env(overrides: Record<string, unknown> = {}): Env {
+    return { GITHUB_WEBHOOK_SECRET: secret, ...overrides } as Env;
+  }
+
+  it("matches only requests with X-WebHooker-Signature and no forge headers", () => {
+    expect(customProvider.matches({ "x-webhooker-signature": "sha256=abc" })).toBe(true);
+    expect(customProvider.matches({})).toBe(false);
+    expect(customProvider.matches({ "x-github-event": "push" })).toBe(false);
+    expect(customProvider.matches({ "x-gitea-event": "push" })).toBe(false);
+  });
+
+  it("detectProvider finds the custom provider", () => {
+    expect(detectProvider({ "x-webhooker-signature": "sha256=abc" })?.id).toBe("custom");
+  });
+
+  it("accepts a valid sha256 HMAC signature", async () => {
+    const sig = `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
+    expect(await customProvider.verify(body, { "x-webhooker-signature": sig }, env())).toBe(true);
+  });
+
+  it("rejects an invalid signature", async () => {
+    expect(
+      await customProvider.verify(body, { "x-webhooker-signature": "sha256=wrong" }, env()),
+    ).toBe(false);
+  });
+
+  it("rejects when the secret is missing", async () => {
+    const sig = `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
+    expect(
+      (await customProvider.verify(body, { "x-webhooker-signature": sig }, {})) as unknown as Env,
+    ).toBe(false);
+  });
+
+  it("parses the body into a custom event with optional deliveryId", () => {
+    const event = customProvider.parse(body, {});
+    expect(event).not.toBeNull();
+    expect(event!.event).toBe("custom");
+    expect(event!.provider).toBe("custom");
+    expect((event!.payload as { title: string }).title).toBe("Deploy failed");
+
+    const withId = customProvider.parse(JSON.stringify({ title: "x", deliveryId: "alert-1" }), {});
+    expect(withId!.deliveryId).toBe("alert-1");
+  });
+
+  it("returns null for invalid JSON", () => {
+    expect(customProvider.parse("not json", {})).toBeNull();
+  });
+
+  it("extracts the GitHub App installation id on github events", () => {
+    const event = parseEvent(
+      { "x-github-event": "push", "x-github-delivery": "d1" },
+      JSON.stringify({ installation: { id: 42 }, repository: { full_name: "a/b" } }),
+    );
+    expect(event!.installationId).toBe(42);
+    const noInstall = parseEvent(
+      { "x-github-event": "push" },
+      JSON.stringify({ repository: { full_name: "a/b" } }),
+    );
+    expect(noInstall!.installationId).toBeUndefined();
   });
 });

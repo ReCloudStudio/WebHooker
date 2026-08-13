@@ -13,7 +13,9 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Discord interactions: HTTPS Interactions Endpoint (`POST /discord/interactions`, Ed25519-signed) — no Discord Gateway / Durable Object; bot stays offline, messages always sent via REST
 - Storage: Cloudflare KV (tokens, OAuth state, route config `config:routes`, group config `config:groups`, admin sessions, delivery dedup, message-update tracking `msg:*`, i18n overrides `i18n:*`) + D1 (`send_logs`, `discord_links`, `telegram_links`)
 - Signature verification: Web Crypto API (HMAC-SHA256 for GitHub/Gitea, Ed25519 for Discord, timing-safe secret-token compare for Telegram)
-- Webhook providers: pluggable forge adapters under `src/providers/` (github, gitea) — each verifies its own signature format and normalizes its payload to a GitHub-shaped `WebhookEvent`; GitLab etc. can be added later
+- Webhook providers: pluggable forge adapters under `src/providers/` (github, gitea) — each verifies its own signature format and normalizes its payload to a GitHub-shaped `WebhookEvent`; a `custom` provider accepts arbitrary signed JSON posts (`X-WebHooker-Signature`) as `custom` events; GitLab etc. can be added later
+- Per-group webhook ingress: optional `POST /webhook/{groupId}` with a per-group secret in KV (`tenant:{groupId}`) — Gitea/classic-GitHub/custom webhooks are verified against the group's secret instead of the operator's global ones; only that group's routes fire. The legacy `POST /webhook` (global secrets, all routes) stays untouched
+- GitHub App tenant isolation: `Group.installationId` binds a group to one GitHub App installation; events whose `payload.installation.id` differs are rejected at dispatch (hard isolation on top of the optional `owners` list). `installation.created` events auto-provision: a dedicated `inst-{installationId}` group is created, or existing groups whose `owners` match the installing account get bound automatically
 - GitHub OAuth: octokit (token is stored hashed for reverse lookup)
 - Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist
 - Access control: every group has role-based members (`owner` / `admin` / `viewer`); super admins bypass; legacy `adminIds` are read as owners (backward compatible); owners manage members + invites; `owners` field stays super-only
@@ -29,7 +31,8 @@ src/
 ├── index.ts              # CF Workers entry (fetch + scheduled), scheduled = Discord command sync + Telegram webhook sync
 ├── types.ts              # Env, Config, Route, Filter, Group, WebhookEvent, NeutralMessage
 ├── config.ts             # loadRoutes/saveRoutes (KV config:routes, cache w/ 60s TTL), loadConfig from env
-├── server.ts             # Hono app: /health, /webhook, /discord/interactions, /telegram/webhook, mounts /auth, /admin + /
+├── server.ts             # Hono app: /health, /webhook, /webhook/:groupId, /discord/interactions, /telegram/webhook, mounts /auth, /admin + /
+├── webhook.ts            # processWebhook/handleWebhook: tenant lookup, provider detect/verify/parse, dedup, scoped dispatch
 ├── core/
 │   └── dispatch.ts       # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter + per-group webhook log)
 ├── events/               # Provider-agnostic route matching
@@ -37,20 +40,22 @@ src/
 ├── providers/            # Forge webhook providers (verify + parse/normalize to GitHub-shaped events)
 │   ├── types.ts          # Provider interface (matches/verify/parse)
 │   ├── hmac.ts           # HMAC-SHA256 + timing-safe compare helpers
-│   ├── index.ts          # detectProvider() registry (github, gitea)
-│   ├── github/           # X-GitHub-Event + X-Hub-Signature-256 ("sha256=" prefix)
+│   ├── index.ts          # detectProvider() registry (gitea, github, custom)
+│   ├── github/           # X-GitHub-Event + X-Hub-Signature-256 ("sha256=" prefix); extracts installation.id
 │   │   ├── verify.ts     # HMAC signature verify
 │   │   └── parse.ts      # parseEvent (headers + body → WebhookEvent)
-│   └── gitea/            # X-Gitea-Event + X-Gitea-Signature (plain hex HMAC)
-│       ├── verify.ts     # HMAC signature verify (no prefix)
-│       └── parse.ts      # parse + normalize Gitea payloads to GitHub shape
+│   ├── gitea/            # X-Gitea-Event + X-Gitea-Signature (plain hex HMAC)
+│   │   ├── verify.ts     # HMAC signature verify (no prefix)
+│   │   └── parse.ts      # parse + normalize Gitea payloads to GitHub shape
+│   └── custom/           # X-WebHooker-Signature (sha256= HMAC) + arbitrary JSON → `custom` events
+│       └── index.ts      # matches/verify/parse for non-forge senders
 ├── formatters/           # Platform-neutral message formatters (was formatter.ts)
-│   ├── index.ts          # formatEvent: 28-event switch → NeutralMessage + re-exports
+│   ├── index.ts          # formatEvent: 29-event switch → NeutralMessage + re-exports
 │   ├── colors.ts         # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
 │   ├── helpers.ts        # emojiPrefix, T, buildMessage
 │   └── *.ts              # push, pull-request, issues, comments, workflow, release, create,
 │                         # repo, check, review, commit-comment, deployment, member, label,
-│                         # milestone, discussion, repository, security, generic, ping
+│                         # milestone, discussion, repository, security, generic, ping, custom
 ├── drivers/              # Platform drivers (pluggable push targets)
 │   ├── types.ts          # PlatformDriver interface + SendResult (send + edit)
 │   ├── index.ts          # getDriver() registry (discord default + telegram)
@@ -77,6 +82,7 @@ src/
 │   ├── invites.ts        # Invite CRUD (KV invite:{token}, 7d TTL) + acceptInvite (join group as admin/viewer)
 │   ├── session.ts        # Session CRUD (KV session:{id}), isAdminUser, cookie helpers
 │   ├── groups.ts         # Group CRUD (config:groups), member roles (normalizeGroupMembers/memberRole), resolveScope + role helpers (roleAt/canEditRoutes/canEditGroup)
+│   ├── tenants.ts        # Per-group webhook secret CRUD (KV tenant:{groupId}, 32-byte random hex)
 │   ├── home-routes.ts    # landing page (zh/en)
 │   ├── legal-routes.ts   # /terms + /privacy pages (zh/en)
 │   └── richheader-routes.ts # GET /api/richheader: Open Graph page for Telegram avatar link-preview card
@@ -94,19 +100,22 @@ src/__tests__/            # bun test unit tests (webhook, formatter, discord, te
 
 - Verify GitHub webhook signatures (Web Crypto HMAC-SHA256, `X-Hub-Signature-256`)
 - Verify Gitea webhook signatures (Web Crypto HMAC-SHA256, plain hex `X-Gitea-Signature`)
+- Verify custom webhook signatures (Web Crypto HMAC-SHA256, GitHub-style `sha256=` via `X-WebHooker-Signature`)
 - Normalize Gitea webhook payloads to a GitHub-shaped `WebhookEvent` (push `compare_url` → `compare`, `pull_request_comment` → `pull_request_review_comment`, ...)
 - Verify Discord interactions (Web Crypto Ed25519, X-Signature-Ed25519 over timestamp + body)
 - Verify Telegram webhook calls (X-Telegram-Bot-Api-Secret-Token when configured)
 - Filter events by: event type, repo name, actor, action, branch, keyword (regex supported)
-- Filter routes by group owner restriction (`Group.owners`), group source-platform restriction (`Group.providers`: github/gitea), and skip fallback routes whenever a regular route matched; stop evaluating further routes when a matched route has `stop: true`
+- Filter routes by group owner restriction (`Group.owners`), group source-platform restriction (`Group.providers`: github/gitea), GitHub App installation restriction (`Group.installationId`), and skip fallback routes whenever a regular route matched; stop evaluating further routes when a matched route has `stop: true`
+- Auto-provision GitHub App installs on `installation.created`: create `inst-{installationId}` group or bind existing groups whose `owners` match the installing account
 - Enforce role-based access on every admin API: super admins bypass, `owner` manages the group (routes/members/invites/settings), `admin` edits routes, `viewer` is read-only; legacy `adminIds` groups resolve to `owner` members
 - Issue single-use 7-day group invite links (`invite:{token}`); accepting joins as admin/viewer (never owner); `ALLOW_SELF_SIGNUP=1` creates a deterministic personal group (`u-{userId}`) on first login
 - Record every admin operation (login/logout, group/route/member/invite changes) to D1 `audit_logs`; the scheduled trigger prunes entries past `AUDIT_RETENTION_DAYS`
 - Mention Discord roles on route trigger: route-level `discordRoleIds` are rendered as `<@&id>` into the Discord message `content` (Telegram targets ignore the field)
-- Format 28 event types as platform-neutral messages (Discord embeds + Telegram HTML)
+- Format 29 event types as platform-neutral messages (Discord embeds + Telegram HTML)
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
 - Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, KV `msg:*` tracking)
 - Record every dispatch attempt to D1 `send_logs` (route id, event, target, ok/error, duration, error code)
+- Serve a per-group webhook ingress (`POST /webhook/{groupId}`, per-group secret in KV `tenant:{groupId}`) for Gitea/classic-GitHub/custom senders; only that group's routes fire; dedup keys are tenant-scoped
 - Send a per-event summary (event, repo, delivery id, per route×target ✅/❌ outcome) to the group's `logTarget` when configured
 - Serve `/gh` slash commands + message context-menu commands + PR merge/close buttons + comment modals
 - Serve Telegram `/gh` commands (login/logout/comment/merge/close) via reply-message parsing

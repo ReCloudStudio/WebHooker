@@ -8,8 +8,12 @@ export function parseEvent(headers: Record<string, string>, body: string): Webho
   if (!event) return null;
 
   try {
-    const payload = JSON.parse(body);
-    return { provider: "github", event, payload, signature, deliveryId };
+    const payload = JSON.parse(body) as Record<string, unknown>;
+    const installationId =
+      typeof (payload.installation as { id?: unknown } | undefined)?.id === "number"
+        ? (payload.installation as { id: number }).id
+        : undefined;
+    return { provider: "github", event, payload, signature, deliveryId, installationId };
   } catch {
     return null;
   }

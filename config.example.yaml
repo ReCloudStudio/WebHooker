@@ -12,6 +12,7 @@ groups:
         role: owner
     # owners: ["myorg"]            # restrict events to this org/user (optional)
     # providers: ["github", "gitea"]  # restrict to source platforms (optional; empty = all)
+    # installationId: 12345678     # GitHub App installation binding (auto-created on installation.created)
     # emoji: true                  # include emoji in messages (default true)
     # lang: "en"                   # message language for this group's routes (en/zh, default en)
     # Webhook log channel: a Discord channel/thread or Telegram chat/topic that

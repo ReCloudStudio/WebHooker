@@ -108,6 +108,19 @@
           </div>
           <div class="field">
             <label
+              >{{ t("groupEditor.installationId") }}
+              <span class="lbl-note">{{ t("groupEditor.installationIdNote") }}</span></label
+            >
+            <input
+              v-model="form.installationId"
+              type="text"
+              inputmode="numeric"
+              :placeholder="t('groupEditor.installationIdPlaceholder')"
+            />
+            <div class="hint">{{ t("groupEditor.installationIdHint") }}</div>
+          </div>
+          <div class="field">
+            <label
               >{{ t("groupEditor.logTarget") }}
               <span class="lbl-note">{{ t("groupEditor.logTargetNote") }}</span></label
             >
@@ -183,6 +196,7 @@ const form = reactive({
   name: "",
   owners: "",
   providers: [] as ("github" | "gitea")[],
+  installationId: "",
   emoji: true,
   lang: "",
   logPlatform: "" as "" | "discord" | "telegram",
@@ -218,6 +232,7 @@ watch(
     form.providers = (g?.providers ?? []).filter(
       (p): p is "github" | "gitea" => p === "github" || p === "gitea",
     );
+    form.installationId = g?.installationId != null ? String(g.installationId) : "";
     form.emoji = g?.emoji ?? true;
     form.lang = g?.lang ?? "";
     form.logPlatform = lt?.platform ?? "";
@@ -268,6 +283,15 @@ function save(): void {
     }
     logTarget = { platform: "telegram", chatId, topicId: form.logTopicId.trim() || undefined };
   }
+  const installationText = form.installationId.trim();
+  let installationId: number | undefined;
+  if (installationText) {
+    installationId = Number(installationText);
+    if (!Number.isInteger(installationId) || installationId <= 0) {
+      formError.value = t("groupEditor.errInstallationId");
+      return;
+    }
+  }
   const owners = splitList(form.owners);
   const members = props.group?.members
     ? props.group.members.map((m) => ({ ...m }))
@@ -281,6 +305,7 @@ function save(): void {
     adminIds: members.filter((m) => m.role === "owner").map((m) => m.login),
     owners: props.superAdmin ? (owners.length ? owners : undefined) : props.group?.owners,
     providers: form.providers.length ? form.providers : undefined,
+    installationId,
     emoji: form.emoji,
     lang: form.lang.trim() || undefined,
     logTarget,

@@ -58,27 +58,87 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
 
 控制台以 SPA 形式挂在 `/admin`，各标签页可通过 URL 路径直达（`/admin/groups`、`/admin/logs`、`/admin/audit`）。`/admin` 之外且未匹配下方端点的 URL 直接返回 `404`，不会再被吞进控制台。
 
-| 端点                                 | 说明                                   |
-| ------------------------------------ | -------------------------------------- |
-| `GET /admin`                         | 配置控制台页面                         |
-| `GET /admin/login`                   | 开始 GitHub OAuth 登录                 |
-| `GET /admin/logout`                  | 销毁会话                               |
-| `GET /admin/invite?token=…`          | 接受分组邀请（浏览器页面）             |
-| `GET /admin/api/me`                  | 当前会话、权限范围、分组和角色         |
-| `GET /admin/api/routes`              | 列出路由（按权限过滤）                 |
-| `PUT /admin/api/routes`              | 替换路由（按分组 owner/admin 权限）    |
-| `GET /admin/api/groups`              | 列出分组 + 当前用户在各组的角色        |
-| `PUT /admin/api/groups`              | 替换分组（超管全量；owner 仅自己的组） |
-| `GET /admin/api/groups/:id/routes`   | 列出某分组的路由                       |
-| `PUT /admin/api/groups/:id/routes`   | 替换某分组的路由（owner/admin）        |
-| `GET /admin/api/logs`                | 发送日志（按可访问路由过滤）           |
-| `GET /admin/api/logs/:id`            | 单条发送日志（按权限过滤）             |
-| `POST /admin/api/groups/:id/invites` | 创建邀请链接（owner）                  |
-| `GET /admin/api/groups/:id/invites`  | 列出待接受邀请（owner）                |
-| `DELETE /admin/api/invites/:token`   | 撤销邀请（owner）                      |
-| `GET /admin/api/audit`               | 审计日志（按可访问分组过滤）           |
+| 端点                                            | 说明                                      |
+| ----------------------------------------------- | ----------------------------------------- |
+| `GET /admin`                                    | 配置控制台页面                            |
+| `GET /admin/login`                              | 开始 GitHub OAuth 登录                    |
+| `GET /admin/logout`                             | 销毁会话                                  |
+| `GET /admin/invite?token=…`                     | 接受分组邀请（浏览器页面）                |
+| `GET /admin/api/me`                             | 当前会话、权限范围、分组和角色            |
+| `GET /admin/api/routes`                         | 列出路由（按权限过滤）                    |
+| `PUT /admin/api/routes`                         | 替换路由（按分组 owner/admin 权限）       |
+| `GET /admin/api/groups`                         | 列出分组 + 当前用户在各组的角色           |
+| `PUT /admin/api/groups`                         | 替换分组（超管全量；owner 仅自己的组）    |
+| `GET /admin/api/groups/:id/routes`              | 列出某分组的路由                          |
+| `PUT /admin/api/groups/:id/routes`              | 替换某分组的路由（owner/admin）           |
+| `GET /admin/api/logs`                           | 发送日志（按可访问路由过滤）              |
+| `GET /admin/api/logs/:id`                       | 单条发送日志（按权限过滤）                |
+| `POST /admin/api/groups/:id/invites`            | 创建邀请链接（owner）                     |
+| `GET /admin/api/groups/:id/invites`             | 列出待接受邀请（owner）                   |
+| `DELETE /admin/api/invites/:token`              | 撤销邀请（owner）                         |
+| `GET /admin/api/audit`                          | 审计日志（按可访问分组过滤）              |
+| `GET /admin/api/groups/:id/webhook`             | 分组 webhook 入口信息（owner）            |
+| `POST /admin/api/groups/:id/webhook/regenerate` | 生成/重新生成分组 webhook secret（owner） |
+| `DELETE /admin/api/groups/:id/webhook`          | 停用分组 webhook 入口（owner）            |
 
 控制台支持新增、编辑、删除和开关路由。保存后立即写入 KV `config:routes` 并使配置缓存失效，下一次 webhook 处理即会生效。
+
+## Webhook 端点
+
+### 全局端点（`POST /webhook`）
+
+旧版全局端点使用运维者的全局 secret（`GITHUB_WEBHOOK_SECRET`、`GITEA_WEBHOOK_SECRET`）验签，可分发到**所有**路由。GitHub App 安装事件从该端点进入；多租户场景请用分组的 `installationId` 做隔离。
+
+### 分组端点（`POST /webhook/{groupId}`）
+
+每个分组可以启用独立的 webhook 入口和 secret（在分组页面「Webhook 入口」面板生成，owner 权限）。载荷使用**分组的** secret 验签，且只有该分组的路由会触发。SaaS 用户可以借此配置 Gitea、classic GitHub 或自定义 webhook，无需共享（也无需知道）运维者的全局 secret。
+
+- 支持所有 provider：GitHub（`X-Hub-Signature-256`）、Gitea（`X-Gitea-Signature`）、自定义（`X-WebHooker-Signature`）
+- secret 为 64 位十六进制字符串；重新生成后旧值立即失效
+- 去重 key 按租户隔离（`delivery:{groupId}:{id}`）
+- 分组未配置 secret（或分组不存在）时返回 `404`
+
+### 自定义 Webhook
+
+向 `POST /webhook/{groupId}`（或全局端点）POST 任意 JSON，并用分组的 secret 对原始 body 计算 HMAC-SHA256 放在 `X-WebHooker-Signature: sha256=<hex>` 头中。载荷会变成 `custom` 事件走标准路由管线——创建一条 `event: custom` 的路由（控制台有模板）即可分发到该路由的目标，并自动记录 `send_logs`、出现在分组的日志频道。
+
+载荷格式：
+
+```json
+{
+  "title": "Deploy failed",
+  "description": "Prod rollout failed at 12:03 UTC",
+  "color": "red",
+  "url": "https://ci.example.com/runs/42",
+  "repo": "acme/widget",
+  "author": {
+    "name": "alice",
+    "iconUrl": "https://…/alice.png",
+    "url": "https://github.com/alice"
+  },
+  "fields": [{ "name": "Env", "value": "prod", "inline": true }],
+  "footer": "my-monitor",
+  "deliveryId": "alert-123"
+}
+```
+
+| 字段          | 类型     | 说明                                                                                                     |
+| ------------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `title`       | string   | 消息标题（缺失时回退为「自定义消息」）                                                                   |
+| `description` | string   | 可选的消息正文                                                                                           |
+| `color`       | string   | 可选消息颜色：颜色词（`red`、`green`、`yellow`、`blue`、`purple`、`orange`、`cyan`、`gray`）或 `#rrggbb` |
+| `url`         | string   | 可选标题链接                                                                                             |
+| `repo`        | string   | 可选 `owner/repo`；会加在标题前并作为 footer                                                             |
+| `author`      | object   | 可选的 `{ name, iconUrl, url }`                                                                          |
+| `fields`      | object[] | 可选的嵌入字段 `{ name, value, inline }`                                                                 |
+| `footer`      | string   | 可选的 footer 覆盖                                                                                       |
+| `deliveryId`  | string   | 可选的发送方去重 id（重试场景）                                                                          |
+
+### GitHub App 租户隔离
+
+GitHub App 安装后，**所有**安装方的事件都会到达全局端点。要让租户互相隔离，请把每个分组绑定到应当为其提供事件的安装 ID：`"installationId": 12345678`。该 ID 可从 App 安装 webhook 载荷（`installation.id`）或 GitHub App 安装页 URL 看到。即使分组的 `owners` 为空，来自其它安装的事件也会被拒绝。未设置 `installationId` 的分组保持旧行为（`owners` 过滤）。
+
+绑定是**自动配置**的：`installation.created` webhook 事件会自动创建绑定到该安装的专用分组 `inst-{installationId}`（名称为安装账号），或自动把 `owners` 匹配该账号的现有分组绑定到该安装。无需手动填写 ID——安装 App 后在控制台为自动创建的分组添加路由和成员即可。
 
 ## 路由
 
@@ -182,21 +242,23 @@ WebHooker 内置了位于 `/admin` 的配置控制台，可在浏览器中管理
   ],
   "owners": ["myorg"],
   "providers": ["github", "gitea"],
+  "installationId": 12345678,
   "logTarget": { "platform": "discord", "channelId": "123456789", "threadId": "987654321" }
 }
 ```
 
-| 字段        | 类型     | 必需 | 说明                                                                                                                                                                 |
-| ----------- | -------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`        | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用                                                                                                                |
-| `name`      | string   | 是   | 可读的分组名称                                                                                                                                                       |
-| `members`   | object[] | 否   | `{ login, role }` 列表；角色为 `owner`、`admin` 或 `viewer`                                                                                                          |
-| `adminIds`  | string[] | 否   | 已废弃的旧字段；存在时按 role 为 `owner` 的成员处理                                                                                                                  |
-| `owners`    | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制                                                                                                                  |
-| `providers` | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部                                                                                                          |
-| `emoji`     | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                                                                                                                          |
-| `lang`      | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——默认 `en`                                                                                 |
-| `logTarget` | object   | 否   | Webhook 日志频道：Discord 目标 `{ platform, channelId, threadId? }` 或 Telegram 目标 `{ platform, chatId, topicId? }`，本分组路由每次投递 webhook 时都会向其发送摘要 |
+| 字段             | 类型     | 必需 | 说明                                                                                                                                                                 |
+| ---------------- | -------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`             | string   | 是   | 小写 id（`a-z0-9`、`-`），由每条路由的 `groupId` 引用                                                                                                                |
+| `name`           | string   | 是   | 可读的分组名称                                                                                                                                                       |
+| `members`        | object[] | 否   | `{ login, role }` 列表；角色为 `owner`、`admin` 或 `viewer`                                                                                                          |
+| `adminIds`       | string[] | 否   | 已废弃的旧字段；存在时按 role 为 `owner` 的成员处理                                                                                                                  |
+| `owners`         | string[] | 否   | 允许事件进入该分组的组织/用户登录名；为空表示不限制                                                                                                                  |
+| `providers`      | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；为空表示全部                                                                                                          |
+| `installationId` | number   | 否   | 绑定到该分组的 GitHub App 安装 ID；只接受该安装的事件（为空表示全部）                                                                                                |
+| `emoji`          | boolean  | 否   | 是否在该分组消息中显示 emoji（默认 `true`）                                                                                                                          |
+| `lang`           | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——默认 `en`                                                                                 |
+| `logTarget`      | object   | 否   | Webhook 日志频道：Discord 目标 `{ platform, channelId, threadId? }` 或 Telegram 目标 `{ platform, chatId, topicId? }`，本分组路由每次投递 webhook 时都会向其发送摘要 |
 
 ### 角色
 

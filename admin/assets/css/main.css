@@ -1282,6 +1282,62 @@ main {
   color: var(--faint);
 }
 
+.webhook-panel .wh-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.webhook-panel .wh-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  text-transform: uppercase;
+  min-width: 52px;
+}
+
+.webhook-panel .wh-value {
+  flex: 1;
+  min-width: 180px;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  word-break: break-all;
+}
+
+.webhook-panel .wh-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.webhook-panel .wh-usage {
+  margin-top: 14px;
+}
+
+.webhook-panel .wh-usage summary {
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.webhook-panel .wh-code {
+  margin: 10px 0 0;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: var(--muted);
+}
+
 @media (max-width: 720px) {
   .filter-row {
     grid-template-columns: 100px 1fr auto;

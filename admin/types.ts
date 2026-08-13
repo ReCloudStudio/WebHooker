@@ -38,6 +38,7 @@ export interface Group {
   members?: GroupMember[];
   owners?: string[];
   providers?: ("github" | "gitea" | "gitlab")[];
+  installationId?: number;
   emoji?: boolean;
   lang?: string;
   logTarget?: RouteTarget;
@@ -145,6 +146,11 @@ export const ROUTE_TEMPLATES: RouteTemplate[] = [
     id: "commit-comments",
     nameKey: "templates.commitComment",
     filters: [{ type: "event", match: "commit_comment" }],
+  },
+  {
+    id: "custom-webhook",
+    nameKey: "templates.customWebhook",
+    filters: [{ type: "event", match: "custom" }],
   },
 ];
 

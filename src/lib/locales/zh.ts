@@ -195,6 +195,9 @@ export const zh = {
       title: "{repo}: {event}{action}",
     },
   },
+  custom: {
+    title_fallback: "自定义消息",
+  },
   log: {
     title: "{repo}: {event}{action}",
     routes: "路由",

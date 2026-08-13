@@ -7,7 +7,7 @@ import type { Env, WebhookEvent } from "../types";
  * {@link WebhookEvent} and never knows which forge produced it.
  */
 export interface Provider {
-  readonly id: "github" | "gitea" | "gitlab";
+  readonly id: "github" | "gitea" | "gitlab" | "custom";
   /**
    * Whether the request headers belong to this provider (e.g. checks the
    * `X-Gitea-Event` header).

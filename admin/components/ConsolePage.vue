@@ -84,6 +84,12 @@
             :saving="savingGroup"
             @save="onSaveGroupFromPanel"
           />
+
+          <WebhookPanel
+            v-if="canEditGroup(selectedGroup.id)"
+            :group-id="selectedGroup.id"
+            :can-edit="canEditGroup(selectedGroup.id)"
+          />
         </template>
 
         <!-- Top-level views -->
@@ -227,6 +233,7 @@
 <script setup lang="ts">
 import type { Group, Route } from "~/types";
 import { useAuditApi } from "~/composables/useAudit";
+import WebhookPanel from "~/components/WebhookPanel.vue";
 
 const { t, toggle } = useI18n();
 const { push } = useToasts();

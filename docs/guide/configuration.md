@@ -58,27 +58,87 @@ WebHooker ships with a built-in config console at `/admin` for managing routes i
 
 The console is served as an SPA at `/admin`; its tabs are deep-linkable via the URL path (`/admin/groups`, `/admin/logs`, `/admin/audit`). URLs outside `/admin` that do not match an endpoint below return a plain `404` instead of the console.
 
-| Endpoint                             | Description                                  |
-| ------------------------------------ | -------------------------------------------- |
-| `GET /admin`                         | Config console UI                            |
-| `GET /admin/login`                   | Start GitHub OAuth sign-in                   |
-| `GET /admin/logout`                  | Destroy session                              |
-| `GET /admin/invite?token=…`          | Accept a group invite (browser page)         |
-| `GET /admin/api/me`                  | Current session, scope, groups, and roles    |
-| `GET /admin/api/routes`              | List routes (scoped to access)               |
-| `PUT /admin/api/routes`              | Replace routes (owner/admin per group)       |
-| `GET /admin/api/groups`              | List groups + the signed-in user's role each |
-| `PUT /admin/api/groups`              | Replace groups (super: all; owner: own only) |
-| `GET /admin/api/groups/:id/routes`   | List a group's routes                        |
-| `PUT /admin/api/groups/:id/routes`   | Replace a group's routes (owner/admin)       |
-| `GET /admin/api/logs`                | Send logs (scoped to accessible routes)      |
-| `GET /admin/api/logs/:id`            | Single send-log entry (scoped)               |
-| `POST /admin/api/groups/:id/invites` | Create an invite link (owner)                |
-| `GET /admin/api/groups/:id/invites`  | List pending invites (owner)                 |
-| `DELETE /admin/api/invites/:token`   | Revoke an invite (owner)                     |
-| `GET /admin/api/audit`               | Audit log (scoped to accessible groups)      |
+| Endpoint                                        | Description                                          |
+| ----------------------------------------------- | ---------------------------------------------------- |
+| `GET /admin`                                    | Config console UI                                    |
+| `GET /admin/login`                              | Start GitHub OAuth sign-in                           |
+| `GET /admin/logout`                             | Destroy session                                      |
+| `GET /admin/invite?token=…`                     | Accept a group invite (browser page)                 |
+| `GET /admin/api/me`                             | Current session, scope, groups, and roles            |
+| `GET /admin/api/routes`                         | List routes (scoped to access)                       |
+| `PUT /admin/api/routes`                         | Replace routes (owner/admin per group)               |
+| `GET /admin/api/groups`                         | List groups + the signed-in user's role each         |
+| `PUT /admin/api/groups`                         | Replace groups (super: all; owner: own only)         |
+| `GET /admin/api/groups/:id/routes`              | List a group's routes                                |
+| `PUT /admin/api/groups/:id/routes`              | Replace a group's routes (owner/admin)               |
+| `GET /admin/api/logs`                           | Send logs (scoped to accessible routes)              |
+| `GET /admin/api/logs/:id`                       | Single send-log entry (scoped)                       |
+| `POST /admin/api/groups/:id/invites`            | Create an invite link (owner)                        |
+| `GET /admin/api/groups/:id/invites`             | List pending invites (owner)                         |
+| `DELETE /admin/api/invites/:token`              | Revoke an invite (owner)                             |
+| `GET /admin/api/audit`                          | Audit log (scoped to accessible groups)              |
+| `GET /admin/api/groups/:id/webhook`             | Group webhook endpoint info (owner)                  |
+| `POST /admin/api/groups/:id/webhook/regenerate` | Generate/regenerate the group webhook secret (owner) |
+| `DELETE /admin/api/groups/:id/webhook`          | Disable the group webhook ingress (owner)            |
 
 The console lets you add, edit, delete, and toggle routes. Saved routes are written to KV `config:routes` immediately and the config cache is invalidated so the webhook pipeline picks them up on the next run.
+
+## Webhook Endpoints
+
+### Global endpoint (`POST /webhook`)
+
+The legacy global endpoint verifies payloads against the operator's global secrets (`GITHUB_WEBHOOK_SECRET`, `GITEA_WEBHOOK_SECRET`) and dispatches into **all** routes. GitHub App installations deliver here; use `installationId` on groups to keep tenants isolated.
+
+### Per-group endpoint (`POST /webhook/{groupId}`)
+
+Every group can opt into its own webhook ingress with an independent secret (generated from the group page — Webhook endpoint panel, owner role). Payloads are verified against the **group's** secret instead of the global ones, and only that group's routes are eligible. This is how SaaS users configure Gitea, classic GitHub, or custom webhooks without sharing (or knowing) the operator's secrets.
+
+- Supported for any provider: GitHub (`X-Hub-Signature-256`), Gitea (`X-Gitea-Signature`), custom (`X-WebHooker-Signature`)
+- The secret is a 64-char hex string; regenerate from the console invalidates the old one immediately
+- Delivery-id dedup keys are tenant-scoped (`delivery:{groupId}:{id}`)
+- When the group has no secret (or no longer exists) the endpoint returns `404`
+
+### Custom webhooks
+
+Post arbitrary JSON to `POST /webhook/{groupId}` (or the global endpoint) with the body signed as `X-WebHooker-Signature: sha256=<hmac-sha256 hex of the raw body>` using the group's secret. The payload becomes a `custom` event that flows through the normal route pipeline — create a route with `event: custom` (there is a console template) and it dispatches to that route's targets, records `send_logs`, and appears in the group's webhook log channel.
+
+Payload schema:
+
+```json
+{
+  "title": "Deploy failed",
+  "description": "Prod rollout failed at 12:03 UTC",
+  "color": "red",
+  "url": "https://ci.example.com/runs/42",
+  "repo": "acme/widget",
+  "author": {
+    "name": "alice",
+    "iconUrl": "https://…/alice.png",
+    "url": "https://github.com/alice"
+  },
+  "fields": [{ "name": "Env", "value": "prod", "inline": true }],
+  "footer": "my-monitor",
+  "deliveryId": "alert-123"
+}
+```
+
+| Field         | Type     | Description                                                                                                      |
+| ------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `title`       | string   | Message title (falls back to "Custom message")                                                                   |
+| `description` | string   | Optional message body                                                                                            |
+| `color`       | string   | Optional embed color: a word (`red`, `green`, `yellow`, `blue`, `purple`, `orange`, `cyan`, `gray`) or `#rrggbb` |
+| `url`         | string   | Optional link for the title                                                                                      |
+| `repo`        | string   | Optional `owner/repo`; prefixes the title and is used as the footer                                              |
+| `author`      | object   | Optional `{ name, iconUrl, url }`                                                                                |
+| `fields`      | object[] | Optional embed fields `{ name, value, inline }`                                                                  |
+| `footer`      | string   | Optional footer override                                                                                         |
+| `deliveryId`  | string   | Optional id for sender-side dedup (retries)                                                                      |
+
+### GitHub App tenant isolation
+
+When the GitHub App is installed, its events arrive at the global endpoint for **every** installation. To keep tenants apart, bind each group to the installation id that should feed it: `"installationId": 12345678`. The id is visible in the App's installation webhook payload (`installation.id`) or on the GitHub App installation page URL. Events from any other installation are rejected for that group even if its `owners` list is empty. Groups without `installationId` keep the legacy behavior (`owners` filtering).
+
+Binding is **auto-configured**: the `installation.created` webhook event creates a dedicated `inst-{installationId}` group (name = the installing account) bound to the installation, or automatically binds every existing group whose `owners` match the installing account. No manual id entry is needed — just install the app, then add routes/members to the auto-created group in the console.
 
 ## Routes
 
@@ -182,21 +242,23 @@ Routes belong to groups. Groups scope admin access and can restrict which events
   ],
   "owners": ["myorg"],
   "providers": ["github", "gitea"],
+  "installationId": 12345678,
   "logTarget": { "platform": "discord", "channelId": "123456789", "threadId": "987654321" }
 }
 ```
 
-| Field       | Type     | Required | Description                                                                                                                                                                                  |
-| ----------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`        | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`                                                                                                                           |
-| `name`      | string   | Yes      | Human-readable group name                                                                                                                                                                    |
-| `members`   | object[] | No       | `{ login, role }` entries; role is `owner`, `admin`, or `viewer`                                                                                                                             |
-| `adminIds`  | string[] | No       | Deprecated legacy field; treated as `members` with role `owner` when present                                                                                                                 |
-| `owners`    | string[] | No       | Org/user logins whose events are accepted into this group; empty = all                                                                                                                       |
-| `providers` | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all                                                                                                                    |
-| `emoji`     | boolean  | No       | Whether to include emoji in this group's messages (default `true`)                                                                                                                           |
-| `lang`      | string   | No       | Message language for every route in this group (e.g. `en`, `zh`; custom via KV `i18n:<lang>`) — defaults to `en`                                                                             |
-| `logTarget` | object   | No       | Webhook log channel: a Discord `{ platform, channelId, threadId? }` or Telegram `{ platform, chatId, topicId? }` target that receives a summary of every webhook the group's routes dispatch |
+| Field            | Type     | Required | Description                                                                                                                                                                                  |
+| ---------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`             | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`                                                                                                                           |
+| `name`           | string   | Yes      | Human-readable group name                                                                                                                                                                    |
+| `members`        | object[] | No       | `{ login, role }` entries; role is `owner`, `admin`, or `viewer`                                                                                                                             |
+| `adminIds`       | string[] | No       | Deprecated legacy field; treated as `members` with role `owner` when present                                                                                                                 |
+| `owners`         | string[] | No       | Org/user logins whose events are accepted into this group; empty = all                                                                                                                       |
+| `providers`      | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all                                                                                                                    |
+| `installationId` | number   | No       | GitHub App installation id bound to this group; only that installation's events are accepted (empty = all)                                                                                   |
+| `emoji`          | boolean  | No       | Whether to include emoji in this group's messages (default `true`)                                                                                                                           |
+| `lang`           | string   | No       | Message language for every route in this group (e.g. `en`, `zh`; custom via KV `i18n:<lang>`) — defaults to `en`                                                                             |
+| `logTarget`      | object   | No       | Webhook log channel: a Discord `{ platform, channelId, threadId? }` or Telegram `{ platform, chatId, topicId? }` target that receives a summary of every webhook the group's routes dispatch |
 
 ### Roles
 

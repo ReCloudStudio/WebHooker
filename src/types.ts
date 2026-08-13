@@ -115,6 +115,13 @@ export interface Group {
    */
   providers?: WebhookProvider[];
   /**
+   * GitHub App installation id bound to this group. When set, only webhook
+   * events coming from that installation (org/user) are accepted into the
+   * group's routes — hard tenant isolation on top of (or instead of) the
+   * `owners` list. Empty/omitted = no installation restriction.
+   */
+  installationId?: number;
+  /**
    * Whether to include emoji in messages sent through this group's routes.
    * Defaults to true when omitted.
    */
@@ -137,7 +144,7 @@ export interface Filter {
   exclude?: boolean;
 }
 
-export type WebhookProvider = "github" | "gitea" | "gitlab";
+export type WebhookProvider = "github" | "gitea" | "gitlab" | "custom";
 
 export interface WebhookEvent {
   event: string;
@@ -145,6 +152,11 @@ export interface WebhookEvent {
   signature?: string;
   deliveryId?: string;
   provider?: WebhookProvider;
+  /**
+   * GitHub App installation id that produced this event (extracted from
+   * `payload.installation.id`). Gitea/custom events have none.
+   */
+  installationId?: number;
 }
 
 export interface NeutralAuthor {

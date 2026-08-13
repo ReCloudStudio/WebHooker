@@ -4,8 +4,10 @@ GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook event
 
 ## Features
 
-- **28 event formatters** — push, pull_request, issues, issue_comment, workflow_run, workflow_job, status, deployment, deployment_status, check_run, check_suite, ping, release, create, delete, star, fork, pull_request_review, pull_request_review_comment, commit_comment, member, label, milestone, discussion, discussion_comment, repository, code_scanning_alert, dependabot_alert (+ generic fallback)
+- **28 event formatters** — push, pull_request, issues, issue_comment, workflow_run, workflow_job, status, deployment, deployment_status, check_run, check_suite, ping, release, create, delete, star, fork, pull_request_review, pull_request_review_comment, commit_comment, member, label, milestone, discussion, discussion_comment, repository, code_scanning_alert, dependabot_alert (+ generic fallback, + `custom` webhooks)
 - **Multi-provider webhooks** — GitHub (`X-Hub-Signature-256`) and Gitea (`X-Gitea-Signature`) share one `/webhook` endpoint; the provider is auto-detected from headers
+- **Per-group webhook ingress** — every group can get its own `POST /webhook/{groupId}` URL + secret (Gitea, classic GitHub webhooks, and arbitrary custom JSON posts signed with `X-WebHooker-Signature`)
+- **GitHub App tenant isolation** — bind a group to a GitHub App installation id so only that org/user's events enter it
 - HMAC-SHA256 signature verification (Web Crypto API)
 - Filter by event type, repo, actor, action, branch, keyword (supports regex)
 - Rich messages with color coding, author avatars, fields, and timestamps — rendered as Discord embeds and Telegram HTML

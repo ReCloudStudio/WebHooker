@@ -96,6 +96,62 @@ export function groupAcceptsProvider(group: Group, provider?: string): boolean {
   return allowed.includes(provider ?? "github");
 }
 
+/**
+ * Whether an event from a GitHub App `installationId` is allowed into this
+ * group. A group bound to an installation only accepts events from that
+ * installation (hard tenant isolation). Unbound groups accept everything here
+ * (their access is governed by `owners`/`providers` instead).
+ */
+export function groupAcceptsInstallation(group: Group, installationId?: number): boolean {
+  if (group.installationId == null) return true;
+  return installationId != null && group.installationId === installationId;
+}
+
+/**
+ * Auto-provision a GitHub App installation on `installation.created`:
+ * 1. No-op when a group is already bound to this installation id.
+ * 2. Otherwise bind every unbound group whose `owners` match the installing
+ *    account login (so existing org groups light up automatically).
+ * 3. Otherwise create a dedicated `inst-{installationId}` group bound to the
+ *    installation. Returns the group that now owns the installation.
+ */
+export async function ensureInstallationGroup(
+  kv: KVNamespace,
+  installationId: number,
+  accountLogin: string,
+): Promise<Group | null> {
+  const groups = await loadGroups(kv);
+  const existing = groups.find((g) => g.installationId === installationId);
+  if (existing) return existing;
+
+  const login = accountLogin.trim().toLowerCase();
+  const candidates = groups.filter(
+    (g) =>
+      g.installationId == null &&
+      login.length > 0 &&
+      (g.owners ?? []).some((o) => o.trim().toLowerCase() === login),
+  );
+  if (candidates.length > 0) {
+    const next = groups.map((g) => (candidates.includes(g) ? { ...g, installationId } : g));
+    await saveGroups(kv, next);
+    return next.find((g) => g.id === candidates[0]!.id) ?? null;
+  }
+
+  const gid = `inst-${installationId}`;
+  const dedicated = groups.find((g) => g.id === gid);
+  const group: Group = {
+    id: gid,
+    name: accountLogin.trim() || `Installation ${installationId}`,
+    adminIds: [],
+    installationId,
+  };
+  await saveGroups(
+    kv,
+    dedicated ? groups.map((g) => (g.id === gid ? { ...g, ...group } : g)) : [...groups, group],
+  );
+  return group;
+}
+
 export interface AccessScope {
   isSuper: boolean;
   /** Groups the user may view. When isSuper, this is every group. */

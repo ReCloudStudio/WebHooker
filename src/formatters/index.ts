@@ -21,6 +21,7 @@ import { formatRepository } from "./repository";
 import { formatCodeScanningAlert, formatDependabotAlert } from "./security";
 import { formatGeneric } from "./generic";
 import { formatPing } from "./ping";
+import { formatCustom } from "./custom";
 
 export function formatEvent(
   route: Route,
@@ -100,6 +101,8 @@ export function formatEvent(
       return formatCodeScanningAlert(payload, repo, author, t, showEmoji);
     case "dependabot_alert":
       return formatDependabotAlert(payload, repo, author, t, showEmoji);
+    case "custom":
+      return formatCustom(payload, repo, author, t, showEmoji);
     default:
       return formatGeneric(eventType, payload, repo, author, t, showEmoji);
   }

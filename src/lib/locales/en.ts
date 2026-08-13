@@ -195,6 +195,9 @@ export const en = {
       title: "{repo}: {event}{action}",
     },
   },
+  custom: {
+    title_fallback: "Custom message",
+  },
   log: {
     title: "{repo}: {event}{action}",
     routes: "Routes",

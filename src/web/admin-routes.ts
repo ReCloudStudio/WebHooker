@@ -16,6 +16,7 @@ import {
 import { getSendLog, getSendLogById } from "../lib/send-log";
 import { getAuditLog, recordAudit } from "../lib/audit";
 import { createInvite, listInvites, revokeInvite, getInvite, acceptInvite } from "./invites";
+import { getTenantSecret, setTenantSecret, deleteTenantSecret } from "./tenants";
 import { log } from "../lib/log";
 
 const VALID_FILTER_TYPES = new Set(["event", "repo", "actor", "action", "branch", "keyword"]);
@@ -277,6 +278,13 @@ export function validateGroups(
         error: `group "${g.id}".providers must be a list of "github" | "gitea" | "gitlab"`,
       };
     }
+    if (g.installationId !== undefined && g.installationId !== null) {
+      if (typeof g.installationId !== "number" || !Number.isInteger(g.installationId)) {
+        return { ok: false, error: `group "${g.id}".installationId must be an integer` };
+      }
+    } else {
+      delete g.installationId;
+    }
     if (g.emoji !== undefined && typeof g.emoji !== "boolean") {
       return { ok: false, error: `group "${g.id}".emoji must be a boolean` };
     }
@@ -463,6 +471,7 @@ export function createAdminRoutes(): Hono<AuthEnv> {
       if (prev.lang !== g.lang) fields.push("lang");
       if (!deepEqual(prev.logTarget, g.logTarget)) fields.push("logTarget");
       if (!deepEqual(prev.providers ?? [], g.providers ?? [])) fields.push("providers");
+      if (prev.installationId !== g.installationId) fields.push("installationId");
       if (!deepEqual(prev.owners ?? [], g.owners ?? [])) fields.push("owners");
       if (!deepEqual(prev.members ?? normalizeGroupMembers(prev), g.members))
         fields.push("members");
@@ -490,6 +499,7 @@ export function createAdminRoutes(): Hono<AuthEnv> {
           groupId: g.id,
           ip: clientIp(c),
         });
+        await deleteTenantSecret(c.env.KV, g.id).catch(() => undefined);
       }
     }
 
@@ -741,6 +751,76 @@ export function createAdminRoutes(): Hono<AuthEnv> {
       targetType: "group",
       targetId: invite.groupId,
       groupId: invite.groupId,
+      ip: clientIp(c),
+    });
+    return c.json({ ok: true });
+  });
+
+  // ---- Group webhook ingress (owner +) ----
+  app.get("/api/groups/:groupId/webhook", requireAnyAccess(), async (c) => {
+    const groupId = param(c, "groupId");
+    const access = requireGroupRole(c, groupId, "owner");
+    if (!access.ok) {
+      return c.json(
+        { error: access.status === 404 ? "Group not found" : "Forbidden" },
+        access.status,
+      );
+    }
+    const origin = c.env.BASE_URL ?? new URL(c.req.url).origin;
+    return c.json({
+      url: `${origin.replace(/\/$/, "")}/webhook/${groupId}`,
+      hasSecret: (await getTenantSecret(c.env.KV, groupId)) != null,
+    });
+  });
+
+  app.post("/api/groups/:groupId/webhook/regenerate", requireAnyAccess(), async (c) => {
+    const groupId = param(c, "groupId");
+    const access = requireGroupRole(c, groupId, "owner");
+    if (!access.ok) {
+      return c.json(
+        { error: access.status === 404 ? "Group not found" : "Forbidden" },
+        access.status,
+      );
+    }
+    const secret = await setTenantSecret(c.env.KV, groupId);
+    const auth = currentAuth(c);
+    await recordAudit(c.env.DB, {
+      ts: Date.now(),
+      actorId: auth.session.userId,
+      actorLogin: auth.session.login,
+      action: "webhook.secret.regenerate",
+      targetType: "group",
+      targetId: groupId,
+      groupId,
+      ip: clientIp(c),
+    });
+    const origin = c.env.BASE_URL ?? new URL(c.req.url).origin;
+    return c.json({
+      ok: true,
+      url: `${origin.replace(/\/$/, "")}/webhook/${groupId}`,
+      secret,
+    });
+  });
+
+  app.delete("/api/groups/:groupId/webhook", requireAnyAccess(), async (c) => {
+    const groupId = param(c, "groupId");
+    const access = requireGroupRole(c, groupId, "owner");
+    if (!access.ok) {
+      return c.json(
+        { error: access.status === 404 ? "Group not found" : "Forbidden" },
+        access.status,
+      );
+    }
+    await deleteTenantSecret(c.env.KV, groupId);
+    const auth = currentAuth(c);
+    await recordAudit(c.env.DB, {
+      ts: Date.now(),
+      actorId: auth.session.userId,
+      actorLogin: auth.session.login,
+      action: "webhook.secret.delete",
+      targetType: "group",
+      targetId: groupId,
+      groupId,
       ip: clientIp(c),
     });
     return c.json({ ok: true });

@@ -4,7 +4,12 @@ import { matchRoute, eventOwners } from "../events/match";
 import { log } from "../lib/log";
 import { loadTranslations, t as translate, type Translations } from "../lib/i18n";
 import { recordSend } from "../lib/send-log";
-import { loadGroups, groupAcceptsOwners, groupAcceptsProvider } from "../web/groups";
+import {
+  loadGroups,
+  groupAcceptsOwners,
+  groupAcceptsProvider,
+  groupAcceptsInstallation,
+} from "../web/groups";
 import { getDriver } from "../drivers";
 import type { SendResult } from "../drivers/types";
 
@@ -37,6 +42,7 @@ export async function dispatchEvent(config: Config, event: WebhookEvent, env: En
     if (!route.groupId) return true;
     const group = groupById.get(route.groupId);
     if (!group) return true;
+    if (!groupAcceptsInstallation(group, event.installationId)) return false;
     if (!groupAcceptsOwners(group, owners)) return false;
     return groupAcceptsProvider(group, event.provider);
   };

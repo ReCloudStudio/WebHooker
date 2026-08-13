@@ -7,8 +7,20 @@ import {
   adminCookie,
   clearAdminCookie,
 } from "../web/session";
-import { groupAcceptsProvider } from "../web/groups";
+import {
+  groupAcceptsProvider,
+  groupAcceptsInstallation,
+  ensureInstallationGroup,
+  loadGroups,
+  saveGroups,
+} from "../web/groups";
 import { validateGroups } from "../web/admin-routes";
+import {
+  getTenantSecret,
+  setTenantSecret,
+  deleteTenantSecret,
+  generateTenantSecret,
+} from "../web/tenants";
 import { loadRoutes, saveRoutes, loadConfig } from "../config";
 import type { Env, Route, Group } from "../types";
 
@@ -196,6 +208,105 @@ describe("validateGroups logTarget", () => {
     const res = validateGroups([{ ...baseGroup, logTarget: null }]);
     expect(res.ok).toBe(true);
     if (res.ok) expect(res.groups[0]!.logTarget).toBeUndefined();
+  });
+});
+
+describe("validateGroups installationId", () => {
+  const baseGroup = {
+    id: "g",
+    name: "G",
+    members: [{ login: "boss", role: "owner" }],
+  };
+
+  it("accepts a positive integer installation id", () => {
+    const res = validateGroups([{ ...baseGroup, installationId: 42 }]);
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.groups[0]!.installationId).toBe(42);
+  });
+
+  it("rejects non-integer installation ids", () => {
+    expect(validateGroups([{ ...baseGroup, installationId: "42" }]).ok).toBe(false);
+    expect(validateGroups([{ ...baseGroup, installationId: 42.5 }]).ok).toBe(false);
+  });
+
+  it("drops a null installation id", () => {
+    const res = validateGroups([{ ...baseGroup, installationId: null }]);
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.groups[0]!.installationId).toBeUndefined();
+  });
+});
+
+describe("groupAcceptsInstallation", () => {
+  const base: Group = { id: "g", name: "G", adminIds: [] };
+
+  it("accepts everything when the group is not bound to an installation", () => {
+    expect(groupAcceptsInstallation(base, 101)).toBe(true);
+    expect(groupAcceptsInstallation(base, undefined)).toBe(true);
+  });
+
+  it("only accepts events from the bound installation", () => {
+    const bound = { ...base, installationId: 101 };
+    expect(groupAcceptsInstallation(bound, 101)).toBe(true);
+    expect(groupAcceptsInstallation(bound, 202)).toBe(false);
+    expect(groupAcceptsInstallation(bound, undefined)).toBe(false);
+  });
+});
+
+describe("ensureInstallationGroup", () => {
+  it("creates an inst-{id} group when nothing is bound", async () => {
+    const kv = createMockKV();
+    const group = await ensureInstallationGroup(kv, 555, "myorg");
+    expect(group?.id).toBe("inst-555");
+    expect(group?.installationId).toBe(555);
+    expect(group?.name).toBe("myorg");
+    const groups = await loadGroups(kv);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.installationId).toBe(555);
+  });
+
+  it("binds existing groups whose owners match the installing account", async () => {
+    const kv = createMockKV();
+    await saveGroups(kv, [
+      { id: "backend", name: "Backend", adminIds: [], owners: ["myorg"], members: [] },
+      { id: "other", name: "Other", adminIds: [], owners: ["another-org"], members: [] },
+    ]);
+    await ensureInstallationGroup(kv, 555, "MyOrg");
+    const groups = await loadGroups(kv);
+    expect(groups).toHaveLength(2);
+    expect(groups.find((g) => g.id === "backend")?.installationId).toBe(555);
+    expect(groups.find((g) => g.id === "other")?.installationId).toBeUndefined();
+    expect(groups.some((g) => g.id.startsWith("inst-"))).toBe(false);
+  });
+
+  it("is idempotent when a group is already bound", async () => {
+    const kv = createMockKV();
+    await ensureInstallationGroup(kv, 555, "myorg");
+    await ensureInstallationGroup(kv, 555, "myorg");
+    expect((await loadGroups(kv)).filter((g) => g.installationId === 555)).toHaveLength(1);
+  });
+});
+
+describe("tenant webhook secrets", () => {
+  it("generates 64-char hex secrets", () => {
+    const s = generateTenantSecret();
+    expect(s).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("creates, reads, and deletes a tenant secret", async () => {
+    const kv = createMockKV();
+    expect(await getTenantSecret(kv, "g1")).toBeNull();
+    const secret = await setTenantSecret(kv, "g1");
+    expect(await getTenantSecret(kv, "g1")).toBe(secret);
+    await deleteTenantSecret(kv, "g1");
+    expect(await getTenantSecret(kv, "g1")).toBeNull();
+  });
+
+  it("regenerating replaces the previous secret", async () => {
+    const kv = createMockKV();
+    const a = await setTenantSecret(kv, "g1");
+    const b = await setTenantSecret(kv, "g1");
+    expect(a).not.toBe(b);
+    expect(await getTenantSecret(kv, "g1")).toBe(b);
   });
 });
 
