@@ -1,7 +1,7 @@
 {
 	"name": "webhooker",
 	"main": ".output/server/index.mjs",
-	"compatibility_date": "2025-01-01",
+	"compatibility_date": "2026-",
 	"compatibility_flags": ["nodejs_compat"],
 	"build": {
 		"command": "bun run build"

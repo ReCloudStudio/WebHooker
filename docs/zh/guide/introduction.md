@@ -41,7 +41,7 @@ GitHub / Gitea Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 - **HTTP 框架**: Nuxt 4 / Nitro (H3)
 - **Discord 投递**: Discord REST API（交互通过 Ed25519 验签的 HTTPS Interactions Endpoint）
 - **Telegram 投递**: Telegram Bot API（webhook 带可选 secret-token 校验）
-- **Web UI**: Nuxt 3 静态 SPA，由 Worker 资源托管
+- **Web UI**: Nuxt 4（Vue 3 + Tailwind CSS v3）——首页/法律页面服务端渲染，`/admin` 控制台客户端渲染
 - **存储**: Cloudflare KV + D1
 - **鉴权**: Web Crypto API (HMAC-SHA256、Ed25519)、octokit (GitHub API)
 - **语言**: TypeScript

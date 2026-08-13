@@ -40,7 +40,7 @@ server/                  # Nitro server (H3 handlers in server/routes/)
     │   ├── github/      # X-GitHub-Event + X-Hub-Signature-256
     │   └── gitea/       # X-Gitea-Event + X-Gitea-Signature (normalized payloads)
     ├── formatters/      # Platform-neutral formatters (produce NeutralMessage)
-    │   ├── index.ts     # formatEvent: 29-event switch → NeutralMessage + re-exports
+    │   ├── index.ts     # formatEvent: 28-event switch + custom → NeutralMessage + re-exports
     │   ├── colors.ts    # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
     │   ├── helpers.ts   # emojiPrefix, T, buildMessage, commitLink/branchLink/tagLink
     │   └── *.ts         # push, pull-request, issues, comments, workflow, release, create, repo,

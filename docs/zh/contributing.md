@@ -40,7 +40,7 @@ server/                  # Nitro 服务器（H3 处理器位于 server/routes/�
     │   ├── github/      # X-GitHub-Event + X-Hub-Signature-256
     │   └── gitea/       # X-Gitea-Event + X-Gitea-Signature（归一化载荷）
     ├── formatters/      # 平台中立格式化器（产出 NeutralMessage）
-    │   ├── index.ts     # formatEvent：29 事件 switch → NeutralMessage + re-export
+    │   ├── index.ts     # formatEvent：28 事件 switch + custom → NeutralMessage + re-export
     │   ├── colors.ts    # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
     │   ├── helpers.ts   # emojiPrefix、T、buildMessage、commitLink/branchLink/tagLink
     │   └── *.ts         # push、pull-request、issues、comments、workflow、release、create、repo、

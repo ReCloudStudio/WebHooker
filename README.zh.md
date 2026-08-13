@@ -54,11 +54,11 @@ bunx wrangler dev    # 启动本地开发服务器
 ### 密钥（本地用 `.dev.vars`，生产用 Worker Secrets）
 
 | 变量                        | 说明                                                                        |
-| --------------------------- | --------------------------------------------------------------------------- |
+|-----------------------------|-----------------------------------------------------------------------------|
 | `GITHUB_WEBHOOK_SECRET`     | GitHub webhook 密钥                                                         |
 | `GITEA_WEBHOOK_SECRET`      | Gitea webhook 密钥（仅接收 Gitea webhook 时需要）                           |
-| `GITHUB_APP_ID`             | GitHub App ID（当前代码未使用，为兼容保留）                                 |
-| `GITHUB_PRIVATE_KEY`        | App 私钥（PKCS#8 PEM；当前代码未使用，为兼容保留）                          |
+| `GITHUB_APP_ID`             | GitHub App ID（用于 App 安装流程解析安装所属账号）                          |
+| `GITHUB_PRIVATE_KEY`        | App 私钥（PKCS#8 PEM；用于 App 安装流程，可选）                             |
 | `GITHUB_CLIENT_ID`          | OAuth Client ID                                                             |
 | `GITHUB_CLIENT_SECRET`      | OAuth Client Secret                                                         |
 | `DISCORD_TOKEN`             | 机器人 token                                                                |
@@ -71,9 +71,9 @@ bunx wrangler dev    # 启动本地开发服务器
 | `ADMIN_USER_IDS`            | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                   |
 | `ALLOW_SELF_SIGNUP`         | 设为 `1` 时，无权限的 GitHub 用户首次登录自动获得个人分组（默认关闭）       |
 | `AUDIT_RETENTION_DAYS`      | 定时清理时审计日志的保留天数（默认 90）                                     |
-| `DOCS_URL`                  | 可选；落地页使用的文档站点 URL                                              |
-| `GITHUB_REPO_URL`           | 可选；落地页使用的 GitHub 仓库 URL                                          |
-| `LEGAL_CONTACT`             | 可选；`/terms` 与 `/privacy` 页面展示的联系方式                             |
+| `NUXT_PUBLIC_DOCS_URL`      | 可选；落地页使用的文档站点 URL                                              |
+| `NUXT_PUBLIC_REPO_URL`      | 可选；落地页使用的 GitHub 仓库 URL                                          |
+| `NUXT_PUBLIC_LEGAL_CONTACT` | 可选；`/terms` 与 `/privacy` 页面展示的联系方式                             |
 
 ### 路由配置
 
@@ -131,7 +131,7 @@ bunx wrangler dev    # 启动本地开发服务器
 ### 过滤器类型
 
 | 类型      | 匹配内容                            | 备注                                                                                                          |
-| --------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+|-----------|-------------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `event`   | `push`、`pull_request`、`issues` 等 | GitHub 事件名                                                                                                 |
 | `repo`    | `org/repo` 全名                     |                                                                                                               |
 | `actor`   | 发送者登录名                        |                                                                                                               |
@@ -194,7 +194,7 @@ bunx wrangler dev    # 启动本地开发服务器
    - **Repository permissions**：Contents (read)、Issues (write)、Pull requests (write)、Metadata (read)、Checks (read)、Deployments (read)、Discussions (read)、Code scanning alerts (read)、Dependabot alerts (read)
    - **Organization permissions**：Members (read) — 如需要
 4. 订阅事件：Push、Pull request、Issues、Issue comment、Workflow run、Workflow job、Status、Deployment、Deployment status、Ping、Release、Create、Delete、Star、Fork、Check run、Check suite、Pull request review、Pull request review comment、Commit comment、Member、Label、Milestone、Discussion、Discussion comment、Repository、Code scanning alert、Dependabot alert
-5. 生成私钥 — `GITHUB_PRIVATE_KEY` 当前未被代码使用（OAuth 流程只用到 Client ID/Secret），因此为可选；若日后启用 GitHub App 认证可再配置。
+5. 生成私钥 — 可选；`GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` 仅用于 [App 安装流程](/zh/guide/deployment#github-app-设置)在安装后页面解析安装所属账号的登录名。
 
 ### 2. 安装 App
 
@@ -217,7 +217,7 @@ bunx wrangler dev    # 启动本地开发服务器
 使用 `bot` scope 将机器人加入服务器，需要以下权限：
 
 | 权限                                        | 数值           | 用途                                     |
-| ------------------------------------------- | -------------- | ---------------------------------------- |
+|---------------------------------------------|----------------|------------------------------------------|
 | 查看频道 (View Channels)                    | `1024`         | 查看目标频道以发送消息                   |
 | 发送消息 (Send Messages)                    | `2048`         | 向频道发送 embed/消息                    |
 | 在线程中发送消息 (Send Messages in Threads) | `274877906944` | 当路由配置了 `threadId` 时向线程发送消息 |
@@ -238,40 +238,14 @@ bot 从不连接 Discord Gateway，因此显示为**离线**——消息推送�
 
 ### Bot 指令（以本人身份评论 GitHub）
 
-bot 通过定时任务（每 5 分钟）同步注册原生的**斜杠命令**与**消息右键菜单命令**：按服务器注册以获得即时可用性，并全局注册（24h 去重，约 1 小时传播）。评论以**你本人**绑定的 GitHub 账号（OAuth）发出，权限交由 GitHub 判定——若 GitHub 拒绝（例如去修改他人评论），bot 会提示你无权限。所有回复均为 ephemeral（仅你可见）。
-
-**1. 绑定账号**（一次即可）：
+bot 通过定时任务（每 5 分钟）同步注册原生的**斜杠命令**与**消息右键菜单命令**：按服务器注册以获得即时可用性，并全局注册（24h 去重，约 1 小时传播）。执行 `/gh login` 后即可评论 issue/PR、编辑/删除自己的评论，并通过按钮合并/关闭 PR——所有回复均为临时消息（仅你可见），权限交由 GitHub 判定。
 
 ```
-/gh login     → 返回一个 ephemeral 授权链接，用于绑定你的 GitHub 账号
-/gh logout    → 解除绑定
+/gh login  /gh logout
+/gh comment add|edit|del  link:<链接>      （或右键通知 → 应用 → GitHub: 添加/编辑/删除评论）
 ```
 
-**2. 添加 / 编辑 / 删除评论** —— 两种等价方式：
-
-- **右键点击通知**（推荐）：右键一条 bot 推送的 issue / PR / 评论通知 → **应用（Apps）** → **GitHub: 添加评论 / 编辑评论 / 删除评论**。目标会从通知 embed 中自动提取，无需粘贴链接。
-- **斜杠命令 + 链接**：
-
-  ```
-  /gh comment add  link:<issue 或 PR 链接>          例如 https://github.com/owner/repo/issues/123
-  /gh comment edit link:<评论链接>                  链接需包含 #issuecomment-<id>
-  /gh comment del  link:<评论链接>                  链接需包含 #issuecomment-<id>
-  ```
-
-  `edit` / `del` 需要具体的评论链接（在 GitHub 上：评论 ⋯ 菜单 → **Copy link**）。`add` / `edit` 会弹出 modal 让你输入 / 修改评论内容（编辑时预填原文）。
-
-**3. 合并 / 关闭 PR** —— 打开状态的 PR 通知会附带 **合并 / 关闭** 按钮：
-
-- 点击按钮后以**你绑定**的 GitHub 账号执行合并（squash）或关闭操作，权限交由 GitHub 判定。操作成功后通知上的按钮会被移除，结果以 ephemeral 回复显示。
-
-**要求：**
-
-| 项目       | 说明                                                             |
-| ---------- | ---------------------------------------------------------------- |
-| Public Key | 已配置 `DISCORD_PUBLIC_KEY` 且已设置 Interactions Endpoint URL   |
-| 邀请 scope | 邀请时带上 `applications.commands`（见上方邀请链接）             |
-| OAuth      | 已配置 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 与 `BASE_URL` |
-| 用户绑定   | 每个用户先执行 `/gh login`                                       |
+完整参考见[机器人命令指南](https://webhooker.docs.worldexecute.me/zh/guide/commands)。
 
 ## Telegram 机器人配置
 
@@ -280,12 +254,7 @@ bot 通过定时任务（每 5 分钟）同步注册原生的**斜杠命令**与
 3. Worker 会在定时任务中自动同步 webhook（`setWebhook` 指向 `{BASE_URL}/telegram/webhook`），因此无需手动调用 `setWebhook`——只需确保 `BASE_URL` 已设置。
 4. 将机器人加入群组（或启用话题），在路由配置中用 `chatId` / `topicId` 指定目标。
 
-在 Telegram 中，`/gh` 命令通过在通知消息上**回复**来使用：
-
-- `/gh login` — 绑定你的 GitHub 账号（返回 OAuth 链接）
-- `/gh logout` — 解除绑定
-- `/gh comment <内容>` — 回复一条 issue/PR 通知，以本人身份评论
-- `/gh merge` / `/gh close` — 回复一条 PR 通知，合并/关闭该 PR
+在 Telegram 中，`/gh` 命令通过在通知消息上**回复**来使用：`/gh login`、`/gh logout`、`/gh comment <文本>`、`/gh merge`、`/gh close`。见[机器人命令指南](https://webhooker.docs.worldexecute.me/zh/guide/commands)。
 
 头像使用内置 `GET /api/richheader` 渲染为链接预览卡片（可用 `TELEGRAM_RICH_HEADER_HOST` 覆盖）。
 
@@ -326,7 +295,7 @@ bun test              # 单元测试
 ## 支持的事件
 
 | 事件                          | 格式化内容                           |
-| ----------------------------- | ------------------------------------ |
+|-------------------------------|--------------------------------------|
 | `push`                        | 提交列表、分支、作者                 |
 | `pull_request`                | PR 标题、分支、差异统计              |
 | `issues`                      | Issue 标题、标签、指派人             |

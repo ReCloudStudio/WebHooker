@@ -54,11 +54,11 @@ bunx wrangler dev    # Start local dev server
 ### Secrets (`.dev.vars` for local, Worker Secrets for production)
 
 | Variable                    | Description                                                                                    |
-| --------------------------- | ---------------------------------------------------------------------------------------------- |
+|-----------------------------|------------------------------------------------------------------------------------------------|
 | `GITHUB_WEBHOOK_SECRET`     | Webhook secret from GitHub                                                                     |
 | `GITEA_WEBHOOK_SECRET`      | Webhook secret from Gitea (required only to receive Gitea webhooks)                            |
-| `GITHUB_APP_ID`             | GitHub App ID (not currently used by the code; kept for compatibility)                         |
-| `GITHUB_PRIVATE_KEY`        | App private key (PKCS#8 PEM; not currently used by the code; kept for compatibility)           |
+| `GITHUB_APP_ID`             | GitHub App ID (used by the App install flow to resolve the installing account)                 |
+| `GITHUB_PRIVATE_KEY`        | App private key (PKCS#8 PEM; used by the App install flow; optional)                           |
 | `GITHUB_CLIENT_ID`          | OAuth client ID                                                                                |
 | `GITHUB_CLIENT_SECRET`      | OAuth client secret                                                                            |
 | `DISCORD_TOKEN`             | Bot token                                                                                      |
@@ -71,9 +71,9 @@ bunx wrangler dev    # Start local dev server
 | `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access `/admin`                         |
 | `ALLOW_SELF_SIGNUP`         | `1` to give access-less GitHub users a personal group on first login (default off)             |
 | `AUDIT_RETENTION_DAYS`      | Audit-log retention in days for the scheduled cleanup (default 90)                             |
-| `DOCS_URL`                  | Optional docs site URL used by the landing page                                                |
-| `GITHUB_REPO_URL`           | Optional GitHub repo URL used by the landing page                                              |
-| `LEGAL_CONTACT`             | Optional contact shown on `/terms` and `/privacy`                                              |
+| `NUXT_PUBLIC_DOCS_URL`      | Optional docs site URL used by the landing page                                                |
+| `NUXT_PUBLIC_REPO_URL`      | Optional GitHub repo URL used by the landing page                                              |
+| `NUXT_PUBLIC_LEGAL_CONTACT` | Optional contact shown on `/terms` and `/privacy`                                              |
 
 ### Routes
 
@@ -131,7 +131,7 @@ See `config.example.yaml` for full syntax examples.
 ### Filter Types
 
 | Type      | Matches                                | Notes                                                                                                              |
-| --------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+|-----------|----------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | `event`   | `push`, `pull_request`, `issues`, etc. | GitHub event name                                                                                                  |
 | `repo`    | `org/repo` full name                   |                                                                                                                    |
 | `actor`   | Sender login                           |                                                                                                                    |
@@ -195,7 +195,7 @@ Set `exclude: true` to invert any filter. See the [Filter Tutorial](https://webh
    - **Organization permissions**: Members (read) — if needed
 4. Subscribe to events:
    - Push, Pull request, Issues, Issue comment, Workflow run, Workflow job, Status, Deployment, Deployment status, Ping, Release, Create, Delete, Star, Fork, Check run, Check suite, Pull request review, Pull request review comment, Commit comment, Member, Label, Milestone, Discussion, Discussion comment, Repository, Code scanning alert, Dependabot alert
-5. Generate private key — `GITHUB_PRIVATE_KEY` is currently unused by the code (only client ID/secret power the OAuth flow), so it is optional; store it if you later enable GitHub App authentication.
+5. Generate private key — optional; `GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` are only used by the [App install flow](/guide/deployment#github-app-setup) to resolve the installing account's login on the post-install page.
 
 ### 2. Install App
 
@@ -218,7 +218,7 @@ Create a bot at <https://discord.com/developers/applications>, copy its token to
 Add the bot to your server with the `bot` scope and the following permissions:
 
 | Permission               | Value          | Why                                             |
-| ------------------------ | -------------- | ----------------------------------------------- |
+|--------------------------|----------------|-------------------------------------------------|
 | View Channels            | `1024`         | See the target channel to post messages         |
 | Send Messages            | `2048`         | Send embeds/messages to channels                |
 | Send Messages in Threads | `274877906944` | Send to threads when a route targets `threadId` |
@@ -239,40 +239,14 @@ The bot never connects to the Discord Gateway, so it shows as **offline** — me
 
 ### Bot Commands (comment on GitHub as yourself)
 
-The bot registers native **slash** and **message context-menu** commands, synced by the scheduled trigger (every 5 minutes): per-guild for instant availability, and globally (24h dedup, ~1h propagation). Comments are posted using **your own** linked GitHub account (OAuth), and permission is delegated to GitHub — if GitHub rejects the action (e.g. editing someone else's comment) the bot tells you so. All replies are ephemeral (only you see them).
-
-**1. Link your account** (once):
+The bot registers native **slash** and **message context-menu** commands, synced by the scheduled trigger (every 5 minutes): per-guild for instant availability, and globally (24h dedup, ~1h propagation). After `/gh login` you can comment on issues/PRs as yourself, edit/delete your comments, and merge/close PRs via buttons — all replies are ephemeral and GitHub enforces permission.
 
 ```
-/gh login     → returns an ephemeral link to authorize your GitHub account
-/gh logout    → unlink your GitHub account
+/gh login  /gh logout
+/gh comment add|edit|del  link:<url>      (or right-click a notification → Apps → GitHub: 添加/编辑/删除评论)
 ```
 
-**2. Add / edit / delete a comment** — two equivalent ways:
-
-- **Right-click a notification** (recommended): right-click a bot-issued issue / PR / comment notification → **Apps** → **GitHub: 添加评论 / 编辑评论 / 删除评论**. The target is auto-extracted from the notification embed; no link needed.
-- **Slash command with a link**:
-
-  ```
-  /gh comment add  link:<issue or PR url>          e.g. https://github.com/owner/repo/issues/123
-  /gh comment edit link:<comment url>              url must contain #issuecomment-<id>
-  /gh comment del  link:<comment url>              url must contain #issuecomment-<id>
-  ```
-
-  For `edit` / `del`, copy the specific comment link on GitHub (comment ⋯ menu → **Copy link**). `add` / `edit` open a modal to enter/adjust the comment body (prefilled for edit).
-
-**3. Merge / close a PR** — notifications for open PRs include **合并 / 关闭** (merge/close) buttons:
-
-- Clicking a button merges (squash) or closes the PR as **your linked** GitHub account; GitHub enforces permission. On success the buttons are removed from the notification and the result is shown in an ephemeral reply.
-
-**Requirements:**
-
-| Item         | How                                                                   |
-| ------------ | --------------------------------------------------------------------- |
-| Public key   | `DISCORD_PUBLIC_KEY` set + Interactions Endpoint URL configured       |
-| Invite scope | Bot invited with `applications.commands` (see invite URL above)       |
-| OAuth        | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` and `BASE_URL` configured |
-| User linked  | Each user runs `/gh login` first                                      |
+See the full reference in the [Bot Commands guide](https://webhooker.docs.worldexecute.me/guide/commands).
 
 ## Telegram Bot Setup
 
@@ -281,12 +255,7 @@ The bot registers native **slash** and **message context-menu** commands, synced
 3. The worker syncs the webhook from the scheduled trigger (`setWebhook` to `{BASE_URL}/telegram/webhook`), so no manual `setWebhook` call is needed — just make sure `BASE_URL` is set.
 4. Add the bot to a group (or enable topics) and route events to `chatId` / `topicId` in the route config.
 
-In Telegram, `/gh` commands work by replying to a notification message:
-
-- `/gh login` — link your GitHub account (returns an OAuth link)
-- `/gh logout` — unlink
-- `/gh comment <text>` — reply to an issue/PR notification to comment as yourself
-- `/gh merge` / `/gh close` — reply to a PR notification to merge/close it
+In Telegram, `/gh` commands work by **replying to a notification message**: `/gh login`, `/gh logout`, `/gh comment <text>`, `/gh merge`, `/gh close`. See the [Bot Commands guide](https://webhooker.docs.worldexecute.me/guide/commands).
 
 Avatars are rendered as a link-preview card using the built-in `GET /api/richheader` (overridable with `TELEGRAM_RICH_HEADER_HOST`).
 
@@ -327,7 +296,7 @@ bun test              # Unit tests
 ## Supported Events
 
 | Event                         | Formatter                                               |
-| ----------------------------- | ------------------------------------------------------- |
+|-------------------------------|---------------------------------------------------------|
 | `push`                        | Commit list, branch, author                             |
 | `pull_request`                | PR title, branch, diff stats                            |
 | `issues`                      | Issue title, labels, assignees                          |

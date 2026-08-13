@@ -7,7 +7,7 @@ WebHooker requires several secrets to function. For local development, store the
 ### Required Secrets
 
 | Variable                | Description                                                              |
-| ----------------------- | ------------------------------------------------------------------------ |
+|-------------------------|--------------------------------------------------------------------------|
 | `GITHUB_WEBHOOK_SECRET` | Webhook secret from your GitHub App settings                             |
 | `GITEA_WEBHOOK_SECRET`  | Webhook secret from your Gitea instance (only to receive Gitea webhooks) |
 | `GITHUB_CLIENT_ID`      | OAuth client ID from App settings                                        |
@@ -16,14 +16,16 @@ WebHooker requires several secrets to function. For local development, store the
 | `TELEGRAM_TOKEN`        | Telegram bot token (from BotFather) — required for Telegram routes       |
 
 > [!NOTE]
-> `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` are not currently used by the code — the
-> OAuth flow only needs `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`. They are kept
-> in the schema for compatibility in case GitHub App authentication is added later.
+> `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` (PKCS#8 PEM) are used by the GitHub App
+> **install flow** (`/auth/github/install`) to resolve the installing account's login
+> via an App JWT. They are optional — when unset, the install page still works but
+> shows an anonymous `inst-{installationId}` group without the account name. The
+> OAuth flow itself only needs `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`.
 
 ### Optional Secrets
 
 | Variable                    | Description                                                                                                                 | Default                           |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
 | `DISCORD_PUBLIC_KEY`        | Discord application public key (Developer Portal) — required for interactions                                               | Unset → interactions return `401` |
 | `DISCORD_APPLICATION_ID`    | Discord application id; auto-resolved when omitted                                                                          | Auto-resolved                     |
 | `TELEGRAM_WEBHOOK_SECRET`   | Secret token for `POST /telegram/webhook` verification (X-Telegram-Bot-Api-Secret-Token)                                    | Disabled (no verification)        |
@@ -32,15 +34,20 @@ WebHooker requires several secrets to function. For local development, store the
 | `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                                                    | Disabled                          |
 | `ALLOW_SELF_SIGNUP`         | When enabled (`1`/`true`), GitHub users without any group access get a personal group on first login instead of `403`       | Disabled                          |
 | `AUDIT_RETENTION_DAYS`      | Audit-log retention in days for the scheduled cleanup                                                                       | `90`                              |
+| `NUXT_PUBLIC_DOCS_URL`      | Docs site URL used by the landing page (client-side runtime config)                                                         | Landing page defaults             |
+| `NUXT_PUBLIC_REPO_URL`      | GitHub repo URL used by the landing page                                                                                    | Landing page defaults             |
+| `NUXT_PUBLIC_LEGAL_CONTACT` | Contact shown on `/terms` and `/privacy`                                                                                    | Unset → placeholder text          |
 
 ## Webhook Providers
 
 WebHooker ingests webhooks from multiple forges through the same `POST /webhook` endpoint; the provider is auto-detected from the request headers, so point every forge's webhook at `{BASE_URL}/webhook`.
 
 | Provider | Event header     | Signature header      | Signature format           | Secret                  |
-| -------- | ---------------- | --------------------- | -------------------------- | ----------------------- |
+|----------|------------------|-----------------------|----------------------------|-------------------------|
 | GitHub   | `X-GitHub-Event` | `X-Hub-Signature-256` | `sha256=<hex>` HMAC-SHA256 | `GITHUB_WEBHOOK_SECRET` |
 | Gitea    | `X-Gitea-Event`  | `X-Gitea-Signature`   | plain hex HMAC-SHA256      | `GITEA_WEBHOOK_SECRET`  |
+
+Delivery-id dedup uses `X-GitHub-Delivery` (GitHub) or `X-Gitea-Delivery` (Gitea) when present.
 
 Gitea payloads are normalized to the same internal shape as GitHub events, so routes, filters, and the 28 formatters work unchanged. Unknown or unmapped Gitea events fall back to the generic formatter. Repository/commit/user links are derived from the payload's `repository.html_url`, so they point at your Gitea instance.
 
@@ -59,7 +66,7 @@ WebHooker ships with a built-in config console at `/admin` for managing routes i
 The console is served as an SPA at `/admin`; its tabs are deep-linkable via the URL path (`/admin/groups`, `/admin/logs`, `/admin/audit`). URLs outside `/admin` that do not match an endpoint below return a plain `404` instead of the console.
 
 | Endpoint                                        | Description                                                       |
-| ----------------------------------------------- | ----------------------------------------------------------------- |
+|-------------------------------------------------|-------------------------------------------------------------------|
 | `GET /admin`                                    | Config console UI                                                 |
 | `GET /admin/login`                              | Start GitHub OAuth sign-in                                        |
 | `GET /admin/logout`                             | Destroy session                                                   |
@@ -82,7 +89,7 @@ The console is served as an SPA at `/admin`; its tabs are deep-linkable via the 
 | `POST /admin/api/groups/:id/webhook/regenerate` | Generate/regenerate the group webhook secret (owner)              |
 | `DELETE /admin/api/groups/:id/webhook`          | Disable the group webhook ingress (owner)                         |
 
-The console lets you add, edit, delete, and toggle routes. Saved routes are written to KV `config:routes` immediately and the config cache is invalidated so the webhook pipeline picks them up on the next run.
+The console lets you add, edit, delete, and toggle routes. Saved routes are written to KV `config:routes` immediately and the config cache is invalidated so the webhook pipeline picks them up on the next run. Limits: at most **200 routes** and **100 groups** per instance.
 
 ## Webhook Endpoints
 
@@ -124,7 +131,7 @@ Payload schema:
 ```
 
 | Field         | Type     | Description                                                                                                      |
-| ------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+|---------------|----------|------------------------------------------------------------------------------------------------------------------|
 | `title`       | string   | Message title (falls back to "Custom message")                                                                   |
 | `description` | string   | Optional message body                                                                                            |
 | `color`       | string   | Optional embed color: a word (`red`, `green`, `yellow`, `blue`, `purple`, `orange`, `cyan`, `gray`) or `#rrggbb` |
@@ -139,7 +146,7 @@ Payload schema:
 
 When the GitHub App is installed, its events arrive at the global endpoint for **every** installation. To keep tenants apart, bind each group to the installation id that should feed it: `"installationId": 12345678`. The id is visible in the App's installation webhook payload (`installation.id`) or on the GitHub App installation page URL. Events from any other installation are rejected for that group even if its `owners` list is empty. Groups without `installationId` keep the legacy behavior (`owners` filtering).
 
-Binding is **auto-configured** — the GitHub App's _Setup URL_ should point to `{BASE_URL}/auth/github/install`. Right after a user installs the App, the browser lands there and they choose where the installation binds: a **new group** (`inst-{installationId}`, default) or any **existing group they own** (owner role checked again on submit; `POST /auth/github/install/bind` performs the provisioning). No manual id entry is needed. As a fallback (e.g. when the Setup URL is not configured), the `installation.created` webhook event creates/binds the group automatically — existing groups whose `owners` match the installing account are bound, otherwise a dedicated `inst-{installationId}` group is created. Then just add routes/members in the console.
+Binding is **auto-configured** — the GitHub App's _Setup URL_ should point to `{BASE_URL}/auth/github/install`. Right after a user installs the App, the browser lands there (the page requires a signed-in admin session — not signed in users are redirected through the OAuth flow first) and they choose where the installation binds: a **new group** (`inst-{installationId}`, default) or any **existing group they own** (owner role checked again on submit; `POST /auth/github/install/bind` performs the provisioning). No manual id entry is needed. As a fallback (e.g. when the Setup URL is not configured), the `installation.created` webhook event creates/binds the group automatically — existing groups whose `owners` match the installing account are bound, otherwise a dedicated `inst-{installationId}` group is created. Then just add routes/members in the console.
 
 ## Routes
 
@@ -195,7 +202,7 @@ You can add role ids in the admin console under _Discord role mentions_.
 Other route fields:
 
 | Field            | Type     | Required | Description                                                                                     |
-| ---------------- | -------- | -------- | ----------------------------------------------------------------------------------------------- |
+|------------------|----------|----------|-------------------------------------------------------------------------------------------------|
 | `groupId`        | string   | Yes      | Id of the [group](#groups) this route belongs to                                                |
 | `fallback`       | boolean  | No       | When `true`, fires only if no non-fallback route matched the event; its own filters are ignored |
 | `stop`           | boolean  | No       | When `true` and this route matches, no further routes are evaluated for this event              |
@@ -249,7 +256,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 ```
 
 | Field            | Type     | Required | Description                                                                                                                                                                                  |
-| ---------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|------------------|----------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `id`             | string   | Yes      | Lowercase id (`a-z0-9`, `-`); referenced by each route's `groupId`. Editable: renaming a group re-points its routes, per-group webhook secret and pending invites                            |
 | `name`           | string   | Yes      | Human-readable group name                                                                                                                                                                    |
 | `members`        | object[] | No       | `{ login, role }` entries; role is `owner`, `admin`, or `viewer`                                                                                                                             |
@@ -266,7 +273,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 Every group member has one of three roles. Super admins (`ADMIN_USER_IDS`) always bypass them.
 
 | Role     | View routes/logs | Edit routes | Manage members & invites | Edit group settings |
-| -------- | ---------------- | ----------- | ------------------------ | ------------------- |
+|----------|------------------|-------------|--------------------------|---------------------|
 | `owner`  | ✓                | ✓           | ✓                        | ✓ (except `owners`) |
 | `admin`  | ✓                | ✓           | ✗                        | ✗                   |
 | `viewer` | ✓ (read-only)    | ✗           | ✗                        | ✗                   |
@@ -282,7 +289,7 @@ Every group member has one of three roles. Super admins (`ADMIN_USER_IDS`) alway
 
 ### Webhook Log Channel
 
-A group may set `logTarget` to a Discord channel/thread or Telegram chat/topic. Whenever the group's routes dispatch a webhook, a single summary message is sent there: the event type/action, the repo, the delivery id, and one line per route×target with an ✅/❌ outcome (including the error for failed sends). The message is green when every dispatch succeeded and red when any failed. The summary uses the group's message language. Log messages are sent best-effort and are not themselves recorded in the D1 send log.
+A group may set `logTarget` to a Discord channel/thread or Telegram chat/topic. Whenever the group's routes dispatch a webhook, a single summary message is sent there: the event type/action, the repo, the delivery id, and one line per route×target with an ✅/❌ outcome (including the error for failed sends; at most the first 10 lines are listed, the rest is summarized as `+N`). The message is green when every dispatch succeeded and red when any failed. The summary uses the group's message language. Log messages are sent best-effort and are not themselves recorded in the D1 send log.
 
 ### Invites
 
@@ -297,7 +304,7 @@ With `ALLOW_SELF_SIGNUP=1`, a GitHub user who has no group access gets a persona
 See the [Filter Tutorial](./filters) for a hands-on guide with worked examples.
 
 | Type      | Matches              | Example                            |
-| --------- | -------------------- | ---------------------------------- |
+|-----------|----------------------|------------------------------------|
 | `event`   | GitHub event name    | `push`, `pull_*`, `pull_request`   |
 | `repo`    | Repository full name | `org/repo`, `org/*`                |
 | `actor`   | Sender login         | `username`, `[bot]`, `*[bot]`      |
@@ -326,7 +333,7 @@ Filters accept either a single string or an array of strings:
 ## KV Storage Layout
 
 | Key Pattern                    | Value                                                                         | TTL                |
-| ------------------------------ | ----------------------------------------------------------------------------- | ------------------ |
+|--------------------------------|-------------------------------------------------------------------------------|--------------------|
 | `config:routes`                | JSON array of routes                                                          | Permanent          |
 | `config:groups`                | JSON array of groups                                                          | Permanent          |
 | `session:{id}`                 | Admin session `{ userId, login }`                                             | 7 days             |
@@ -336,6 +343,8 @@ Filters accept either a single string or an array of strings:
 | `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 days             |
 | `invite:group:{id}`            | Token index per group (keeps invite listing consistent)                       | Permanent          |
 | `delivery:{id}`                | Webhook delivery id (dedup marker)                                            | 300 seconds        |
+| `delivery:{groupId}:{id}`      | Tenant-scoped delivery dedup for the per-group webhook ingress                | 300 seconds        |
+| `tenant:{groupId}`             | Per-group webhook secret (64-char hex, generated from the console)            | Permanent          |
 | `msg:{routeId}:{key}:{target}` | Message id tracking for in-place updates (e.g. `workflow_run` / `check_run`)  | 7 days             |
 | `cmd:guild:{id}`               | Guild id whose commands were registered (dedup)                               | Permanent          |
 | `cmd:registered:global`        | Global command registration marker (dedup)                                    | 1 day              |
@@ -347,7 +356,7 @@ Filters accept either a single string or an array of strings:
 The D1 database (`DB` binding, database `webhooker`) holds four tables:
 
 | Table            | Purpose                                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------------------- |
+|------------------|------------------------------------------------------------------------------------------------|
 | `send_logs`      | One row per dispatch attempt (route id, event, target, ok/error, duration, error code, detail) |
 | `audit_logs`     | One row per admin operation (login/logout, group/route/member/invite changes)                  |
 | `discord_links`  | Maps `discord_user_id` → `github_user_id` for `/gh` Discord commands                           |

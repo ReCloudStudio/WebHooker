@@ -64,7 +64,7 @@ server/                  # Nitro server
     │   │   └── parse.ts # parse + normalize Gitea payloads to GitHub shape
     │   └── custom/      # X-WebHooker-Signature (sha256= HMAC) + arbitrary JSON → `custom` events
     ├── formatters/      # Platform-neutral message formatters (was formatter.ts)
-    │   ├── index.ts     # formatEvent: 29-event switch → NeutralMessage + re-exports
+    │   ├── index.ts     # formatEvent: 28-event switch + custom → NeutralMessage + re-exports
     │   ├── colors.ts    # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
     │   ├── helpers.ts   # emojiPrefix, T, buildMessage, commitLink/branchLink/tagLink
     │   └── *.ts         # push, pull-request, issues, comments, workflow, release, create,
@@ -123,7 +123,7 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
 - Issue single-use 7-day group invite links (`invite:{token}`); accepting joins as admin/viewer (never owner); `ALLOW_SELF_SIGNUP=1` creates a deterministic personal group (`u-{userId}`) on first login
 - Record every admin operation (login/logout, group/route/member/invite changes) to D1 `audit_logs`; the scheduled trigger prunes entries past `AUDIT_RETENTION_DAYS`
 - Mention Discord roles on route trigger: route-level `discordRoleIds` are rendered as `<@&id>` into the Discord message `content` (Telegram targets ignore the field)
-- Format 29 event types as platform-neutral messages (Discord embeds + Telegram HTML)
+- Format 28 GitHub/Gitea event types plus `custom` webhooks as platform-neutral messages (Discord embeds + Telegram HTML)
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
 - Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, KV `msg:*` tracking)
 - Record every dispatch attempt to D1 `send_logs` (route id, event, target, ok/error, duration, error code)
@@ -215,7 +215,7 @@ Full list of secrets used: `GITHUB_WEBHOOK_SECRET`, `GITEA_WEBHOOK_SECRET`,
 (PKCS#8 PEM), `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `DISCORD_TOKEN`,
 `DISCORD_PUBLIC_KEY`, `TELEGRAM_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ADMIN_USER_IDS`,
 plus optional `BASE_URL`, `DISCORD_APPLICATION_ID`, `TELEGRAM_RICH_HEADER_HOST`,
-`DOCS_URL`, `GITHUB_REPO_URL`, `LEGAL_CONTACT`. See `.env.example` and `docs/guide/configuration.md`.
+`NUXT_PUBLIC_DOCS_URL`, `NUXT_PUBLIC_REPO_URL`, `NUXT_PUBLIC_LEGAL_CONTACT`. See `.env.example` and `docs/guide/configuration.md`.
 
 ## Notes
 

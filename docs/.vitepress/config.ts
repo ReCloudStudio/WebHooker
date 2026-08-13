@@ -35,7 +35,23 @@ export default defineConfig({
                 { text: "Getting Started", link: "/guide/getting-started" },
                 { text: "Configuration", link: "/guide/configuration" },
                 { text: "Filter Tutorial", link: "/guide/filters" },
+              ],
+            },
+            {
+              text: "Messaging",
+              items: [
+                { text: "Bot Commands", link: "/guide/commands" },
+                { text: "Message Format", link: "/guide/message-format" },
+                { text: "Message Language (i18n)", link: "/guide/i18n" },
+              ],
+            },
+            {
+              text: "Operations",
+              items: [
+                { text: "Logs", link: "/guide/logs" },
+                { text: "Scheduled Tasks", link: "/guide/tasks" },
                 { text: "Deployment", link: "/guide/deployment" },
+                { text: "FAQ", link: "/guide/faq" },
               ],
             },
           ],
@@ -55,10 +71,16 @@ export default defineConfig({
               items: [{ text: "Supported Events", link: "/events/supported" }],
             },
           ],
+          "/contributing": [
+            {
+              text: "Development",
+              items: [{ text: "Contributing", link: "/contributing" }],
+            },
+          ],
         },
         footer: {
           message: "Released under the MIT License.",
-          copyright: "Copyright 2025 ReCloudStudio",
+          copyright: "Copyright 2026 ReCloudStudio",
         },
         editLink: {
           pattern: `${github}/edit/main/docs/:path`,
@@ -91,7 +113,23 @@ export default defineConfig({
                 { text: "快速开始", link: "/zh/guide/getting-started" },
                 { text: "配置", link: "/zh/guide/configuration" },
                 { text: "过滤器教程", link: "/zh/guide/filters" },
+              ],
+            },
+            {
+              text: "消息",
+              items: [
+                { text: "机器人命令", link: "/zh/guide/commands" },
+                { text: "消息格式", link: "/zh/guide/message-format" },
+                { text: "消息语言 (i18n)", link: "/zh/guide/i18n" },
+              ],
+            },
+            {
+              text: "运维",
+              items: [
+                { text: "日志", link: "/zh/guide/logs" },
+                { text: "定时任务", link: "/zh/guide/tasks" },
                 { text: "部署", link: "/zh/guide/deployment" },
+                { text: "常见问题", link: "/zh/guide/faq" },
               ],
             },
           ],
@@ -111,10 +149,16 @@ export default defineConfig({
               items: [{ text: "支持的事件", link: "/zh/events/supported" }],
             },
           ],
+          "/zh/contributing": [
+            {
+              text: "开发",
+              items: [{ text: "贡献指南", link: "/zh/contributing" }],
+            },
+          ],
         },
         footer: {
           message: "基于 MIT 许可发布。",
-          copyright: "Copyright 2025 ReCloudStudio",
+          copyright: "Copyright 2026 ReCloudStudio",
         },
         editLink: {
           pattern: `${github}/edit/main/docs/:path`,

@@ -38,7 +38,7 @@ BASE_URL=http://localhost:8787
 ```
 
 ::: tip
-`GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` are not used by the code (the OAuth flow only needs the client ID/secret), so you can omit them. Target channels are set per route in the Web UI, so no `DISCORD_CHANNEL_ID` is needed. To enable `/gh` commands locally, copy the **Public Key** from the Developer Portal into `DISCORD_PUBLIC_KEY` and set the Interactions Endpoint URL to `http://localhost:8787/discord/interactions`.
+`GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` are optional and only used by the App install flow to resolve the installing account's login (the OAuth flow only needs the client ID/secret). Target channels are set per route in the Web UI, so no `DISCORD_CHANNEL_ID` is needed. To enable `/gh` commands locally, copy the **Public Key** from the Developer Portal into `DISCORD_PUBLIC_KEY` and set the Interactions Endpoint URL to `http://localhost:8787/discord/interactions`.
 :::
 
 ::: warning

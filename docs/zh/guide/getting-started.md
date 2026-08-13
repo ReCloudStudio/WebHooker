@@ -38,7 +38,7 @@ BASE_URL=http://localhost:8787
 ```
 
 ::: tip
-`GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` 未被代码使用（OAuth 流程只需要 Client ID/Secret），可省略。目标频道在 Web UI 中按路由设置，因此不需要 `DISCORD_CHANNEL_ID`。若要在本地启用 `/gh` 命令，请在开发者门户复制 **Public Key** 填入 `DISCORD_PUBLIC_KEY`，并把 Interactions Endpoint URL 设为 `http://localhost:8787/discord/interactions`。
+`GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` 为可选，仅用于 App 安装流程解析安装所属账号的登录名（OAuth 流程只需要 Client ID/Secret）。目标频道在 Web UI 中按路由设置，因此不需要 `DISCORD_CHANNEL_ID`。若要在本地启用 `/gh` 命令，请在开发者门户复制 **Public Key** 填入 `DISCORD_PUBLIC_KEY`，并把 Interactions Endpoint URL 设为 `http://localhost:8787/discord/interactions`。
 :::
 
 ::: warning
@@ -62,14 +62,16 @@ curl http://localhost:8787/health
 
 ## 可用脚本
 
-| 脚本                   | 说明                          |
-| ---------------------- | ----------------------------- |
-| `bun run dev`          | 启动本地开发服务器 (wrangler) |
-| `bun run deploy`       | 部署到 Cloudflare             |
-| `bun run typecheck`    | TypeScript 类型检查           |
-| `bun run lint`         | ESLint                        |
-| `bun run lint:md`      | Markdownlint                  |
-| `bun run format`       | 使用 Prettier 格式化          |
-| `bun run format:check` | 检查 Prettier 格式            |
-| `bun run docs:dev`     | 启动文档开发服务器            |
-| `bun run docs:build`   | 构建文档站点                  |
+| 脚本                   | 说明                                 |
+|------------------------|--------------------------------------|
+| `bun run dev`          | 启动 Nuxt 开发服务器 (HMR)           |
+| `bun run build`        | 生产构建（cloudflare_module preset） |
+| `bun run deploy`       | 部署到 Cloudflare                    |
+| `bun run typecheck`    | TypeScript 类型检查                  |
+| `bun run lint`         | ESLint                               |
+| `bun run lint:md`      | Markdownlint                         |
+| `bun run format`       | 使用 Prettier 格式化                 |
+| `bun run format:check` | 检查 Prettier 格式                   |
+| `bun test`             | 单元测试                             |
+| `bun run docs:dev`     | 启动文档开发服务器                   |
+| `bun run docs:build`   | 构建文档站点                         |

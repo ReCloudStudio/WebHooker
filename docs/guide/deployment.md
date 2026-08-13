@@ -37,10 +37,8 @@ bunx wrangler secret put ADMIN_USER_IDS       # comma-separated GitHub IDs/login
 There is no global channel secret. Each route in the [Web UI](/guide/configuration#web-ui) declares its own target channel (and optional thread), so `DISCORD_CHANNEL_ID` is not needed.
 :::
 
-::: tip GitHub App ID / private key are unused
-`GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` are not currently used by the code — the
-OAuth flow only needs `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`. You do not need to
-set them (no PKCS#8 conversion required).
+::: tip GitHub App ID / private key are optional
+`GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` (PKCS#8 PEM) are only used by the [App install flow](#github-app-setup) to resolve the installing account's login on the post-install choice page. You can skip them — the page then shows an anonymous `inst-{installationId}` group. The OAuth flow only needs `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`.
 :::
 
 Discord interactions arrive via the HTTPS Interactions Endpoint, so set `DISCORD_PUBLIC_KEY` and point the **Interactions Endpoint URL** at `https://your-domain/discord/interactions`. See [Interactions Endpoint](#interactions-endpoint) below.
@@ -124,7 +122,7 @@ Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
    - **Organization permissions**: Members (read) — if needed
 4. Subscribe to events (all 28 supported):
    - Push, Pull request, Issues, Issue comment, Workflow run, Workflow job, Status, Deployment, Deployment status, Ping, Release, Create, Delete, Star, Fork, Check run, Check suite, Pull request review, Pull request review comment, Commit comment, Member, Label, Milestone, Discussion, Discussion comment, Repository, Code scanning alert, Dependabot alert
-5. Generate private key → save contents to `GITHUB_PRIVATE_KEY` env var
+5. Generate private key — optional; set `GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` to show the installing account's login on the post-install page (see the tip above).
 
 ### 2. Install App
 
@@ -161,7 +159,7 @@ Messages are sent via the Discord **REST API**, so pushing works with just `DISC
 
 The `/gh` slash command and the `GitHub: 添加/编辑/删除评论` message commands are synced by the scheduled trigger (every 5 minutes): per-guild for instant availability, plus a global registration (24h dedup, ~1h propagation). The bot never connects to the Discord Gateway, so it shows as **offline** — messaging is unaffected (always REST).
 
-Users run `/gh login` to link their GitHub account and can then comment on issues/PRs as themselves. See the [README](https://github.com/ReCloudStudio/WebHooker#bot-commands-comment-on-github-as-yourself) for the full command reference.
+Users run `/gh login` to link their GitHub account and can then comment on issues/PRs as themselves. See the [Bot Commands](/guide/commands) page for the full command reference.
 
 ## Telegram Bot Setup
 
@@ -170,12 +168,7 @@ Users run `/gh login` to link their GitHub account and can then comment on issue
 3. The worker syncs the webhook from the scheduled trigger (`setWebhook` to `{BASE_URL}/telegram/webhook`), so no manual `setWebhook` call is needed — just make sure `BASE_URL` is set.
 4. Add the bot to a group (or enable topics) and route events to `chatId` / `topicId` in the route config.
 
-In Telegram, `/gh` commands work by replying to a notification message:
-
-- `/gh login` — link your GitHub account (returns an OAuth link)
-- `/gh logout` — unlink
-- `/gh comment <text>` — reply to an issue/PR notification to comment as yourself
-- `/gh merge` / `/gh close` — reply to a PR notification to merge/close it
+In Telegram, `/gh` commands (`/gh login`, `/gh logout`, `/gh comment <text>`, `/gh merge`, `/gh close`) work by replying to a notification message — see the [Bot Commands](/guide/commands) page.
 
 Avatars are rendered as a link-preview card using the built-in `GET /api/richheader` (overridable with `TELEGRAM_RICH_HEADER_HOST`).
 

@@ -285,12 +285,12 @@ export function validateGroups(
       g.providers !== undefined &&
       (!Array.isArray(g.providers) ||
         !g.providers.every(
-          (p) => typeof p === "string" && ["github", "gitea", "gitlab"].includes(p),
+          (p) => typeof p === "string" && ["github", "gitea"].includes(p),
         ))
     ) {
       return {
         ok: false,
-        error: `group "${g.id}".providers must be a list of "github" | "gitea" | "gitlab"`,
+        error: `group "${g.id}".providers must be a list of "github" | "gitea"`,
       };
     }
     if (g.installationId !== undefined && g.installationId !== null) {
