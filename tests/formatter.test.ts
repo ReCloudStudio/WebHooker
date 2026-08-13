@@ -31,7 +31,10 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(msg.title).toBe("acme/widget: Pushed 1 commit");
+    expect(msg.title).toBe(
+      "acme/widget: Pushed 1 commit to [`main`](https://github.com/acme/widget/tree/main)",
+    );
+    expect(msg.description).toBe("[View comparison](https://github.com/acme/widget/compare/abc...def)");
   });
 
   it("pull_request title is repo#number: title", () => {
@@ -98,7 +101,7 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(msg.title).toBe("acme/widget: CI — success");
+    expect(msg.title).toBe("acme/widget: [CI — success](https://github.com/acme/widget/actions/runs/42)");
     expect(msg.fields![1].value).toBe("✅ build");
   });
 
@@ -119,7 +122,7 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(queued.title).toBe("acme/widget: CI — queued");
+    expect(queued.title).toBe("acme/widget: [CI — queued](https://github.com/acme/widget/actions/runs/42)");
     expect(queued.fields![0].value).toBe("⏳ queued");
 
     const running = formatEvent(
@@ -131,7 +134,7 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(running.title).toBe("acme/widget: CI — running");
+    expect(running.title).toBe("acme/widget: [CI — running](https://github.com/acme/widget/actions/runs/42)");
     expect(running.fields![0].value).toBe("🔄 running");
   });
 

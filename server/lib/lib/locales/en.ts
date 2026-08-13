@@ -88,12 +88,11 @@ export const en = {
     push: {
       force_push: "**Force push**",
       branch_created: "Branch created",
-      commits_pushed: "**{count}** commit{s} pushed to {ref}",
       view_comparison: "[View comparison]({url})",
       added: "+{count} added",
       removed: "-{count} removed",
       modified: "~{count} modified",
-      title: "{repo}: Pushed {count} commit{s}",
+      title: "{repo}: Pushed {count} commit{s} to {ref}",
     },
     pr: {
       action_pr: "{emoji}**{action}** pull request",
@@ -108,7 +107,7 @@ export const en = {
       action_comment: "{emoji}**{action}** comment",
     },
     workflow_run: {
-      title: "{repo}: {name} — {conclusion}",
+      title: "{repo}: {run}",
     },
     workflow_job: {
       title: "{repo}: Job {name} — {conclusion}",

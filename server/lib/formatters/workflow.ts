@@ -175,13 +175,16 @@ export function formatWorkflowRun(
     });
   }
 
+  const runLabel = workflow.html_url
+    ? `[${workflow.name ?? "Workflow"} — ${status}](${workflow.html_url})`
+    : `${workflow.name ?? "Workflow"} — ${status}`;
+
   return buildMessage(
     {
       author,
       title: t("events.workflow_run.title", {
         repo: repo ?? t("common.repository"),
-        name: workflow.name ?? "Workflow",
-        conclusion: status,
+        run: runLabel,
       }),
       url: workflow.html_url,
       color: GITHUB_COLORS[colorKey],

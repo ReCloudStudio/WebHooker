@@ -108,7 +108,7 @@ export const zh = {
       action_comment: "{emoji}**{action}** 评论",
     },
     workflow_run: {
-      title: "{repo}: {name} — {conclusion}",
+      title: "{repo}: {run}",
     },
     workflow_job: {
       title: "{repo}: 作业 {name} — {conclusion}",

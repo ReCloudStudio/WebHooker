@@ -58,14 +58,6 @@ export function formatPush(
     descriptionParts.push(em("🆕") + t("events.push.branch_created"));
   }
 
-  descriptionParts.push(
-    t("events.push.commits_pushed", {
-      count,
-      s: count !== 1 ? "s" : "",
-      ref: isTagPush ? tagLink(baseUrl, rawRef, ref) : branchLink(baseUrl, rawRef, ref),
-    }),
-  );
-
   if (compareUrl) {
     descriptionParts.push(t("events.push.view_comparison", { url: compareUrl }));
   }
@@ -119,6 +111,7 @@ export function formatPush(
         count,
         s: count !== 1 ? "s" : "",
         repo: repo ?? t("common.repository"),
+        ref: isTagPush ? tagLink(baseUrl, rawRef, ref) : branchLink(baseUrl, rawRef, ref),
       }),
       url: compareUrl,
       color: GITHUB_COLORS.push,
