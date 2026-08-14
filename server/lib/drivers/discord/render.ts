@@ -58,16 +58,12 @@ export function renderNeutralMessage(message: NeutralMessage): FormattedMessage 
               url: message.author.url,
             }
           : undefined,
-        fields: message.fields
-          ?.slice(0, MAX_FIELDS)
-          .map((f) => ({
-            name: cap(f.name, MAX_TITLE),
-            value: cap(f.value, MAX_FIELD_VALUE),
-            inline: f.inline,
-          })),
-        footer: footerText
-          ? { text: footerText, icon_url: message.forge?.iconUrl }
-          : undefined,
+        fields: message.fields?.slice(0, MAX_FIELDS).map((f) => ({
+          name: cap(f.name, MAX_TITLE),
+          value: cap(f.value, MAX_FIELD_VALUE),
+          inline: f.inline,
+        })),
+        footer: footerText ? { text: footerText, icon_url: message.forge?.iconUrl } : undefined,
         timestamp: message.timestamp,
       },
     ],

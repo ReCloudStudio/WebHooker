@@ -64,8 +64,7 @@ export function formatPush(
   }
   if (created) {
     descriptionParts.push(
-      em("🆕") +
-        t(isTagPush ? "events.push.tag_created" : "events.push.branch_created"),
+      em("🆕") + t(isTagPush ? "events.push.tag_created" : "events.push.branch_created"),
     );
   }
 
@@ -77,8 +76,8 @@ export function formatPush(
 
   const commitField = (c: (typeof commits)[number]): { name: string; value: string } => {
     const shortId = c.id?.slice(0, 7) ?? "???????";
-    const msg = (c.message?.split("\n")[0] ?? "").slice(0, MAX_COMMIT_SUBJECT) ||
-      t("common.no_message");
+    const msg =
+      (c.message?.split("\n")[0] ?? "").slice(0, MAX_COMMIT_SUBJECT) || t("common.no_message");
     const url = baseUrl && c.id ? `${baseUrl}/commit/${c.id}` : null;
     const hash = url ? `[\`${shortId}\`](${url})` : `\`${shortId}\``;
     return { name: `\u200b`, value: `${hash} ${msg}` };

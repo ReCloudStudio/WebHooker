@@ -521,9 +521,7 @@ describe("limits and localization", () => {
 
 describe("forge source branding", () => {
   it("github events brand as GitHub with the favicon", () => {
-    expect(
-      forgeInfo({ event: "push", provider: "github", payload: {} }),
-    ).toEqual({
+    expect(forgeInfo({ event: "push", provider: "github", payload: {} })).toEqual({
       name: "GitHub",
       url: "https://github.com",
       iconUrl: "https://github.com/favicon.ico",
@@ -542,9 +540,7 @@ describe("forge source branding", () => {
       url: "https://git.example.com",
       iconUrl: "https://git.example.com/favicon.ico",
     });
-    expect(
-      forgeInfo({ event: "push", provider: "gitea", payload: {} }),
-    ).toBeUndefined();
+    expect(forgeInfo({ event: "push", provider: "gitea", payload: {} })).toBeUndefined();
   });
 
   it("custom events brand as a plain label without links", () => {

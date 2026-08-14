@@ -30,7 +30,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 | `providers`      | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all                                                                                                                    |
 | `installationId` | number   | No       | GitHub App installation id bound to this group; only that installation's events are accepted (empty = all)                                                                                   |
 | `emoji`          | boolean  | No       | Whether to include emoji in this group's messages (default `true`)                                                                                                                           |
-| `forgeLabel`     | boolean  | No       | Whether to show the forge source (GitHub / Gitea instance / custom) in the footer of this group's messages (default `false`)                                                                  |
+| `forgeLabel`     | boolean  | No       | Whether to show the forge source (GitHub / Gitea instance / custom) in the footer of this group's messages (default `false`)                                                                 |
 | `lang`           | string   | No       | Message language for every route in this group (e.g. `en`, `zh`; custom via KV `i18n:<lang>`) — see [Message Language](./i18n) — defaults to `en`                                            |
 | `logTarget`      | object   | No       | Webhook log channel: a Discord `{ platform, channelId, threadId? }` or Telegram `{ platform, chatId, topicId? }` target that receives a summary of every webhook the group's routes dispatch |
 

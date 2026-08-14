@@ -96,12 +96,7 @@ export async function dispatchEvent(
           .map((a) =>
             a.ok
               ? emojiPrefix("✅", true) +
-                translate(
-                  "log.route_ok",
-                  { route: a.routeName, target: a.target },
-                  undefined,
-                  tr,
-                )
+                translate("log.route_ok", { route: a.routeName, target: a.target }, undefined, tr)
               : emojiPrefix("❌", true) +
                 translate(
                   "log.route_fail",

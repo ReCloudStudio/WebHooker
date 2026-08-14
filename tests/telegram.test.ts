@@ -35,11 +35,13 @@ describe("telegram renderNeutralMessage", () => {
     const out = renderNeutralMessage({
       title: "acme/widget: Add feature",
       footer: "acme/widget",
-      forge: { name: "GitHub", url: "https://github.com", iconUrl: "https://github.com/favicon.ico" },
+      forge: {
+        name: "GitHub",
+        url: "https://github.com",
+        iconUrl: "https://github.com/favicon.ico",
+      },
     });
-    expect(out).toContain(
-      '<i><a href="https://github.com">GitHub</a> · acme/widget</i>',
-    );
+    expect(out).toContain('<i><a href="https://github.com">GitHub</a> · acme/widget</i>');
 
     const gitea = renderNeutralMessage({
       title: "org/repo: Add feature",

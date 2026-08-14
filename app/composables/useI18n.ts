@@ -456,7 +456,8 @@ const zh: Dict = {
   "groupEditor.forgeLabel": "显示来源平台",
   "groupEditor.forgeLabelNote": "（可选）",
   "groupEditor.forgeLabelLabel": "在消息中标识事件来源（GitHub / Gitea / 自定义）",
-  "groupEditor.forgeLabelHint": "在消息底部显示来源平台的图标与站点名称，便于区分不同 forge 的事件。",
+  "groupEditor.forgeLabelHint":
+    "在消息底部显示来源平台的图标与站点名称，便于区分不同 forge 的事件。",
   "groupEditor.logTarget": "Webhook 日志频道",
   "groupEditor.logTargetNote": "（可选）",
   "groupEditor.logDisabled": "— 未启用 —",

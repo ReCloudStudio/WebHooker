@@ -170,7 +170,11 @@ export function forgeInfo(event: WebhookEvent): NeutralForge | undefined {
   const repoUrl = (event.payload.repository as { html_url?: string } | undefined)?.html_url;
   switch (event.provider) {
     case "github":
-      return { name: "GitHub", url: "https://github.com", iconUrl: "https://github.com/favicon.ico" };
+      return {
+        name: "GitHub",
+        url: "https://github.com",
+        iconUrl: "https://github.com/favicon.ico",
+      };
     case "gitea": {
       if (!repoUrl) return undefined;
       try {

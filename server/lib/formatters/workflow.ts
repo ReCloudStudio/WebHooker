@@ -133,7 +133,8 @@ export function formatWorkflowRun(
   if (workflow.jobs?.length) {
     // Many-jobs workflows must stay under the Discord field value limit.
     const jobLines = workflow.jobs.map(
-      (j) => `${em(WORKFLOW_CONCLUSION_EMOJI[j.conclusion ?? ""] ?? "⏳")}${cap(j.name ?? "", 200)}`,
+      (j) =>
+        `${em(WORKFLOW_CONCLUSION_EMOJI[j.conclusion ?? ""] ?? "⏳")}${cap(j.name ?? "", 200)}`,
     );
     fields.push({
       name: t("fields.job"),

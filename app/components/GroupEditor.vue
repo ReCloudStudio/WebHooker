@@ -46,27 +46,27 @@
               />
               <div class="hint">{{ t("groupEditor.langHint") }}</div>
             </div>
-          <div class="field">
-            <label
-              >{{ t("groupEditor.emoji") }}
-              <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
-            >
-            <label class="inline">
-              <input v-model="form.emoji" type="checkbox" />
-              <span>{{ t("groupEditor.emojiLabel") }}</span>
-            </label>
-          </div>
-          <div class="field">
-            <label
-              >{{ t("groupEditor.forgeLabel") }}
-              <span class="lbl-note">{{ t("groupEditor.forgeLabelNote") }}</span></label
-            >
-            <label class="inline">
-              <input v-model="form.forgeLabel" type="checkbox" />
-              <span>{{ t("groupEditor.forgeLabelLabel") }}</span>
-            </label>
-            <div class="hint">{{ t("groupEditor.forgeLabelHint") }}</div>
-          </div>
+            <div class="field">
+              <label
+                >{{ t("groupEditor.emoji") }}
+                <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
+              >
+              <label class="inline">
+                <input v-model="form.emoji" type="checkbox" />
+                <span>{{ t("groupEditor.emojiLabel") }}</span>
+              </label>
+            </div>
+            <div class="field">
+              <label
+                >{{ t("groupEditor.forgeLabel") }}
+                <span class="lbl-note">{{ t("groupEditor.forgeLabelNote") }}</span></label
+              >
+              <label class="inline">
+                <input v-model="form.forgeLabel" type="checkbox" />
+                <span>{{ t("groupEditor.forgeLabelLabel") }}</span>
+              </label>
+              <div class="hint">{{ t("groupEditor.forgeLabelHint") }}</div>
+            </div>
           </div>
           <div class="field">
             <label

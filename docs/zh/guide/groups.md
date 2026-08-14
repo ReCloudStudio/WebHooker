@@ -30,7 +30,7 @@
 | `providers`      | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；空 = 全部                                                                                                     |
 | `installationId` | number   | 否   | 绑定到该分组的 GitHub App 安装 id；仅接受该安装的事件（空 = 全部）                                                                                           |
 | `emoji`          | boolean  | 否   | 该分组消息是否包含表情（默认 `true`）                                                                                                                        |
-| `forgeLabel`     | boolean  | 否   | 是否在该分组消息的底部显示来源平台标识（GitHub / Gitea 实例 / 自定义）（默认 `false`）                                                                      |
+| `forgeLabel`     | boolean  | 否   | 是否在该分组消息的底部显示来源平台标识（GitHub / Gitea 实例 / 自定义）（默认 `false`）                                                                       |
 | `lang`           | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——见[消息语言](./i18n)——默认 `en`                                                   |
 | `logTarget`      | object   | 否   | Webhook 日志频道：Discord 目标 `{ platform, channelId, threadId? }` 或 Telegram 目标 `{ platform, chatId, topicId? }`，接收该分组路由每次分发 webhook 的摘要 |
 
