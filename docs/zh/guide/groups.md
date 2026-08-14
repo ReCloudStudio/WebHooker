@@ -30,7 +30,7 @@
 | `providers`      | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；空 = 全部                                                                                                     |
 | `installationId` | number   | 否   | 绑定到该分组的 GitHub App 安装 id；仅接受该安装的事件（空 = 全部）                                                                                           |
 | `emoji`          | boolean  | 否   | 该分组消息是否包含表情（默认 `true`）                                                                                                                        |
-| `forgeSources`   | object[] | 否   | 来源主机：`{ host, type, name? }` 条目（`type` 为 `github` 或 `gitea`，`name` 为可选显示名称），用于标注该分组消息底部；空 = 不标注                                                        |
+| `forgeSources`   | object[] | 否   | 来源主机：`{ host, type, name? }` 条目（`type` 为 `github` 或 `gitea`，`name` 为可选显示名称），用于标注该分组消息底部；空 = 不标注                          |
 | `lang`           | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——见[消息语言](./i18n)——默认 `en`                                                   |
 | `logTarget`      | object   | 否   | Webhook 日志频道：Discord 目标 `{ platform, channelId, threadId? }` 或 Telegram 目标 `{ platform, chatId, topicId? }`，接收该分组路由每次分发 webhook 的摘要 |
 
@@ -62,11 +62,13 @@
 分组通过 `forgeSources` 定义自己接收事件的 forge，即一组 `{ host, type, name? }` 条目（`type` 为 `github` 或 `gitea`）。该分组路由发出的每条消息都会使用**与事件来源类型匹配、且 host 与仓库 URL 主机名一致的第一条**配置作为底部标识（GitHub 事件匹配 `github.com`）。标识文本为条目的可选 `name`——未填则回退为 host——因此两个自建 Gitea 实例可以显示为「内网 Gitea」/「Git2 仓库」，同时通过各自主机名完成匹配：
 
 ```json
-{ "forgeSources": [
-  { "host": "github.com",       "type": "github", "name": "GitHub 主站" },
-  { "host": "git1.example.com", "type": "gitea",  "name": "内网 Gitea" },
-  { "host": "git2.example.com", "type": "gitea" }
-] }
+{
+  "forgeSources": [
+    { "host": "github.com", "type": "github", "name": "GitHub 主站" },
+    { "host": "git1.example.com", "type": "gitea", "name": "内网 Gitea" },
+    { "host": "git2.example.com", "type": "gitea" }
+  ]
+}
 ```
 
 - **Discord** — embed 底部在仓库名旁显示标识（`内网 Gitea · acme/widget`），并以按仓库 URL 推导的站点 favicon 作为底部图标。

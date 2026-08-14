@@ -46,47 +46,51 @@
               />
               <div class="hint">{{ t("groupEditor.langHint") }}</div>
             </div>
-          <div class="field">
-            <label
-              >{{ t("groupEditor.emoji") }}
-              <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
-            >
-            <label class="inline">
-              <input v-model="form.emoji" type="checkbox" />
-              <span>{{ t("groupEditor.emojiLabel") }}</span>
-            </label>
-          </div>
-          <div class="field">
-            <label
-              >{{ t("groupEditor.forgeSources") }}
-              <span class="lbl-note">{{ t("groupEditor.forgeSourcesNote") }}</span></label
-            >
-            <div v-for="(s, i) in form.forgeSources" :key="i" class="forge-source-row">
-              <input
-                v-model="s.host"
-                type="text"
-                class="input f-host"
-                :placeholder="t('groupEditor.forgeSourcesHost')"
-              />
-              <select v-model="s.type" class="select forge-type">
-                <option value="github">GitHub</option>
-                <option value="gitea">Gitea</option>
-              </select>
-              <button type="button" class="icon-btn danger" @click="form.forgeSources.splice(i, 1)">
-                ✕
-              </button>
-              <input
-                v-model="s.name"
-                type="text"
-                class="input f-name"
-                :placeholder="t('groupEditor.forgeSourcesName')"
-              />
+            <div class="field">
+              <label
+                >{{ t("groupEditor.emoji") }}
+                <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
+              >
+              <label class="inline">
+                <input v-model="form.emoji" type="checkbox" />
+                <span>{{ t("groupEditor.emojiLabel") }}</span>
+              </label>
             </div>
-            <button type="button" class="btn btn-ghost add-filter" @click="addForgeSource">
-              {{ t("groupEditor.forgeSourcesAdd") }}
-            </button>
-            <div class="hint">{{ t("groupEditor.forgeSourcesHint") }}</div>
-          </div>
+            <div class="field">
+              <label
+                >{{ t("groupEditor.forgeSources") }}
+                <span class="lbl-note">{{ t("groupEditor.forgeSourcesNote") }}</span></label
+              >
+              <div v-for="(s, i) in form.forgeSources" :key="i" class="forge-source-row">
+                <input
+                  v-model="s.host"
+                  type="text"
+                  class="input f-host"
+                  :placeholder="t('groupEditor.forgeSourcesHost')"
+                />
+                <select v-model="s.type" class="select forge-type">
+                  <option value="github">GitHub</option>
+                  <option value="gitea">Gitea</option>
+                </select>
+                <button
+                  type="button"
+                  class="icon-btn danger"
+                  @click="form.forgeSources.splice(i, 1)"
+                >
+                  ✕
+                </button>
+                <input
+                  v-model="s.name"
+                  type="text"
+                  class="input f-name"
+                  :placeholder="t('groupEditor.forgeSourcesName')"
+                />
+              </div>
+              <button type="button" class="btn btn-ghost add-filter" @click="addForgeSource">
+                {{ t("groupEditor.forgeSourcesAdd") }}
+              </button>
+              <div class="hint">{{ t("groupEditor.forgeSourcesHint") }}</div>
+            </div>
           </div>
           <div class="field">
             <label

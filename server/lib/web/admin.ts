@@ -36,7 +36,8 @@ import { log } from "../lib/log";
 
 const VALID_FILTER_TYPES = new Set(["event", "repo", "actor", "action", "branch", "keyword"]);
 const ID_RE = /^[a-z0-9][a-z0-9-]*$/;
-const HOST_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+const HOST_RE =
+  /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
 
 function isValidMatch(match: unknown): match is string | string[] {
   if (typeof match === "string") return match.trim().length > 0;
@@ -328,10 +329,7 @@ export function validateGroups(
             error: `group "${g.id}".forgeSources[${i}].type must be "github" | "gitea"`,
           };
         }
-        if (
-          s.name !== undefined &&
-          (typeof s.name !== "string" || s.name.length > 50)
-        ) {
+        if (s.name !== undefined && (typeof s.name !== "string" || s.name.length > 50)) {
           return {
             ok: false,
             error: `group "${g.id}".forgeSources[${i}].name must be a string`,

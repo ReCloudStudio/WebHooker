@@ -169,10 +169,7 @@ export function senderProfileUrl(repoUrl: string | undefined, login: string): st
  * entry's display `name` (or its host when no name is set). Link/favicon are
  * derived from the repository URL.
  */
-export function forgeInfo(
-  event: WebhookEvent,
-  sources?: ForgeSource[],
-): NeutralForge | undefined {
+export function forgeInfo(event: WebhookEvent, sources?: ForgeSource[]): NeutralForge | undefined {
   const repoUrl = (event.payload.repository as { html_url?: string } | undefined)?.html_url;
   let host: string | undefined;
   if (repoUrl) {
@@ -186,9 +183,7 @@ export function forgeInfo(
   if (!host && event.provider === "github") host = "github.com";
   if (!host) return undefined;
 
-  const source = sources?.find(
-    (s) => s.type === event.provider && s.host.toLowerCase() === host,
-  );
+  const source = sources?.find((s) => s.type === event.provider && s.host.toLowerCase() === host);
   if (!source) return undefined;
 
   const label = source.name?.trim() || source.host;
