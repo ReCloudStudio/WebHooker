@@ -1,4 +1,4 @@
-import type { NeutralMessage } from "../types";
+import type { NeutralForge, NeutralMessage, WebhookEvent } from "../types";
 import { t as translate } from "../lib/i18n";
 import type { Translations } from "../lib/i18n";
 
@@ -159,4 +159,30 @@ export function senderProfileUrl(repoUrl: string | undefined, login: string): st
     }
   }
   return `https://github.com/${login}`;
+}
+
+/**
+ * Forge branding for an event (used when the group enables `forgeLabel`):
+ * GitHub gets its brand + favicon, Gitea the instance hostname + favicon
+ * derived from the repository URL, custom webhooks a plain "Custom" label.
+ */
+export function forgeInfo(event: WebhookEvent): NeutralForge | undefined {
+  const repoUrl = (event.payload.repository as { html_url?: string } | undefined)?.html_url;
+  switch (event.provider) {
+    case "github":
+      return { name: "GitHub", url: "https://github.com", iconUrl: "https://github.com/favicon.ico" };
+    case "gitea": {
+      if (!repoUrl) return undefined;
+      try {
+        const origin = new URL(repoUrl).origin;
+        return { name: new URL(origin).hostname, url: origin, iconUrl: `${origin}/favicon.ico` };
+      } catch {
+        return undefined;
+      }
+    }
+    case "custom":
+      return { name: "Custom" };
+    default:
+      return undefined;
+  }
 }

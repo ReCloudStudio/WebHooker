@@ -39,6 +39,10 @@ export function renderNeutralMessage(message: NeutralMessage): FormattedMessage 
 
   // Safety net: clamp every embed part to the Discord API limits so a single
   // oversized formatter or custom payload can never hard-fail the request.
+  const footerText = cap(
+    [message.forge?.name, message.footer].filter(Boolean).join(" · "),
+    MAX_FOOTER,
+  );
   return {
     content,
     embeds: [
@@ -61,7 +65,9 @@ export function renderNeutralMessage(message: NeutralMessage): FormattedMessage 
             value: cap(f.value, MAX_FIELD_VALUE),
             inline: f.inline,
           })),
-        footer: message.footer ? { text: cap(message.footer, MAX_FOOTER) } : undefined,
+        footer: footerText
+          ? { text: footerText, icon_url: message.forge?.iconUrl }
+          : undefined,
         timestamp: message.timestamp,
       },
     ],

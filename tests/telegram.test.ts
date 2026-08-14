@@ -31,6 +31,23 @@ describe("telegram renderNeutralMessage", () => {
     expect(out).toContain("<i>acme/widget</i>");
   });
 
+  it("renders the forge source as a linked name in the footer", () => {
+    const out = renderNeutralMessage({
+      title: "acme/widget: Add feature",
+      footer: "acme/widget",
+      forge: { name: "GitHub", url: "https://github.com", iconUrl: "https://github.com/favicon.ico" },
+    });
+    expect(out).toContain(
+      '<i><a href="https://github.com">GitHub</a> · acme/widget</i>',
+    );
+
+    const gitea = renderNeutralMessage({
+      title: "org/repo: Add feature",
+      forge: { name: "git.example.com", url: "https://git.example.com" },
+    });
+    expect(gitea).toContain('<i><a href="https://git.example.com">git.example.com</a></i>');
+  });
+
   it("escapes HTML special characters", () => {
     const out = renderNeutralMessage({
       title: 'a <b> & "c"',

@@ -46,16 +46,27 @@
               />
               <div class="hint">{{ t("groupEditor.langHint") }}</div>
             </div>
-            <div class="field">
-              <label
-                >{{ t("groupEditor.emoji") }}
-                <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
-              >
-              <label class="inline">
-                <input v-model="form.emoji" type="checkbox" />
-                <span>{{ t("groupEditor.emojiLabel") }}</span>
-              </label>
-            </div>
+          <div class="field">
+            <label
+              >{{ t("groupEditor.emoji") }}
+              <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
+            >
+            <label class="inline">
+              <input v-model="form.emoji" type="checkbox" />
+              <span>{{ t("groupEditor.emojiLabel") }}</span>
+            </label>
+          </div>
+          <div class="field">
+            <label
+              >{{ t("groupEditor.forgeLabel") }}
+              <span class="lbl-note">{{ t("groupEditor.forgeLabelNote") }}</span></label
+            >
+            <label class="inline">
+              <input v-model="form.forgeLabel" type="checkbox" />
+              <span>{{ t("groupEditor.forgeLabelLabel") }}</span>
+            </label>
+            <div class="hint">{{ t("groupEditor.forgeLabelHint") }}</div>
+          </div>
           </div>
           <div class="field">
             <label
@@ -208,6 +219,7 @@ const form = reactive({
   providers: [] as ("github" | "gitea")[],
   installationId: "",
   emoji: true,
+  forgeLabel: false,
   lang: "",
   logPlatform: "" as "" | "discord" | "telegram",
   logChannelId: "",
@@ -237,6 +249,7 @@ watch(
     );
     form.installationId = g?.installationId != null ? String(g.installationId) : "";
     form.emoji = g?.emoji ?? true;
+    form.forgeLabel = g?.forgeLabel ?? false;
     form.lang = g?.lang ?? "";
     form.logPlatform = lt?.platform ?? "";
     form.logChannelId = lt?.channelId ?? "";
@@ -310,6 +323,7 @@ function save(): void {
     providers: form.providers.length ? form.providers : undefined,
     installationId,
     emoji: form.emoji,
+    forgeLabel: form.forgeLabel,
     lang: form.lang.trim() || undefined,
     logTarget,
   });

@@ -127,6 +127,11 @@ export interface Group {
    */
   emoji?: boolean;
   /**
+   * Whether to show the forge source (GitHub / Gitea instance / custom) in the
+   * footer of this group's messages. Defaults to false when omitted.
+   */
+  forgeLabel?: boolean;
+  /**
    * Message language for every route in this group (e.g. "en", "zh"; custom
    * via KV i18n:<lang>). Defaults to "en" when omitted.
    */
@@ -165,6 +170,20 @@ export interface NeutralAuthor {
   url?: string;
 }
 
+/**
+ * The forge (source platform) that produced an event: shown in the message
+ * footer when the group enables `Group.forgeLabel` so recipients can tell
+ * GitHub, a Gitea instance or a custom webhook apart at a glance.
+ */
+export interface NeutralForge {
+  /** Display name, e.g. "GitHub" or the Gitea instance hostname. */
+  name: string;
+  /** Site URL for the hyperlink (Telegram) / brand context (Discord). */
+  url?: string;
+  /** Site favicon used as the Discord embed footer icon. */
+  iconUrl?: string;
+}
+
 export interface NeutralField {
   name: string;
   value: string;
@@ -189,6 +208,11 @@ export interface NeutralMessage {
   footer?: string;
   timestamp?: string;
   actions?: NeutralAction[];
+  /**
+   * Forge branding set by dispatch when `Group.forgeLabel` is enabled; drivers
+   * render it in the footer (Discord icon + name, Telegram linked name).
+   */
+  forge?: NeutralForge;
   /**
    * Stable key identifying a message chain that should be updated in place
    * (e.g. workflow run progress). When set, subsequent events edit the
@@ -215,7 +239,7 @@ export interface FormattedMessage {
       url?: string;
     };
     fields?: Array<{ name: string; value: string; inline?: boolean }>;
-    footer?: { text: string };
+    footer?: { text: string; icon_url?: string };
     timestamp?: string;
   }>;
   components?: Array<{

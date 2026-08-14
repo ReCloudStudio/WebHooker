@@ -1,6 +1,6 @@
 import type { Config, WebhookEvent, Env, Route, Group, NeutralMessage } from "../types";
 import { formatEvent } from "../formatters";
-import { emojiPrefix } from "../formatters/helpers";
+import { emojiPrefix, forgeInfo } from "../formatters/helpers";
 import { matchRoute, eventOwners } from "../events/match";
 import { log } from "../lib/log";
 import { loadTranslations, t as translate, type Translations } from "../lib/i18n";
@@ -156,6 +156,9 @@ export async function dispatchEvent(
     const tr = trMap.get(group?.lang ?? "en")!;
     const showEmoji = group?.emoji !== false;
     const message = formatEvent(route, event, tr, showEmoji);
+    if (group?.forgeLabel) {
+      message.forge = forgeInfo(event);
+    }
     if (route.discordRoleIds?.length) {
       message.mentionRoleIds = route.discordRoleIds;
     }

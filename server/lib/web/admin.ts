@@ -301,6 +301,9 @@ export function validateGroups(
     if (g.emoji !== undefined && typeof g.emoji !== "boolean") {
       return { ok: false, error: `group "${g.id}".emoji must be a boolean` };
     }
+    if (g.forgeLabel !== undefined && typeof g.forgeLabel !== "boolean") {
+      return { ok: false, error: `group "${g.id}".forgeLabel must be a boolean` };
+    }
     if (g.lang !== undefined && typeof g.lang !== "string") {
       return { ok: false, error: `group "${g.id}".lang must be a string` };
     }

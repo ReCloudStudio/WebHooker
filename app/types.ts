@@ -40,6 +40,7 @@ export interface Group {
   providers?: ("github" | "gitea" | "gitlab")[];
   installationId?: number;
   emoji?: boolean;
+  forgeLabel?: boolean;
   lang?: string;
   logTarget?: RouteTarget;
 }

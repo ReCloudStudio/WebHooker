@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { formatEvent } from "../server/lib/formatters";
-import { MAX_COMMIT_SUBJECT } from "../server/lib/formatters/helpers";
+import { forgeInfo, MAX_COMMIT_SUBJECT } from "../server/lib/formatters/helpers";
 import type { Route, WebhookEvent } from "../server/lib/types";
 
 const route: Route = {
@@ -516,5 +516,40 @@ describe("limits and localization", () => {
     expect(msg.fields!.length).toBe(25);
     expect(msg.fields!.every((f) => f.value.length <= 1024)).toBe(true);
     expect(msg.description!.length).toBe(4096);
+  });
+});
+
+describe("forge source branding", () => {
+  it("github events brand as GitHub with the favicon", () => {
+    expect(
+      forgeInfo({ event: "push", provider: "github", payload: {} }),
+    ).toEqual({
+      name: "GitHub",
+      url: "https://github.com",
+      iconUrl: "https://github.com/favicon.ico",
+    });
+  });
+
+  it("gitea events brand as the instance hostname derived from the repo url", () => {
+    expect(
+      forgeInfo({
+        event: "push",
+        provider: "gitea",
+        payload: { repository: { html_url: "https://git.example.com/org/repo" } },
+      }),
+    ).toEqual({
+      name: "git.example.com",
+      url: "https://git.example.com",
+      iconUrl: "https://git.example.com/favicon.ico",
+    });
+    expect(
+      forgeInfo({ event: "push", provider: "gitea", payload: {} }),
+    ).toBeUndefined();
+  });
+
+  it("custom events brand as a plain label without links", () => {
+    expect(forgeInfo({ event: "custom", provider: "custom", payload: {} })).toEqual({
+      name: "Custom",
+    });
   });
 });

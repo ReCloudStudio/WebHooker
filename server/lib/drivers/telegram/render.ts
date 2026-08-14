@@ -89,6 +89,10 @@ export function renderNeutralMessage(message: NeutralMessage): string {
   }
 
   const meta: string[] = [];
+  if (message.forge) {
+    const name = mdToHtml(message.forge.name);
+    meta.push(message.forge.url ? `<a href="${esc(message.forge.url)}">${name}</a>` : name);
+  }
   if (message.footer) meta.push(esc(message.footer));
   const ts = formatTimestamp(message.timestamp);
   if (ts) meta.push(ts);

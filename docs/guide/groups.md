@@ -30,6 +30,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 | `providers`      | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all                                                                                                                    |
 | `installationId` | number   | No       | GitHub App installation id bound to this group; only that installation's events are accepted (empty = all)                                                                                   |
 | `emoji`          | boolean  | No       | Whether to include emoji in this group's messages (default `true`)                                                                                                                           |
+| `forgeLabel`     | boolean  | No       | Whether to show the forge source (GitHub / Gitea instance / custom) in the footer of this group's messages (default `false`)                                                                  |
 | `lang`           | string   | No       | Message language for every route in this group (e.g. `en`, `zh`; custom via KV `i18n:<lang>`) — see [Message Language](./i18n) — defaults to `en`                                            |
 | `logTarget`      | object   | No       | Webhook log channel: a Discord `{ platform, channelId, threadId? }` or Telegram `{ platform, chatId, topicId? }` target that receives a summary of every webhook the group's routes dispatch |
 
@@ -55,6 +56,16 @@ Every group member has one of three roles. Super admins (`ADMIN_USER_IDS`) alway
 ## Webhook Log Channel
 
 A group may set `logTarget` to a Discord channel/thread or Telegram chat/topic. Whenever the group's routes dispatch a webhook, a single summary message is sent there: the event type/action, the repo, the delivery id, and one line per route×target with an ✅/❌ outcome (including the error for failed sends; at most the first 10 lines are listed, the rest is summarized as `+N`). The message is green when every dispatch succeeded and red when any failed. The summary uses the group's message language. Log messages are sent best-effort and are not themselves recorded in the D1 send log.
+
+## Forge Source Label
+
+With `forgeLabel: true`, every message this group's routes send carries the source forge in its footer, so events from GitHub, a self-hosted Gitea instance and custom webhooks are easy to tell apart when they share a channel:
+
+- **Discord** — the embed footer shows the forge name next to the repo (`GitHub · acme/widget`) with the site's favicon as the footer icon (for Gitea the instance's own favicon is fetched from its origin).
+- **Telegram** — the footer line starts with the hyperlinked site name (`[GitHub](https://github.com)` or the Gitea instance hostname).
+- **Custom** webhooks are labeled `Custom` without a link.
+
+The label is independent of `Group.emoji` and follows every message that group dispatches (including in-place edits of workflow/check messages).
 
 ## Invites
 

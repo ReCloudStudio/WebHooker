@@ -83,6 +83,22 @@ describe("discord role mentions", () => {
     const out = renderNeutralMessage({ title: "T" });
     expect(out.content).toBeUndefined();
   });
+
+  it("renders the forge source in the embed footer", () => {
+    const out = renderNeutralMessage({
+      title: "acme/widget: Add feature",
+      footer: "acme/widget",
+      forge: {
+        name: "GitHub",
+        url: "https://github.com",
+        iconUrl: "https://github.com/favicon.ico",
+      },
+    });
+    expect(out.embeds?.[0]?.footer).toEqual({
+      text: "GitHub · acme/widget",
+      icon_url: "https://github.com/favicon.ico",
+    });
+  });
 });
 
 describe("dispatchEvent fallback routing", () => {
@@ -367,6 +383,72 @@ describe("dispatchEvent fallback routing", () => {
     };
     expect(logBody.embeds?.[0]?.color).toBe(0xf85149);
     expect(logBody.embeds?.[0]?.fields?.[0]?.value).toContain("❌ Push Route → 111");
+  });
+
+  it("attaches the forge label when the group enables it", async () => {
+    const bodies: string[] = [];
+    mockFetch((url, init) => {
+      bodies.push(String(init?.body ?? ""));
+      return new Response("{}", { status: 200 });
+    });
+    const kv = createMockKV();
+    await kv.put(
+      "config:groups",
+      JSON.stringify([
+        { id: "gh", name: "GH", adminIds: [], forgeLabel: true },
+        { id: "plain", name: "Plain", adminIds: [] },
+      ]),
+    );
+    const env = createEnv({ KV: kv, DB: createMockDB() });
+    const routes: Route[] = [
+      {
+        id: "gitea-route",
+        name: "Gitea Route",
+        enabled: true,
+        groupId: "gh",
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "111" }],
+      },
+      {
+        id: "plain-route",
+        name: "Plain Route",
+        enabled: true,
+        groupId: "plain",
+        filters: [{ type: "event", match: "push" }],
+        targets: [{ channelId: "222" }],
+      },
+    ];
+
+    await dispatchEvent(
+      { ...baseConfig, routes },
+      {
+        event: "push",
+        provider: "gitea",
+        payload: {
+          repository: {
+            full_name: "owner/repo",
+            html_url: "https://git.example.com/owner/repo",
+          },
+          ref: "refs/heads/main",
+          commits: [{ id: "abc", message: "fix" }],
+          sender: { login: "octo" },
+        },
+      },
+      env,
+    );
+
+    expect(bodies).toHaveLength(2);
+    const footers = bodies.map((b) => {
+      const parsed = JSON.parse(b) as {
+        embeds?: Array<{ footer?: { text: string; icon_url?: string } }>;
+      };
+      return parsed.embeds?.[0]?.footer;
+    });
+    expect(footers).toContainEqual({
+      text: "git.example.com · owner/repo",
+      icon_url: "https://git.example.com/favicon.ico",
+    });
+    expect(footers).toContainEqual({ text: "owner/repo" });
   });
 
   it("sends no group log when no route matched the event", async () => {

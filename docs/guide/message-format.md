@@ -27,6 +27,10 @@ Commit hashes, branches, and tags render as inline code wrapped in a hyperlink (
 
 Event-specific emoji are added by the formatters; per-group `Group.emoji` (default true) strips them all when disabled. Milestone progress bars are exempt. See [Message Language](./i18n).
 
+## Forge Source Label
+
+With `Group.forgeLabel` (default false) the message footer additionally names the source forge — GitHub, the Gitea instance hostname (hyperlinked), or a plain `Custom` — so events from different forges can be told apart. See [Groups → Forge Source Label](./groups#forge-source-label).
+
 ## In-Place Updates
 
 `workflow_run` and `check_run` messages are sent once and edited in place as the run progresses (queued → running → success/failure) — no duplicate messages. Tracking uses KV `msg:*` with a stable `updateKey` per run.

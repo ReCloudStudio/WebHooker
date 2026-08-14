@@ -27,6 +27,10 @@
 
 事件专属表情由格式化器添加；分组级 `Group.emoji`（默认开启）关闭后会全部去除。里程碑进度条不受影响。见[消息语言](./i18n)。
 
+## 来源平台标识
+
+设置 `Group.forgeLabel`（默认关闭）后，消息底部还会标注来源平台——GitHub、Gitea 实例主机名（带超链接）或无链接的 `Custom`——便于区分来自不同 forge 的事件。见[分组 → 来源平台标识](./groups#来源平台标识)。
+
 ## 原地更新
 
 `workflow_run` 与 `check_run` 消息只发送一次，随运行进度原地编辑（queued → running → success/failure），不会重复发消息。追踪使用 KV `msg:*` 与每次运行的稳定 `updateKey`。

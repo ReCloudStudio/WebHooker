@@ -30,6 +30,7 @@
 | `providers`      | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；空 = 全部                                                                                                     |
 | `installationId` | number   | 否   | 绑定到该分组的 GitHub App 安装 id；仅接受该安装的事件（空 = 全部）                                                                                           |
 | `emoji`          | boolean  | 否   | 该分组消息是否包含表情（默认 `true`）                                                                                                                        |
+| `forgeLabel`     | boolean  | 否   | 是否在该分组消息的底部显示来源平台标识（GitHub / Gitea 实例 / 自定义）（默认 `false`）                                                                      |
 | `lang`           | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——见[消息语言](./i18n)——默认 `en`                                                   |
 | `logTarget`      | object   | 否   | Webhook 日志频道：Discord 目标 `{ platform, channelId, threadId? }` 或 Telegram 目标 `{ platform, chatId, topicId? }`，接收该分组路由每次分发 webhook 的摘要 |
 
@@ -55,6 +56,16 @@
 ## Webhook 日志频道
 
 分组可以设置 `logTarget` 指向一个 Discord 频道/子区或 Telegram 群组/话题。每当该分组的路由分发（dispatch）一个 webhook，就会向那里发送一条摘要消息：事件类型/动作、仓库、投递 ID，以及每条「路由 × 目标」一行的 ✅/❌ 结果（失败时附带错误信息；最多列出前 10 行，其余以 `+N` 汇总）。全部成功时消息为绿色，任一失败则为红色。摘要使用分组的消息语言。日志消息尽力发送，本身不会被记入 D1 发送日志。
+
+## 来源平台标识
+
+设置 `forgeLabel: true` 后，该分组路由发出的每条消息都会在底部带上来源平台，便于在共享频道中区分来自 GitHub、自建 Gitea 实例与自定义 webhook 的事件：
+
+- **Discord** — embed 底部在仓库名旁显示平台名（`GitHub · acme/widget`），并以站点 favicon 作为底部图标（Gitea 会从其实例源站获取自身 favicon）。
+- **Telegram** — 底部行以带超链接的站点名称开头（`[GitHub](https://github.com)` 或 Gitea 实例主机名）。
+- **自定义** webhook 显示为无链接的 `Custom`。
+
+该标识与 `Group.emoji` 相互独立，并跟随该分组分发的所有消息（包括工作流/检查消息的就地更新）。
 
 ## 邀请
 
