@@ -7,7 +7,7 @@ import {
   setResponseHeader,
   setResponseStatus,
 } from "h3";
-import type { Route, Group, GroupMember, GroupRole } from "../types";
+import type { Route, Group, GroupMember, GroupRole, ForgeSource } from "../types";
 import { loadRoutes, saveRoutes } from "../config";
 import { getAdminSession, destroyAdminSession, clearAdminCookie } from "./session";
 import { saveGroups, loadGroups, identityMatches, normalizeGroupMembers } from "./groups";
@@ -36,6 +36,7 @@ import { log } from "../lib/log";
 
 const VALID_FILTER_TYPES = new Set(["event", "repo", "actor", "action", "branch", "keyword"]);
 const ID_RE = /^[a-z0-9][a-z0-9-]*$/;
+const HOST_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
 
 function isValidMatch(match: unknown): match is string | string[] {
   if (typeof match === "string") return match.trim().length > 0;
@@ -301,8 +302,55 @@ export function validateGroups(
     if (g.emoji !== undefined && typeof g.emoji !== "boolean") {
       return { ok: false, error: `group "${g.id}".emoji must be a boolean` };
     }
-    if (g.forgeLabel !== undefined && typeof g.forgeLabel !== "boolean") {
-      return { ok: false, error: `group "${g.id}".forgeLabel must be a boolean` };
+    if (g.forgeSources !== undefined && g.forgeSources !== null) {
+      if (!Array.isArray(g.forgeSources)) {
+        return { ok: false, error: `group "${g.id}".forgeSources must be an array` };
+      }
+      if (g.forgeSources.length > 20) {
+        return { ok: false, error: `group "${g.id}".forgeSources: too many sources` };
+      }
+      const seen = new Set<string>();
+      const normalized: ForgeSource[] = [];
+      for (let i = 0; i < g.forgeSources.length; i++) {
+        const s = g.forgeSources[i] as Record<string, unknown>;
+        if (!s || typeof s !== "object") {
+          return { ok: false, error: `group "${g.id}".forgeSources[${i}] is not an object` };
+        }
+        if (typeof s.host !== "string" || !HOST_RE.test(s.host)) {
+          return {
+            ok: false,
+            error: `group "${g.id}".forgeSources[${i}].host must be a valid hostname`,
+          };
+        }
+        if (s.type !== "github" && s.type !== "gitea") {
+          return {
+            ok: false,
+            error: `group "${g.id}".forgeSources[${i}].type must be "github" | "gitea"`,
+          };
+        }
+        if (
+          s.name !== undefined &&
+          (typeof s.name !== "string" || s.name.length > 50)
+        ) {
+          return {
+            ok: false,
+            error: `group "${g.id}".forgeSources[${i}].name must be a string`,
+          };
+        }
+        const key = `${s.type}:${s.host.toLowerCase()}`;
+        if (seen.has(key)) {
+          return { ok: false, error: `group "${g.id}".forgeSources has a duplicate source` };
+        }
+        seen.add(key);
+        normalized.push({
+          host: s.host.trim(),
+          type: s.type,
+          ...(s.name !== undefined && s.name.trim() ? { name: s.name.trim() } : {}),
+        });
+      }
+      g.forgeSources = normalized;
+    } else {
+      delete g.forgeSources;
     }
     if (g.lang !== undefined && typeof g.lang !== "string") {
       return { ok: false, error: `group "${g.id}".lang must be a string` };
@@ -344,10 +392,21 @@ function accessError(
   );
 }
 
-/** Read a JSON body, returning null when it is not valid JSON. */
+/**
+ * Read a JSON body, returning null when it is not valid JSON. h3's readBody
+ * only parses `application/json` bodies; tolerate clients that omit the
+ * Content-Type header (curl, older UI) by JSON-parsing the raw string.
+ */
 async function readJsonBody(event: H3Event): Promise<Record<string, unknown> | null> {
   try {
     const body = await readBody(event);
+    if (typeof body === "string") {
+      try {
+        return JSON.parse(body) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    }
     return (body ?? {}) as Record<string, unknown>;
   } catch {
     return null;

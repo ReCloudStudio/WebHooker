@@ -29,7 +29,7 @@
 
 ## 来源平台标识
 
-设置 `Group.forgeLabel`（默认关闭）后，消息底部还会标注来源平台——GitHub、Gitea 实例主机名（带超链接）或无链接的 `Custom`——便于区分来自不同 forge 的事件。见[分组 → 来源平台标识](./groups#来源平台标识)。
+设置 `Group.forgeSources`（一组 `{ host, type, name? }` 条目）后，消息底部会标注匹配的来源——即 `type`（`github` / `gitea`）与事件来源一致、且 `host` 与仓库 URL 主机名一致的第一条配置，标识文本为其可选 `name`（未填回退为 host）——便于区分来自不同 forge 的事件。见[分组 → 来源平台标识](./groups#来源平台标识)。
 
 ## 原地更新
 

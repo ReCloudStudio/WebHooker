@@ -23,7 +23,7 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Invites: single-use 7-day links (`invite:{token}`) for joining a group as admin/viewer; `ALLOW_SELF_SIGNUP=1` gives access-less users a personal group on first login (self-service SaaS entry)
 - Audit log: every admin operation (logins, group/route/member/invite changes) recorded in D1 `audit_logs`; pruned by the scheduled trigger after `AUDIT_RETENTION_DAYS` (default 90)
 - Group webhook log channel: optional `Group.logTarget` (Discord channel/thread or Telegram chat/topic) receives one summary message per webhook the group's routes dispatched (event, repo, delivery id, per route×target ✅/❌ outcome, green/red color); best-effort, not recorded in `send_logs`
-- Per-group forge branding: optional `Group.forgeLabel` (default off) renders the source forge in the message footer — GitHub brand + favicon, Gitea instance hostname + favicon (from the repo URL origin), or plain `Custom` for custom webhooks; Discord shows the footer icon + name, Telegram a linked name
+- Per-group forge branding: optional `Group.forgeSources` (a list of `{ host, type: "github" | "gitea", name? }` the group defines itself) labels each message's footer with the first entry whose type matches the event's provider and whose host matches the repository URL's hostname (GitHub matches `github.com`, so two Gitea instances can be `git1.example.com`/`git2.example.com`); the label is the entry's optional `name` (fallback: host); links/favicons are derived from the repo URL; Discord shows the footer icon + name, Telegram a linked name
 - Local dev: wrangler + Miniflare
 
 ## Architecture
@@ -125,7 +125,7 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
 - Record every admin operation (login/logout, group/route/member/invite changes) to D1 `audit_logs`; the scheduled trigger prunes entries past `AUDIT_RETENTION_DAYS`
 - Mention Discord roles on route trigger: route-level `discordRoleIds` are rendered as `<@&id>` into the Discord message `content` (Telegram targets ignore the field)
 - Format 28 GitHub/Gitea event types plus `custom` webhooks as platform-neutral messages (Discord embeds + Telegram HTML)
-- Show the forge source (GitHub / Gitea instance / custom) in the message footer when the group enables `Group.forgeLabel`
+- Show the forge source (named per `Group.forgeSources` host entries) in the message footer when the group defines a host matching the event's repository
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
 - Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, KV `msg:*` tracking)
 - Record every dispatch attempt to D1 `send_logs` (route id, event, target, ok/error, duration, error code)

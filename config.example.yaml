@@ -14,7 +14,16 @@ groups:
     # providers: ["github", "gitea"]  # restrict to source platforms (optional; empty = all)
     # installationId: 12345678     # GitHub App installation binding (auto-created on installation.created)
     # emoji: true                  # include emoji in messages (default true)
-    # forgeLabel: false            # show the forge source (GitHub / Gitea / custom) in message footers (default false)
+    # Forge hosts: label message footers with the host an event came from
+    # (optional `name` overrides the host as the display label).
+    # forgeSources:
+    #   - host: "github.com"        # GitHub events match github.com
+    #     type: github
+    #     name: "GitHub 主站"       # optional display label
+    #   - host: "git1.example.com"  # a self-hosted Gitea instance
+    #     type: gitea
+    #   - host: "git2.example.com"  # another one
+    #     type: gitea
     # lang: "en"                   # message language for this group's routes (en/zh, default en)
     # Webhook log channel: a Discord channel/thread or Telegram chat/topic that
     # receives a summary of every webhook this group's routes dispatch.

@@ -30,7 +30,7 @@ Routes belong to groups. Groups scope admin access and can restrict which events
 | `providers`      | string[] | No       | Source platforms allowed into this group (`github`, `gitea`); empty = all                                                                                                                    |
 | `installationId` | number   | No       | GitHub App installation id bound to this group; only that installation's events are accepted (empty = all)                                                                                   |
 | `emoji`          | boolean  | No       | Whether to include emoji in this group's messages (default `true`)                                                                                                                           |
-| `forgeLabel`     | boolean  | No       | Whether to show the forge source (GitHub / Gitea instance / custom) in the footer of this group's messages (default `false`)                                                                 |
+| `forgeSources`   | object[] | No       | Forge hosts: `{ host, type, name? }` entries (`type` is `github` or `gitea`, `name` is an optional display label) that label this group's message footers; empty = no label                                                        |
 | `lang`           | string   | No       | Message language for every route in this group (e.g. `en`, `zh`; custom via KV `i18n:<lang>`) — see [Message Language](./i18n) — defaults to `en`                                            |
 | `logTarget`      | object   | No       | Webhook log channel: a Discord `{ platform, channelId, threadId? }` or Telegram `{ platform, chatId, topicId? }` target that receives a summary of every webhook the group's routes dispatch |
 
@@ -59,11 +59,19 @@ A group may set `logTarget` to a Discord channel/thread or Telegram chat/topic. 
 
 ## Forge Source Label
 
-With `forgeLabel: true`, every message this group's routes send carries the source forge in its footer, so events from GitHub, a self-hosted Gitea instance and custom webhooks are easy to tell apart when they share a channel:
+A group defines the forges it receives events from via `forgeSources`, a list of `{ host, type, name? }` entries (`type` is `github` or `gitea`). Every message this group's routes send carries the footer label of the **first entry whose type matches the event's provider and whose host matches the repository URL's hostname** (GitHub events match `github.com`). The label is the entry's optional `name` — falling back to the host — so two self-hosted Gitea instances can be shown as "内网 Gitea" / "Git2 仓库" while matched by their distinct hosts:
 
-- **Discord** — the embed footer shows the forge name next to the repo (`GitHub · acme/widget`) with the site's favicon as the footer icon (for Gitea the instance's own favicon is fetched from its origin).
-- **Telegram** — the footer line starts with the hyperlinked site name (`[GitHub](https://github.com)` or the Gitea instance hostname).
-- **Custom** webhooks are labeled `Custom` without a link.
+```json
+{ "forgeSources": [
+  { "host": "github.com",       "type": "github", "name": "GitHub 主站" },
+  { "host": "git1.example.com", "type": "gitea",  "name": "内网 Gitea" },
+  { "host": "git2.example.com", "type": "gitea" }
+] }
+```
+
+- **Discord** — the embed footer shows the label next to the repo (`内网 Gitea · acme/widget`) with the site's favicon as the footer icon (derived from the repository URL).
+- **Telegram** — the footer line starts with the hyperlinked label (`[内网 Gitea](https://git1.example.com)`).
+- Events whose repository host has no matching entry (e.g. custom webhooks, or a repo hosted elsewhere) get no label.
 
 The label is independent of `Group.emoji` and follows every message that group dispatches (including in-place edits of workflow/check messages).
 

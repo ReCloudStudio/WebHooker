@@ -478,6 +478,32 @@
     @apply mt-1 w-full justify-center;
   }
 
+  .forge-source-row {
+    @apply mb-2 grid items-center gap-2 rounded-sm border border-border bg-surface-2 p-2.5;
+    grid-template-areas:
+      "host type del"
+      "name name name";
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .forge-source-row .f-host {
+    grid-area: host;
+  }
+
+  .forge-source-row .select.forge-type {
+    grid-area: type;
+    @apply w-[110px];
+  }
+
+  .forge-source-row .f-name {
+    grid-area: name;
+  }
+
+  .forge-source-row > .icon-btn {
+    grid-area: del;
+    justify-self: end;
+  }
+
   /* ---- Toasts ---- */
   .toasts {
     @apply pointer-events-none fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 flex-col items-center gap-2;

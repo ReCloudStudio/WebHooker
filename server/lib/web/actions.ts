@@ -15,7 +15,15 @@ function isValidId(value: unknown): value is number {
 
 async function readJsonBody(event: H3Event): Promise<Record<string, unknown> | null> {
   try {
-    return (await readBody(event)) as Record<string, unknown>;
+    const body = await readBody(event);
+    if (typeof body === "string") {
+      try {
+        return JSON.parse(body) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    }
+    return (body ?? {}) as Record<string, unknown>;
   } catch {
     return null;
   }

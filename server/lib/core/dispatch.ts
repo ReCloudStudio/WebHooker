@@ -151,8 +151,8 @@ export async function dispatchEvent(
     const tr = trMap.get(group?.lang ?? "en")!;
     const showEmoji = group?.emoji !== false;
     const message = formatEvent(route, event, tr, showEmoji);
-    if (group?.forgeLabel) {
-      message.forge = forgeInfo(event);
+    if (group?.forgeSources?.length) {
+      message.forge = forgeInfo(event, group.forgeSources);
     }
     if (route.discordRoleIds?.length) {
       message.mentionRoleIds = route.discordRoleIds;

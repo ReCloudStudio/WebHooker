@@ -1,4 +1,4 @@
-import type { NeutralForge, NeutralMessage, WebhookEvent } from "../types";
+import type { ForgeSource, NeutralForge, NeutralMessage, WebhookEvent } from "../types";
 import { t as translate } from "../lib/i18n";
 import type { Translations } from "../lib/i18n";
 
@@ -162,31 +162,50 @@ export function senderProfileUrl(repoUrl: string | undefined, login: string): st
 }
 
 /**
- * Forge branding for an event (used when the group enables `forgeLabel`):
- * GitHub gets its brand + favicon, Gitea the instance hostname + favicon
- * derived from the repository URL, custom webhooks a plain "Custom" label.
+ * Forge branding for an event, driven by the group's own forgeSources list.
+ * The event's repository host (github.com for GitHub, the instance hostname
+ * for Gitea) is matched case-insensitively against the configured hosts; the
+ * first entry whose type and host both match wins. The footer label is the
+ * entry's display `name` (or its host when no name is set). Link/favicon are
+ * derived from the repository URL.
  */
-export function forgeInfo(event: WebhookEvent): NeutralForge | undefined {
+export function forgeInfo(
+  event: WebhookEvent,
+  sources?: ForgeSource[],
+): NeutralForge | undefined {
   const repoUrl = (event.payload.repository as { html_url?: string } | undefined)?.html_url;
-  switch (event.provider) {
-    case "github":
-      return {
-        name: "GitHub",
-        url: "https://github.com",
-        iconUrl: "https://github.com/favicon.ico",
-      };
-    case "gitea": {
-      if (!repoUrl) return undefined;
-      try {
-        const origin = new URL(repoUrl).origin;
-        return { name: new URL(origin).hostname, url: origin, iconUrl: `${origin}/favicon.ico` };
-      } catch {
-        return undefined;
-      }
+  let host: string | undefined;
+  if (repoUrl) {
+    try {
+      host = new URL(repoUrl).hostname.toLowerCase();
+    } catch {
+      // unparseable repo URL — fall through
     }
-    case "custom":
-      return { name: "Custom" };
-    default:
-      return undefined;
   }
+  // GitHub events without a repository (e.g. ping) still match github.com.
+  if (!host && event.provider === "github") host = "github.com";
+  if (!host) return undefined;
+
+  const source = sources?.find(
+    (s) => s.type === event.provider && s.host.toLowerCase() === host,
+  );
+  if (!source) return undefined;
+
+  const label = source.name?.trim() || source.host;
+  if (repoUrl) {
+    try {
+      const origin = new URL(repoUrl).origin;
+      return { name: label, url: origin, iconUrl: `${origin}/favicon.ico` };
+    } catch {
+      // unparseable repo URL — name only
+    }
+  }
+  if (event.provider === "github") {
+    return {
+      name: label,
+      url: "https://github.com",
+      iconUrl: "https://github.com/favicon.ico",
+    };
+  }
+  return { name: label };
 }

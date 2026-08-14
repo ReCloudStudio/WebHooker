@@ -30,7 +30,7 @@
 | `providers`      | string[] | 否   | 允许进入该分组的来源平台（`github`、`gitea`）；空 = 全部                                                                                                     |
 | `installationId` | number   | 否   | 绑定到该分组的 GitHub App 安装 id；仅接受该安装的事件（空 = 全部）                                                                                           |
 | `emoji`          | boolean  | 否   | 该分组消息是否包含表情（默认 `true`）                                                                                                                        |
-| `forgeLabel`     | boolean  | 否   | 是否在该分组消息的底部显示来源平台标识（GitHub / Gitea 实例 / 自定义）（默认 `false`）                                                                       |
+| `forgeSources`   | object[] | 否   | 来源主机：`{ host, type, name? }` 条目（`type` 为 `github` 或 `gitea`，`name` 为可选显示名称），用于标注该分组消息底部；空 = 不标注                                                        |
 | `lang`           | string   | 否   | 该分组所有路由的消息语言（如 `en`、`zh`；可通过 KV `i18n:<lang>` 自定义）——见[消息语言](./i18n)——默认 `en`                                                   |
 | `logTarget`      | object   | 否   | Webhook 日志频道：Discord 目标 `{ platform, channelId, threadId? }` 或 Telegram 目标 `{ platform, chatId, topicId? }`，接收该分组路由每次分发 webhook 的摘要 |
 
@@ -59,11 +59,19 @@
 
 ## 来源平台标识
 
-设置 `forgeLabel: true` 后，该分组路由发出的每条消息都会在底部带上来源平台，便于在共享频道中区分来自 GitHub、自建 Gitea 实例与自定义 webhook 的事件：
+分组通过 `forgeSources` 定义自己接收事件的 forge，即一组 `{ host, type, name? }` 条目（`type` 为 `github` 或 `gitea`）。该分组路由发出的每条消息都会使用**与事件来源类型匹配、且 host 与仓库 URL 主机名一致的第一条**配置作为底部标识（GitHub 事件匹配 `github.com`）。标识文本为条目的可选 `name`——未填则回退为 host——因此两个自建 Gitea 实例可以显示为「内网 Gitea」/「Git2 仓库」，同时通过各自主机名完成匹配：
 
-- **Discord** — embed 底部在仓库名旁显示平台名（`GitHub · acme/widget`），并以站点 favicon 作为底部图标（Gitea 会从其实例源站获取自身 favicon）。
-- **Telegram** — 底部行以带超链接的站点名称开头（`[GitHub](https://github.com)` 或 Gitea 实例主机名）。
-- **自定义** webhook 显示为无链接的 `Custom`。
+```json
+{ "forgeSources": [
+  { "host": "github.com",       "type": "github", "name": "GitHub 主站" },
+  { "host": "git1.example.com", "type": "gitea",  "name": "内网 Gitea" },
+  { "host": "git2.example.com", "type": "gitea" }
+] }
+```
+
+- **Discord** — embed 底部在仓库名旁显示标识（`内网 Gitea · acme/widget`），并以按仓库 URL 推导的站点 favicon 作为底部图标。
+- **Telegram** — 底部行以带超链接的标识开头（`[内网 Gitea](https://git1.example.com)`）。
+- 仓库主机没有匹配条目的事件（如自定义 webhook，或仓库托管在别处）不显示标识。
 
 该标识与 `Group.emoji` 相互独立，并跟随该分组分发的所有消息（包括工作流/检查消息的就地更新）。
 

@@ -26,6 +26,12 @@ export interface Route {
 
 export type GroupRole = "owner" | "admin" | "viewer";
 
+export interface ForgeSource {
+  host: string;
+  type: "github" | "gitea";
+  name?: string;
+}
+
 export interface GroupMember {
   login: string;
   role: GroupRole;
@@ -40,7 +46,7 @@ export interface Group {
   providers?: ("github" | "gitea" | "gitlab")[];
   installationId?: number;
   emoji?: boolean;
-  forgeLabel?: boolean;
+  forgeSources?: ForgeSource[];
   lang?: string;
   logTarget?: RouteTarget;
 }

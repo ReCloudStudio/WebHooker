@@ -127,10 +127,14 @@ export interface Group {
    */
   emoji?: boolean;
   /**
-   * Whether to show the forge source (GitHub / Gitea instance / custom) in the
-   * footer of this group's messages. Defaults to false when omitted.
+   * Named forge sources shown in the footer of this group's messages. Each
+   * entry pairs a host (e.g. `git1.example.com`) with a source type
+   * (`github` / `gitea`) and an optional display `name`; an event is labeled
+   * with the first entry whose type matches its provider and whose host
+   * matches the repository URL's hostname (GitHub events match `github.com`).
+   * Empty/omitted = no forge label.
    */
-  forgeLabel?: boolean;
+  forgeSources?: ForgeSource[];
   /**
    * Message language for every route in this group (e.g. "en", "zh"; custom
    * via KV i18n:<lang>). Defaults to "en" when omitted.
@@ -170,13 +174,31 @@ export interface NeutralAuthor {
   url?: string;
 }
 
+export type ForgeType = "github" | "gitea";
+
+/**
+ * A forge host a group configures itself. When an event's repository host
+ * matches `host`, the message footer is labeled with `name` (when set) or the
+ * host itself — e.g. two self-hosted Gitea instances can be shown as
+ * "内网 Gitea" / "Git2 仓库" while matched by git1.example.com /
+ * git2.example.com. GitHub events match `github.com` (or a GitHub Enterprise
+ * host). Link/icon are derived from the repository URL (https, port preserved).
+ */
+export interface ForgeSource {
+  /** Hostname matched against the repository URL (case-insensitive). */
+  host: string;
+  type: ForgeType;
+  /** Optional display label shown in the message footer; falls back to `host`. */
+  name?: string;
+}
+
 /**
  * The forge (source platform) that produced an event: shown in the message
- * footer when the group enables `Group.forgeLabel` so recipients can tell
- * GitHub, a Gitea instance or a custom webhook apart at a glance.
+ * footer when the group defines a matching `Group.forgeSources` entry so
+ * recipients can tell GitHub and Gitea instances apart at a glance.
  */
 export interface NeutralForge {
-  /** Display name, e.g. "GitHub" or the Gitea instance hostname. */
+  /** Display name: the source's `name` or its host (e.g. "内网 Gitea"). */
   name: string;
   /** Site URL for the hyperlink (Telegram) / brand context (Discord). */
   url?: string;

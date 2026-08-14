@@ -385,7 +385,7 @@ describe("dispatchEvent fallback routing", () => {
     expect(logBody.embeds?.[0]?.fields?.[0]?.value).toContain("❌ Push Route → 111");
   });
 
-  it("attaches the forge label when the group enables it", async () => {
+  it("attaches the forge label when the group defines a matching host", async () => {
     const bodies: string[] = [];
     mockFetch((url, init) => {
       bodies.push(String(init?.body ?? ""));
@@ -395,7 +395,12 @@ describe("dispatchEvent fallback routing", () => {
     await kv.put(
       "config:groups",
       JSON.stringify([
-        { id: "gh", name: "GH", adminIds: [], forgeLabel: true },
+        {
+          id: "gh",
+          name: "GH",
+          adminIds: [],
+          forgeSources: [{ host: "git.example.com", type: "gitea", name: "内网 Gitea" }],
+        },
         { id: "plain", name: "Plain", adminIds: [] },
       ]),
     );
@@ -445,7 +450,7 @@ describe("dispatchEvent fallback routing", () => {
       return parsed.embeds?.[0]?.footer;
     });
     expect(footers).toContainEqual({
-      text: "git.example.com · owner/repo",
+      text: "内网 Gitea · owner/repo",
       icon_url: "https://git.example.com/favicon.ico",
     });
     expect(footers).toContainEqual({ text: "owner/repo" });

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "bun:test";
-import { adminGroupRename, adminGroupRoutesGet, adminApiMe } from "../server/lib/web/admin";
+import {
+  adminGroupRename,
+  adminGroupRoutesGet,
+  adminApiGroupsPut,
+  adminApiMe,
+} from "../server/lib/web/admin";
 import { createAdminSession, adminCookie } from "../server/lib/web/session";
 import { loadGroups } from "../server/lib/web/groups";
 import { loadRoutes } from "../server/lib/config";
@@ -114,6 +119,46 @@ describe("admin handlers (h3)", () => {
     expect(invites).toHaveLength(1);
     expect(invites[0]!.groupId).toBe("new-team");
     expect(await listInvites(kv, "old-team")).toHaveLength(0);
+  });
+
+  it("accepts a groups PUT without the application/json content-type", async () => {
+    const kv = createMockKV();
+    await kv.put(
+      "config:groups",
+      JSON.stringify([
+        { id: "team", name: "Team", adminIds: [], members: [{ login: "alice", role: "owner" }] },
+      ]),
+    );
+    const env = createEnv({ KV: kv });
+    const sessionId = await createAdminSession(kv, "1001", "alice");
+
+    // The console's fetch helper always declares application/json, but curl
+    // and older clients may omit it — h3's readBody then returns the raw
+    // string, which used to fail validation with "groups must be an array".
+    const event = makeEvent("/api/groups", {
+      method: "PUT",
+      headers: { cookie: adminCookie(sessionId) },
+      body: JSON.stringify({
+        groups: [
+          {
+            id: "team",
+            name: "Team",
+            adminIds: [],
+            members: [{ login: "alice", role: "owner" }],
+            forgeSources: [{ host: "git.example.com", type: "gitea", name: "内网 Gitea" }],
+          },
+        ],
+      }),
+      env,
+    });
+    const result = (await adminApiGroupsPut(event)) as { ok?: boolean };
+    expect(responseStatus(event)).toBe(200);
+    expect(result.ok).toBe(true);
+    const groups = await loadGroups(kv);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.forgeSources).toEqual([
+      { host: "git.example.com", type: "gitea", name: "内网 Gitea" },
+    ]);
   });
 
   it("forbids non-owner members from renaming", async () => {

@@ -46,27 +46,47 @@
               />
               <div class="hint">{{ t("groupEditor.langHint") }}</div>
             </div>
-            <div class="field">
-              <label
-                >{{ t("groupEditor.emoji") }}
-                <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
-              >
-              <label class="inline">
-                <input v-model="form.emoji" type="checkbox" />
-                <span>{{ t("groupEditor.emojiLabel") }}</span>
-              </label>
+          <div class="field">
+            <label
+              >{{ t("groupEditor.emoji") }}
+              <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
+            >
+            <label class="inline">
+              <input v-model="form.emoji" type="checkbox" />
+              <span>{{ t("groupEditor.emojiLabel") }}</span>
+            </label>
+          </div>
+          <div class="field">
+            <label
+              >{{ t("groupEditor.forgeSources") }}
+              <span class="lbl-note">{{ t("groupEditor.forgeSourcesNote") }}</span></label
+            >
+            <div v-for="(s, i) in form.forgeSources" :key="i" class="forge-source-row">
+              <input
+                v-model="s.host"
+                type="text"
+                class="input f-host"
+                :placeholder="t('groupEditor.forgeSourcesHost')"
+              />
+              <select v-model="s.type" class="select forge-type">
+                <option value="github">GitHub</option>
+                <option value="gitea">Gitea</option>
+              </select>
+              <button type="button" class="icon-btn danger" @click="form.forgeSources.splice(i, 1)">
+                ✕
+              </button>
+              <input
+                v-model="s.name"
+                type="text"
+                class="input f-name"
+                :placeholder="t('groupEditor.forgeSourcesName')"
+              />
             </div>
-            <div class="field">
-              <label
-                >{{ t("groupEditor.forgeLabel") }}
-                <span class="lbl-note">{{ t("groupEditor.forgeLabelNote") }}</span></label
-              >
-              <label class="inline">
-                <input v-model="form.forgeLabel" type="checkbox" />
-                <span>{{ t("groupEditor.forgeLabelLabel") }}</span>
-              </label>
-              <div class="hint">{{ t("groupEditor.forgeLabelHint") }}</div>
-            </div>
+            <button type="button" class="btn btn-ghost add-filter" @click="addForgeSource">
+              {{ t("groupEditor.forgeSourcesAdd") }}
+            </button>
+            <div class="hint">{{ t("groupEditor.forgeSourcesHint") }}</div>
+          </div>
           </div>
           <div class="field">
             <label
@@ -193,7 +213,7 @@
 
 <script setup lang="ts">
 import { reactive, watch } from "vue";
-import type { Group } from "~/types";
+import type { ForgeSource, Group } from "~/types";
 
 const { t } = useI18n();
 
@@ -219,7 +239,7 @@ const form = reactive({
   providers: [] as ("github" | "gitea")[],
   installationId: "",
   emoji: true,
-  forgeLabel: false,
+  forgeSources: [] as ForgeSource[],
   lang: "",
   logPlatform: "" as "" | "discord" | "telegram",
   logChannelId: "",
@@ -228,6 +248,9 @@ const form = reactive({
   logTopicId: "",
 });
 
+function addForgeSource(): void {
+  form.forgeSources.push({ host: "", type: "github" });
+}
 function toggleProvider(p: "github" | "gitea", e: Event): void {
   const checked = (e.target as HTMLInputElement).checked;
   form.providers = checked
@@ -249,7 +272,7 @@ watch(
     );
     form.installationId = g?.installationId != null ? String(g.installationId) : "";
     form.emoji = g?.emoji ?? true;
-    form.forgeLabel = g?.forgeLabel ?? false;
+    form.forgeSources = (g?.forgeSources ?? []).map((s) => ({ ...s }));
     form.lang = g?.lang ?? "";
     form.logPlatform = lt?.platform ?? "";
     form.logChannelId = lt?.channelId ?? "";
@@ -308,6 +331,12 @@ function save(): void {
       return;
     }
   }
+  for (const s of form.forgeSources) {
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i.test(s.host.trim())) {
+      formError.value = t("groupEditor.errForgeSourceHost");
+      return;
+    }
+  }
   const owners = splitList(form.owners);
   const members = props.group?.members
     ? props.group.members.map((m) => ({ ...m }))
@@ -323,7 +352,13 @@ function save(): void {
     providers: form.providers.length ? form.providers : undefined,
     installationId,
     emoji: form.emoji,
-    forgeLabel: form.forgeLabel,
+    forgeSources: form.forgeSources.length
+      ? form.forgeSources.map((s) => ({
+          host: s.host.trim(),
+          type: s.type,
+          ...(s.name?.trim() ? { name: s.name.trim() } : {}),
+        }))
+      : undefined,
     lang: form.lang.trim() || undefined,
     logTarget,
   });

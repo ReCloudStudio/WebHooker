@@ -16,7 +16,15 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const res = await fetch(path, {
     credentials: "same-origin",
     ...init,
-    headers: { accept: "application/json", ...(init?.headers ?? {}) },
+    // JSON in/out: h3's readBody only parses JSON bodies when the request
+    // declares application/json, and the browser defaults string bodies to
+    // text/plain — without this header every PUT/POST would arrive as a
+    // raw string and fail validation.
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      ...(init?.headers ?? {}),
+    },
   });
   if (res.status === 401) {
     useAuthState().needLogin.value = true;

@@ -520,32 +520,129 @@ describe("limits and localization", () => {
 });
 
 describe("forge source branding", () => {
-  it("github events brand as GitHub with the favicon", () => {
-    expect(forgeInfo({ event: "push", provider: "github", payload: {} })).toEqual({
-      name: "GitHub",
+  const ghHost = { host: "github.com", type: "github" as const };
+
+  it("labels github events with the configured host and the github favicon", () => {
+    expect(
+      forgeInfo(
+        { event: "push", provider: "github", payload: { repository: { html_url: "https://github.com/org/repo" } } },
+        [ghHost],
+      ),
+    ).toEqual({
+      name: "github.com",
       url: "https://github.com",
       iconUrl: "https://github.com/favicon.ico",
     });
   });
 
-  it("gitea events brand as the instance hostname derived from the repo url", () => {
+  it("labels github events without a repository (ping) via the github.com fallback", () => {
     expect(
-      forgeInfo({
-        event: "push",
-        provider: "gitea",
-        payload: { repository: { html_url: "https://git.example.com/org/repo" } },
-      }),
+      forgeInfo({ event: "ping", provider: "github", payload: {} }, [ghHost]),
     ).toEqual({
-      name: "git.example.com",
-      url: "https://git.example.com",
-      iconUrl: "https://git.example.com/favicon.ico",
+      name: "github.com",
+      url: "https://github.com",
+      iconUrl: "https://github.com/favicon.ico",
     });
-    expect(forgeInfo({ event: "push", provider: "gitea", payload: {} })).toBeUndefined();
   });
 
-  it("custom events brand as a plain label without links", () => {
-    expect(forgeInfo({ event: "custom", provider: "custom", payload: {} })).toEqual({
-      name: "Custom",
+  it("matches distinct gitea instances by their own host", () => {
+    const sources = [
+      { host: "git1.example.com", type: "gitea" as const },
+      { host: "git2.example.com", type: "gitea" as const },
+    ];
+    expect(
+      forgeInfo(
+        { event: "push", provider: "gitea", payload: { repository: { html_url: "https://git1.example.com/org/a" } } },
+        sources,
+      ),
+    ).toEqual({
+      name: "git1.example.com",
+      url: "https://git1.example.com",
+      iconUrl: "https://git1.example.com/favicon.ico",
     });
+    expect(
+      forgeInfo(
+        { event: "push", provider: "gitea", payload: { repository: { html_url: "https://git2.example.com/org/b" } } },
+        sources,
+      ),
+    ).toEqual({
+      name: "git2.example.com",
+      url: "https://git2.example.com",
+      iconUrl: "https://git2.example.com/favicon.ico",
+    });
+  });
+
+  it("labels gitea events with the configured name when set, else the host", () => {
+    const sources = [
+      { host: "git1.example.com", type: "gitea" as const, name: "内网 Gitea" },
+      { host: "git2.example.com", type: "gitea" as const },
+    ];
+    expect(
+      forgeInfo(
+        { event: "push", provider: "gitea", payload: { repository: { html_url: "https://git1.example.com/org/a" } } },
+        sources,
+      ),
+    ).toEqual({
+      name: "内网 Gitea",
+      url: "https://git1.example.com",
+      iconUrl: "https://git1.example.com/favicon.ico",
+    });
+    expect(
+      forgeInfo(
+        { event: "push", provider: "gitea", payload: { repository: { html_url: "https://git2.example.com/org/b" } } },
+        sources,
+      ),
+    ).toEqual({
+      name: "git2.example.com",
+      url: "https://git2.example.com",
+      iconUrl: "https://git2.example.com/favicon.ico",
+    });
+    expect(
+      forgeInfo(
+        { event: "push", provider: "gitea", payload: { repository: { html_url: "https://git1.example.com/org/a" } } },
+        [{ host: "git1.example.com", type: "gitea", name: "  " }],
+      ),
+    ).toEqual({
+      name: "git1.example.com",
+      url: "https://git1.example.com",
+      iconUrl: "https://git1.example.com/favicon.ico",
+    });
+  });
+
+  it("matches hosts case-insensitively", () => {
+    expect(
+      forgeInfo(
+        { event: "push", provider: "gitea", payload: { repository: { html_url: "https://GIT1.Example.COM/org/a" } } },
+        [{ host: "Git1.Example.com", type: "gitea" }],
+      ),
+    ).toEqual({
+      name: "Git1.Example.com",
+      url: "https://git1.example.com",
+      iconUrl: "https://git1.example.com/favicon.ico",
+    });
+  });
+
+  it("returns no label when the gitea repo url is missing or unparseable", () => {
+    expect(
+      forgeInfo({ event: "push", provider: "gitea", payload: {} }, [{ host: "git1.example.com", type: "gitea" }]),
+    ).toBeUndefined();
+    expect(
+      forgeInfo(
+        { event: "push", provider: "gitea", payload: { repository: { html_url: "not-a-url" } } },
+        [{ host: "git1.example.com", type: "gitea" }],
+      ),
+    ).toBeUndefined();
+  });
+
+  it("returns undefined when no source matches the provider or host", () => {
+    expect(forgeInfo({ event: "custom", provider: "custom", payload: {} }, [ghHost])).toBeUndefined();
+    expect(
+      forgeInfo(
+        { event: "push", provider: "gitea", payload: { repository: { html_url: "https://other.example.com/org/a" } } },
+        [ghHost],
+      ),
+    ).toBeUndefined();
+    expect(forgeInfo({ event: "push", provider: "github", payload: {} }, [])).toBeUndefined();
+    expect(forgeInfo({ event: "push", provider: "github", payload: {} })).toBeUndefined();
   });
 });

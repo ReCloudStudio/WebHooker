@@ -29,7 +29,7 @@ Event-specific emoji are added by the formatters; per-group `Group.emoji` (defau
 
 ## Forge Source Label
 
-With `Group.forgeLabel` (default false) the message footer additionally names the source forge — GitHub, the Gitea instance hostname (hyperlinked), or a plain `Custom` — so events from different forges can be told apart. See [Groups → Forge Source Label](./groups#forge-source-label).
+With `Group.forgeSources` (a list of `{ host, type, name? }` entries) the message footer names the matching source — the first entry whose type (`github` / `gitea`) matches the event's provider and whose host matches the repository URL's hostname, labeled with its optional `name` (falling back to the host) — so events from different forges can be told apart. See [Groups → Forge Source Label](./groups#forge-source-label).
 
 ## In-Place Updates
 
