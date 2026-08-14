@@ -71,7 +71,7 @@
 }
 ```
 
-- **Discord** — embed 底部在仓库名旁显示标识（`内网 Gitea · acme/widget`），并以按仓库 URL 推导的站点 favicon 作为底部图标。
+- **Discord** — embed 底部在仓库名旁显示标识（`内网 Gitea · acme/widget`），并以站点图标作为底部图标：GitHub 使用 `fluidicon.png`，Gitea 实例使用 `/assets/img/favicon.png`（均为 Discord 可渲染的栅格 PNG——`.ico` favicon 会被 Discord 静默忽略）。
 - **Telegram** — 底部行以带超链接的标识开头（`[内网 Gitea](https://git1.example.com)`）。
 - 仓库主机没有匹配条目的事件（如自定义 webhook，或仓库托管在别处）不显示标识。
 

@@ -71,7 +71,7 @@ A group defines the forges it receives events from via `forgeSources`, a list of
 }
 ```
 
-- **Discord** — the embed footer shows the label next to the repo (`内网 Gitea · acme/widget`) with the site's favicon as the footer icon (derived from the repository URL).
+- **Discord** — the embed footer shows the label next to the repo (`内网 Gitea · acme/widget`) with a site icon as the footer icon: GitHub's `fluidicon.png` or the Gitea instance's `/assets/img/favicon.png` (both raster PNGs — Discord silently ignores `.ico` favicons).
 - **Telegram** — the footer line starts with the hyperlinked label (`[内网 Gitea](https://git1.example.com)`).
 - Events whose repository host has no matching entry (e.g. custom webhooks, or a repo hosted elsewhere) get no label.
 

@@ -166,8 +166,9 @@ export function senderProfileUrl(repoUrl: string | undefined, login: string): st
  * The event's repository host (github.com for GitHub, the instance hostname
  * for Gitea) is matched case-insensitively against the configured hosts; the
  * first entry whose type and host both match wins. The footer label is the
- * entry's display `name` (or its host when no name is set). Link/favicon are
- * derived from the repository URL.
+ * entry's display `name` (or its host when no name is set). Link is derived
+ * from the repository URL; the footer icon uses a raster PNG Discord can
+ * render (GitHub's fluidicon, Gitea's /assets/img/favicon.png).
  */
 export function forgeInfo(event: WebhookEvent, sources?: ForgeSource[]): NeutralForge | undefined {
   const repoUrl = (event.payload.repository as { html_url?: string } | undefined)?.html_url;
@@ -187,20 +188,22 @@ export function forgeInfo(event: WebhookEvent, sources?: ForgeSource[]): Neutral
   if (!source) return undefined;
 
   const label = source.name?.trim() || source.host;
+  const githubIcon = "https://github.com/fluidicon.png";
   if (repoUrl) {
     try {
       const origin = new URL(repoUrl).origin;
-      return { name: label, url: origin, iconUrl: `${origin}/favicon.ico` };
+      return {
+        name: label,
+        url: origin,
+        iconUrl:
+          event.provider === "github" ? githubIcon : `${origin}/assets/img/favicon.png`,
+      };
     } catch {
       // unparseable repo URL — name only
     }
   }
   if (event.provider === "github") {
-    return {
-      name: label,
-      url: "https://github.com",
-      iconUrl: "https://github.com/favicon.ico",
-    };
+    return { name: label, url: "https://github.com", iconUrl: githubIcon };
   }
   return { name: label };
 }

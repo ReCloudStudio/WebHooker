@@ -535,7 +535,7 @@ describe("forge source branding", () => {
     ).toEqual({
       name: "github.com",
       url: "https://github.com",
-      iconUrl: "https://github.com/favicon.ico",
+      iconUrl: "https://github.com/fluidicon.png",
     });
   });
 
@@ -543,7 +543,7 @@ describe("forge source branding", () => {
     expect(forgeInfo({ event: "ping", provider: "github", payload: {} }, [ghHost])).toEqual({
       name: "github.com",
       url: "https://github.com",
-      iconUrl: "https://github.com/favicon.ico",
+      iconUrl: "https://github.com/fluidicon.png",
     });
   });
 
@@ -564,7 +564,7 @@ describe("forge source branding", () => {
     ).toEqual({
       name: "git1.example.com",
       url: "https://git1.example.com",
-      iconUrl: "https://git1.example.com/favicon.ico",
+      iconUrl: "https://git1.example.com/assets/img/favicon.png",
     });
     expect(
       forgeInfo(
@@ -578,7 +578,7 @@ describe("forge source branding", () => {
     ).toEqual({
       name: "git2.example.com",
       url: "https://git2.example.com",
-      iconUrl: "https://git2.example.com/favicon.ico",
+      iconUrl: "https://git2.example.com/assets/img/favicon.png",
     });
   });
 
@@ -599,7 +599,7 @@ describe("forge source branding", () => {
     ).toEqual({
       name: "内网 Gitea",
       url: "https://git1.example.com",
-      iconUrl: "https://git1.example.com/favicon.ico",
+      iconUrl: "https://git1.example.com/assets/img/favicon.png",
     });
     expect(
       forgeInfo(
@@ -613,7 +613,7 @@ describe("forge source branding", () => {
     ).toEqual({
       name: "git2.example.com",
       url: "https://git2.example.com",
-      iconUrl: "https://git2.example.com/favicon.ico",
+      iconUrl: "https://git2.example.com/assets/img/favicon.png",
     });
     expect(
       forgeInfo(
@@ -627,7 +627,7 @@ describe("forge source branding", () => {
     ).toEqual({
       name: "git1.example.com",
       url: "https://git1.example.com",
-      iconUrl: "https://git1.example.com/favicon.ico",
+      iconUrl: "https://git1.example.com/assets/img/favicon.png",
     });
   });
 
@@ -644,7 +644,7 @@ describe("forge source branding", () => {
     ).toEqual({
       name: "Git1.Example.com",
       url: "https://git1.example.com",
-      iconUrl: "https://git1.example.com/favicon.ico",
+      iconUrl: "https://git1.example.com/assets/img/favicon.png",
     });
   });
 

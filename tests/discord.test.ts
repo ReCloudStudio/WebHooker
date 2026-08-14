@@ -91,12 +91,12 @@ describe("discord role mentions", () => {
       forge: {
         name: "GitHub",
         url: "https://github.com",
-        iconUrl: "https://github.com/favicon.ico",
+        iconUrl: "https://github.com/fluidicon.png",
       },
     });
     expect(out.embeds?.[0]?.footer).toEqual({
       text: "GitHub · acme/widget",
-      icon_url: "https://github.com/favicon.ico",
+      icon_url: "https://github.com/fluidicon.png",
     });
   });
 });
@@ -451,7 +451,7 @@ describe("dispatchEvent fallback routing", () => {
     });
     expect(footers).toContainEqual({
       text: "内网 Gitea · owner/repo",
-      icon_url: "https://git.example.com/favicon.ico",
+      icon_url: "https://git.example.com/assets/img/favicon.png",
     });
     expect(footers).toContainEqual({ text: "owner/repo" });
   });
