@@ -195,8 +195,7 @@ export function forgeInfo(event: WebhookEvent, sources?: ForgeSource[]): Neutral
       return {
         name: label,
         url: origin,
-        iconUrl:
-          event.provider === "github" ? githubIcon : `${origin}/assets/img/favicon.png`,
+        iconUrl: event.provider === "github" ? githubIcon : `${origin}/assets/img/favicon.png`,
       };
     } catch {
       // unparseable repo URL — name only
