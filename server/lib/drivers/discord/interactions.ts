@@ -115,7 +115,10 @@ export async function handleInteractionRequest(request: Request, env: Env): Prom
     return new Response("Invalid signature", { status: 401 });
   }
   const ts = Number(timestamp);
-  if (!Number.isFinite(ts) || Math.abs(Math.floor(Date.now() / 1000) - ts) > TIMESTAMP_TOLERANCE_SECONDS) {
+  if (
+    !Number.isFinite(ts) ||
+    Math.abs(Math.floor(Date.now() / 1000) - ts) > TIMESTAMP_TOLERANCE_SECONDS
+  ) {
     return new Response("Invalid signature", { status: 401 });
   }
 
