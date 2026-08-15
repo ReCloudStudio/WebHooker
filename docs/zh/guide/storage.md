@@ -2,26 +2,26 @@
 
 ## KV 存储布局
 
-| 键模式                         | 值                                                                            | TTL                |
-| ------------------------------ | ----------------------------------------------------------------------------- | ------------------ |
-| `config:routes`                | 路由 JSON 数组                                                                | 永久               |
-| `config:groups`                | 分组 JSON 数组                                                                | 永久               |
-| `session:{id}`                 | 管理员会话 `{ userId, login }`                                                | 7 天               |
-| `token:{userId}`               | `{ userId, accessToken, expiresAt, refreshToken? }`                           | 0.9 × Token 有效期 |
-| `token-reverse:{sha256}`       | 用于按 Token 反查的用户 id                                                    | 0.9 × Token 有效期 |
-| `state:{hex}`                  | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 秒             |
-| `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 天               |
-| `invite:group:{id}`            | 每组的 Token 索引（保证邀请列表一致性）                                       | 永久               |
-| `delivery:{provider}:{groupId}:{id}` | Webhook 投递去重（按 provider 与租户隔离）                                   | 300 秒             |
+| 键模式                                     | 值                                                                            | TTL                |
+| ------------------------------------------ | ----------------------------------------------------------------------------- | ------------------ |
+| `config:routes`                            | 路由 JSON 数组                                                                | 永久               |
+| `config:groups`                            | 分组 JSON 数组                                                                | 永久               |
+| `session:{id}`                             | 管理员会话 `{ userId, login }`                                                | 7 天               |
+| `token:{userId}`                           | `{ userId, accessToken, expiresAt, refreshToken? }`                           | 0.9 × Token 有效期 |
+| `token-reverse:{sha256}`                   | 用于按 Token 反查的用户 id                                                    | 0.9 × Token 有效期 |
+| `state:{hex}`                              | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 秒             |
+| `invite:{token}`                           | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 天               |
+| `invite:group:{id}`                        | 每组的 Token 索引（保证邀请列表一致性）                                       | 永久               |
+| `delivery:{provider}:{groupId}:{id}`       | Webhook 投递去重（按 provider 与租户隔离）                                    | 300 秒             |
 | `delivery-state:{provider}:{groupId}:{id}` | 队列投递状态（`pending`/`processing`/`delivered`/`retrying`/`failed`/`dead`） | 1 天               |
-| `queue:payload:{provider}:{groupId}:{id}`  | 暂存供队列消费者读取的超大 webhook 负载                                     | 1 天               |
-| `nonce:{nonce}`                | 自定义 webhook 重放防护 nonce（一次性）                                      | 600 秒             |
-| `tenant:{groupId}`             | 分组 webhook secret（64 位 hex，控制台生成）                                 | 永久               |
-| `msg:{routeId}:{key}:{target}` | 原地更新用消息 id 追踪（如 `workflow_run` / `check_run`）                     | 7 天               |
-| `cmd:guild:{id}`               | 已注册命令的服务器 id（去重）                                                 | 永久               |
-| `cmd:registered:global`        | 全局命令注册标记（去重）                                                      | 1 天               |
-| `config:discord-app-id`        | 缓存的 Discord 应用 id                                                        | 永久               |
-| `i18n:{lang}`                  | 叠加在英文之上的翻译覆盖                                                      | 永久               |
+| `queue:payload:{provider}:{groupId}:{id}`  | 暂存供队列消费者读取的超大 webhook 负载                                       | 1 天               |
+| `nonce:{nonce}`                            | 自定义 webhook 重放防护 nonce（一次性）                                       | 600 秒             |
+| `tenant:{groupId}`                         | 分组 webhook secret（64 位 hex，控制台生成）                                  | 永久               |
+| `msg:{routeId}:{key}:{target}`             | 原地更新用消息 id 追踪（如 `workflow_run` / `check_run`）                     | 7 天               |
+| `cmd:guild:{id}`                           | 已注册命令的服务器 id（去重）                                                 | 永久               |
+| `cmd:registered:global`                    | 全局命令注册标记（去重）                                                      | 1 天               |
+| `config:discord-app-id`                    | 缓存的 Discord 应用 id                                                        | 永久               |
+| `i18n:{lang}`                              | 叠加在英文之上的翻译覆盖                                                      | 永久               |
 
 ## D1 存储布局
 

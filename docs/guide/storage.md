@@ -2,26 +2,26 @@
 
 ## KV Storage Layout
 
-| Key Pattern                    | Value                                                                         | TTL                |
-| ------------------------------ | ----------------------------------------------------------------------------- | ------------------ |
-| `config:routes`                | JSON array of routes                                                          | Permanent          |
-| `config:groups`                | JSON array of groups                                                          | Permanent          |
-| `session:{id}`                 | Admin session `{ userId, login }`                                             | 7 days             |
-| `token:{userId}`               | `{ userId, accessToken, expiresAt, refreshToken? }`                           | 0.9 × token expiry |
-| `token-reverse:{sha256}`       | User id for reverse lookup by token                                           | 0.9 × token expiry |
-| `state:{hex}`                  | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 seconds        |
-| `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 days             |
-| `invite:group:{id}`            | Token index per group (keeps invite listing consistent)                       | Permanent          |
-| `delivery:{provider}:{groupId}:{id}` | Webhook delivery dedup (provider- and tenant-scoped)                              | 300 seconds        |
+| Key Pattern                                | Value                                                                                | TTL                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------ |
+| `config:routes`                            | JSON array of routes                                                                 | Permanent          |
+| `config:groups`                            | JSON array of groups                                                                 | Permanent          |
+| `session:{id}`                             | Admin session `{ userId, login }`                                                    | 7 days             |
+| `token:{userId}`                           | `{ userId, accessToken, expiresAt, refreshToken? }`                                  | 0.9 × token expiry |
+| `token-reverse:{sha256}`                   | User id for reverse lookup by token                                                  | 0.9 × token expiry |
+| `state:{hex}`                              | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }`        | 600 seconds        |
+| `invite:{token}`                           | `{ groupId, role, expiresAt, createdBy, note? }`                                     | 7 days             |
+| `invite:group:{id}`                        | Token index per group (keeps invite listing consistent)                              | Permanent          |
+| `delivery:{provider}:{groupId}:{id}`       | Webhook delivery dedup (provider- and tenant-scoped)                                 | 300 seconds        |
 | `delivery-state:{provider}:{groupId}:{id}` | Queue delivery state (`pending`/`processing`/`delivered`/`retrying`/`failed`/`dead`) | 1 day              |
-| `queue:payload:{provider}:{groupId}:{id}`  | Oversized webhook payload parked for the queue consumer                        | 1 day              |
-| `nonce:{nonce}`                | Custom-webhook replay protection nonce (single use)                            | 600 seconds        |
-| `tenant:{groupId}`             | Per-group webhook secret (64-char hex, generated from the console)             | Permanent          |
-| `msg:{routeId}:{key}:{target}` | Message id tracking for in-place updates (e.g. `workflow_run` / `check_run`)  | 7 days             |
-| `cmd:guild:{id}`               | Guild id whose commands were registered (dedup)                               | Permanent          |
-| `cmd:registered:global`        | Global command registration marker (dedup)                                    | 1 day              |
-| `config:discord-app-id`        | Cached Discord application id                                                 | Permanent          |
-| `i18n:{lang}`                  | Translation overrides merged on top of English                                | Permanent          |
+| `queue:payload:{provider}:{groupId}:{id}`  | Oversized webhook payload parked for the queue consumer                              | 1 day              |
+| `nonce:{nonce}`                            | Custom-webhook replay protection nonce (single use)                                  | 600 seconds        |
+| `tenant:{groupId}`                         | Per-group webhook secret (64-char hex, generated from the console)                   | Permanent          |
+| `msg:{routeId}:{key}:{target}`             | Message id tracking for in-place updates (e.g. `workflow_run` / `check_run`)         | 7 days             |
+| `cmd:guild:{id}`                           | Guild id whose commands were registered (dedup)                                      | Permanent          |
+| `cmd:registered:global`                    | Global command registration marker (dedup)                                           | 1 day              |
+| `config:discord-app-id`                    | Cached Discord application id                                                        | Permanent          |
+| `i18n:{lang}`                              | Translation overrides merged on top of English                                       | Permanent          |
 
 ## D1 Storage Layout
 
