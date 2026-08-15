@@ -114,6 +114,31 @@ export function cap(text: string, max: number): string {
   return text.length > max ? text.slice(0, max) : text;
 }
 
+export function htmlToText(input: string): string {
+  if (!input) return "";
+  let out = input
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<table[^>]*>/gi, "\n")
+    .replace(/<\/(p|div|tr|h[1-6]|ul|ol|table|blockquote)>/gi, "\n")
+    .replace(/<\/t[dh]>/gi, "  ")
+    .replace(/<li[^>]*>/gi, "\n• ")
+    .replace(/<[^>]+>/g, "");
+  out = out
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;/gi, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_m, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_m, dec: string) => String.fromCodePoint(Number(dec)))
+    .replace(/&amp;/gi, "&");
+  out = out
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return out;
+}
+
 /**
  * Normalize a check/workflow status: `queued` / `in_progress` keep their
  * value (the latter becomes `running`), anything else falls back to the

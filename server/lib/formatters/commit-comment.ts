@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { commitLink, emojiPrefix, type T, buildMessage, repoBaseUrl } from "./helpers";
+import { commitLink, emojiPrefix, type T, buildMessage, repoBaseUrl, htmlToText } from "./helpers";
 
 export function formatCommitComment(
   payload: Record<string, unknown>,
@@ -18,7 +18,7 @@ export function formatCommitComment(
 
   const al = t("actions." + action) ?? action;
   const em = (e: string): string => emojiPrefix(e, showEmoji);
-  const commentBody = comment.body?.slice(0, 500) ?? "";
+  const commentBody = htmlToText(comment.body ?? "").slice(0, 500);
   const truncated = comment.body && comment.body.length > 500;
   const baseUrl = repoBaseUrl(payload, repo);
   const shortSha = comment.commit_id?.slice(0, 7) ?? "???????";

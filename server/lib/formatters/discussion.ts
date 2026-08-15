@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { emojiPrefix, type T, buildMessage } from "./helpers";
+import { emojiPrefix, type T, buildMessage, htmlToText } from "./helpers";
 
 export function formatDiscussion(
   payload: Record<string, unknown>,
@@ -75,7 +75,7 @@ export function formatDiscussionComment(
 
   const al = t("actions." + action) ?? action;
   const em = (e: string): string => emojiPrefix(e, showEmoji);
-  const commentBody = comment.body?.slice(0, 500) ?? "";
+  const commentBody = htmlToText(comment.body ?? "").slice(0, 500);
   const truncated = comment.body && comment.body.length > 500;
 
   return buildMessage(

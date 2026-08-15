@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { emojiPrefix, type T, buildMessage } from "./helpers";
+import { emojiPrefix, type T, buildMessage, htmlToText } from "./helpers";
 
 export function formatPullRequestReview(
   payload: Record<string, unknown>,
@@ -36,7 +36,7 @@ export function formatPullRequestReview(
   descriptionParts.push(t("events.pr_review.action_review", { emoji: em(stateEmoji), action: al }));
 
   if (review.body) {
-    const truncated = review.body.slice(0, 500);
+    const truncated = htmlToText(review.body).slice(0, 500);
     descriptionParts.push(`\n> ${truncated}${review.body.length > 500 ? "..." : ""}`);
   }
 
@@ -78,7 +78,7 @@ export function formatPullRequestReviewComment(
 
   const al = t("actions." + action) ?? action;
   const em = (e: string): string => emojiPrefix(e, showEmoji);
-  const commentBody = comment.body?.slice(0, 400) ?? "";
+  const commentBody = htmlToText(comment.body ?? "").slice(0, 400);
   const truncated = comment.body && comment.body.length > 400;
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
