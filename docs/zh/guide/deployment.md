@@ -85,7 +85,18 @@ bunx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.
 
 :::
 
-### 4. 部署
+### 4. 创建队列（可选）
+
+`QUEUE` 绑定会通过 Cloudflare Queues 投递 webhook（异步分发，带重试退避与死信队列）。跳过此步则保持同步内联分发。
+
+```bash
+bunx wrangler queues create webhooker-delivery
+bunx wrangler queues create webhooker-delivery-dlq
+```
+
+队列已在 `wrangler.jsonc` 中声明（`queues.producers` / `queues.consumers`），无需修改绑定。`webhooker-delivery` 消费者对可重试失败做指数退避重试（5s/30s/2m/10m），达到 `max_retries` 后消息进入 `webhooker-delivery-dlq` 并标记为 dead。
+
+### 5. 部署
 
 ```bash
 bunx wrangler deploy
@@ -93,13 +104,13 @@ bunx wrangler deploy
 
 Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问。
 
-### 5. 配置 GitHub Webhook
+### 6. 配置 GitHub Webhook
 
 1. 进入 GitHub App 设置页面
 2. 设置 **Webhook URL** 为 `https://webhooker.<your-subdomain>.workers.dev/webhook`
 3. 设置 **Webhook secret** 与 `GITHUB_WEBHOOK_SECRET` 一致
 
-### 6.（可选）配置 Gitea Webhook
+### 7.（可选）配置 Gitea Webhook
 
 1. 在 Gitea 仓库中进入 **设置 → Web 钩子 → 添加 Web 钩子 → Gitea**
 2. 设置 **目标 URL** 为 `https://webhooker.<your-subdomain>.workers.dev/webhook`
@@ -181,4 +192,4 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
 3. 更新 `BASE_URL` 以匹配
 
 > [!NOTE]
-> 本项目是一个 Cloudflare Worker，依赖 `wrangler.jsonc` 中声明的 KV 与 D1 绑定，无法作为独立的 Node/容器进程运行。
+> 本项目是一个 Cloudflare Worker，依赖 `wrangler.jsonc` 中声明的 KV 与 D1 绑定，无法作为独立的 Node/容器进程运行。Queues 绑定（`QUEUE`）可选——未绑定时 webhook 分发保持内联同步。

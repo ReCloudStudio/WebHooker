@@ -27,6 +27,7 @@ export interface Env {
   ASSETS?: Fetcher;
   KV: KVNamespace;
   DB: D1Database;
+  QUEUE?: Queue;
 }
 
 export interface Config {

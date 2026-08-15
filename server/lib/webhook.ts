@@ -11,6 +11,7 @@ import { cfEnv, cfWaitUntil, headersFrom } from "./cf";
 import { log } from "./lib/log";
 import { deliveryKey, kvIdempotencyStore } from "./lib/idempotency";
 import { newCorrelationId } from "./lib/correlation";
+import { enqueueWebhook, type DeliveryMessage } from "./queue/delivery";
 
 const MAX_BODY_SIZE = 1024 * 1024;
 
@@ -133,6 +134,24 @@ export async function processWebhook(
   const config = await loadConfig(env);
   if (tenantId) {
     config.routes = config.routes.filter((r) => r.groupId === tenantId);
+  }
+
+  if (env.QUEUE) {
+    const message: DeliveryMessage = {
+      deliveryId: event.deliveryId ?? requestId,
+      groupId: tenantId,
+      provider: provider.id,
+      event: event.event,
+      payload: event.payload,
+      installationId: event.installationId,
+      receivedAt: Date.now(),
+      requestId,
+    };
+    const enqueue = enqueueWebhook(env, message).catch((err) =>
+      log.error({ requestId, err }, "Failed to enqueue webhook"),
+    );
+    waitUntil(enqueue);
+    return { status: 200, body: { ok: true, requestId } };
   }
 
   const dispatch = dispatchEvent(config, event, env, groups).catch((err) =>

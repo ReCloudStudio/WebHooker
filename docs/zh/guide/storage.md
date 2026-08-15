@@ -12,9 +12,11 @@
 | `state:{hex}`                  | `{ redirectTo, expiresAt, discordUserId?, telegramUserId?, telegramChatId? }` | 600 秒             |
 | `invite:{token}`               | `{ groupId, role, expiresAt, createdBy, note? }`                              | 7 天               |
 | `invite:group:{id}`            | 每组的 Token 索引（保证邀请列表一致性）                                       | 永久               |
-| `delivery:{id}`                | Webhook 投递 id（去重标记）                                                   | 300 秒             |
-| `delivery:{groupId}:{id}`      | 分组级 webhook 入口的租户级投递去重                                           | 300 秒             |
-| `tenant:{groupId}`             | 分组 webhook secret（64 位 hex，控制台生成）                                  | 永久               |
+| `delivery:{provider}:{groupId}:{id}` | Webhook 投递去重（按 provider 与租户隔离）                                   | 300 秒             |
+| `delivery-state:{provider}:{groupId}:{id}` | 队列投递状态（`pending`/`processing`/`delivered`/`retrying`/`failed`/`dead`） | 1 天               |
+| `queue:payload:{provider}:{groupId}:{id}`  | 暂存供队列消费者读取的超大 webhook 负载                                     | 1 天               |
+| `nonce:{nonce}`                | 自定义 webhook 重放防护 nonce（一次性）                                      | 600 秒             |
+| `tenant:{groupId}`             | 分组 webhook secret（64 位 hex，控制台生成）                                 | 永久               |
 | `msg:{routeId}:{key}:{target}` | 原地更新用消息 id 追踪（如 `workflow_run` / `check_run`）                     | 7 天               |
 | `cmd:guild:{id}`               | 已注册命令的服务器 id（去重）                                                 | 永久               |
 | `cmd:registered:global`        | 全局命令注册标记（去重）                                                      | 1 天               |

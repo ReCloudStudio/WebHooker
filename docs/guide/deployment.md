@@ -85,7 +85,18 @@ bunx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.
 
 :::
 
-### 4. Deploy
+### 4. Create Queues (Optional)
+
+The `QUEUE` binding routes webhook delivery through Cloudflare Queues (async dispatch with retry backoff and a dead-letter queue). Skip this step to keep dispatch inline (synchronous).
+
+```bash
+bunx wrangler queues create webhooker-delivery
+bunx wrangler queues create webhooker-delivery-dlq
+```
+
+The queues are already declared in `wrangler.jsonc` (`queues.producers` / `queues.consumers`), so no binding change is needed. The `webhooker-delivery` consumer retries retryable failures with exponential backoff (5s/30s/2m/10m) up to `max_retries`, after which the message is moved to `webhooker-delivery-dlq` and marked dead.
+
+### 5. Deploy
 
 ```bash
 bunx wrangler deploy
@@ -93,13 +104,13 @@ bunx wrangler deploy
 
 Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
 
-### 5. Configure GitHub Webhook
+### 6. Configure GitHub Webhook
 
 1. Go to your GitHub App settings
 2. Set **Webhook URL** to `https://webhooker.<your-subdomain>.workers.dev/webhook`
 3. Set **Webhook secret** to match `GITHUB_WEBHOOK_SECRET`
 
-### 6. (Optional) Configure Gitea Webhook
+### 7. (Optional) Configure Gitea Webhook
 
 1. In your Gitea repo, go to **Settings → Webhooks → Add Webhook → Gitea**
 2. Set **Target URL** to `https://webhooker.<your-subdomain>.workers.dev/webhook`
@@ -181,4 +192,4 @@ To use a custom domain instead of `*.workers.dev`:
 3. Update `BASE_URL` to match
 
 > [!NOTE]
-> This project is a Cloudflare Worker. It requires the KV and D1 bindings declared in `wrangler.jsonc`, so it cannot run as a standalone Node/container process.
+> This project is a Cloudflare Worker. It requires the KV and D1 bindings declared in `wrangler.jsonc`, so it cannot run as a standalone Node/container process. The Queues binding (`QUEUE`) is optional — without it, webhook dispatch stays inline.

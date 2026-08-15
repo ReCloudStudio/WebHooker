@@ -19,13 +19,14 @@ GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook event
 - **Discord Interactions Endpoint** (Ed25519-verified) for `/gh` slash commands, message context-menu commands, PR merge/close buttons, and comment modals
 - **Telegram `/gh` commands** (login/logout/comment/merge/close) via the Telegram webhook, with avatar link-preview cards
 - Cloudflare KV for token/state/config/session storage + D1 for send logs and platform account links
+- **Async delivery via Cloudflare Queues** — when the `QUEUE` binding is present, verified webhooks are enqueued to `webhooker-delivery` and dispatched by a consumer with exponential retry backoff (5s/30s/2m/10m) and a dead-letter queue (`webhooker-delivery-dlq`); oversized payloads are parked in KV. Without the binding, dispatch stays inline
 - Graceful degradation (webhook-only mode if Discord unavailable)
 
 ## Architecture
 
 ```text
 GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
-                 ├── POST /webhook → verify → dedup → filter → format → Discord (REST) / Telegram (Bot API)
+                 ├── POST /webhook → verify → dedup → enqueue (Queue) → dispatch → Discord (REST) / Telegram (Bot API)
                  ├── POST /discord/interactions → verify (Ed25519) → handle command/button/modal
                  ├── POST /telegram/webhook → verify (secret token) → handle /gh commands
                  ├── GET  /auth/github → OAuth flow
@@ -37,8 +38,9 @@ GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 
 - **Cloudflare Worker** — HTTP ingress, signature verification, routing, platform dispatch
 - **Interactions Endpoint** — HTTPS callback (no Discord Gateway connection, no Durable Object); the bot stays offline and commands are registered via the API
-- **KV** — token storage (`token:{userId}`), OAuth state (`state:{hex}`), route config (`config:routes`), group config (`config:groups`), admin sessions (`session:{id}`), delivery dedup (`delivery:{id}`), message-update tracking (`msg:*`)
+- **KV** — token storage (`token:{userId}`), OAuth state (`state:{hex}`), route config (`config:routes`), group config (`config:groups`), admin sessions (`session:{id}`), delivery dedup (`delivery:{provider}:{groupId}:{id}`), delivery state (`delivery-state:*`), message-update tracking (`msg:*`)
 - **D1** — send logs (`send_logs`), Discord↔GitHub links (`discord_links`), Telegram↔GitHub links (`telegram_links`)
+- **Queue** — async delivery when `QUEUE` is bound: `webhooker-delivery` (exponential retry) + DLQ `webhooker-delivery-dlq`; oversized payloads parked in KV (`queue:payload:*`)
 
 ## Quick Start
 
@@ -156,7 +158,7 @@ Every filter supports plain text, `*`/`?` globs, and `/regex/` patterns (case-in
 - **GitHub App** — create the app, subscribe to events, configure OAuth, and set the _Setup URL_ for tenant isolation: see [GitHub App Setup](https://webhooker.docs.worldexecute.me/guide/deployment#github-app-setup)
 - **Discord bot** — create the bot, invite it with `applications.commands` (combined permission integer `274877910016`), and configure the Interactions Endpoint: see [Discord Bot Setup](https://webhooker.docs.worldexecute.me/guide/deployment#discord-bot-setup). The bot never connects to the Discord Gateway, so it shows as **offline** — messaging is unaffected (always REST).
 - **Telegram bot** — create the bot with [@BotFather](https://t.me/BotFather), set `TELEGRAM_TOKEN` (optional `TELEGRAM_WEBHOOK_SECRET`); the webhook is synced automatically by the scheduled trigger: see [Telegram Bot Setup](https://webhooker.docs.worldexecute.me/guide/deployment#telegram-bot-setup)
-- **Deployment** — KV namespace, D1 database + migrations, secrets, and deploy: see the [Deployment guide](https://webhooker.docs.worldexecute.me/guide/deployment)
+- **Deployment** — KV namespace, D1 database + migrations, optional Queues, secrets, and deploy: see the [Deployment guide](https://webhooker.docs.worldexecute.me/guide/deployment)
 
 ### Bot Commands (comment on GitHub as yourself)
 

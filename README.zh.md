@@ -19,13 +19,14 @@ GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare W
 - **Discord Interactions Endpoint**（Ed25519 验签）支持 `/gh` 斜杠命令、消息右键菜单命令、PR 合并/关闭按钮与评论 modal
 - **Telegram `/gh` 命令**（login/logout/comment/merge/close），通过 Telegram webhook 接收，头像以链接预览卡片呈现
 - Cloudflare KV 存储 token/状态/配置/会话 + D1 存储发送日志与平台账号绑定
+- **Cloudflare Queues 异步投递** —— 绑定 `QUEUE` 时，已验签的 webhook 会入队到 `webhooker-delivery`，由消费者分发，带指数退避重试（5s/30s/2m/10m）与死信队列（`webhooker-delivery-dlq`）；超大负载暂存于 KV。未绑定则保持同步分发
 - 优雅降级（Discord 不可用时仅 webhook 模式）
 
 ## 架构
 
 ```text
 GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
-                 ├── POST /webhook → 验证 → 去重 → 过滤 → 格式化 → Discord (REST) / Telegram (Bot API)
+                 ├── POST /webhook → 验证 → 去重 → 入队 (Queue) → 分发 → Discord (REST) / Telegram (Bot API)
                  ├── POST /discord/interactions → 验证 (Ed25519) → 处理命令/按钮/modal
                  ├── POST /telegram/webhook → 验证 (secret token) → 处理 /gh 命令
                  ├── GET  /auth/github → OAuth 流程
@@ -37,8 +38,9 @@ GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 
 - **Cloudflare Worker** — HTTP 入口、签名验证、路由分发
 - **Interactions Endpoint** — HTTPS 回调（无 Discord Gateway 连接、无 Durable Object）；bot 保持离线，命令通过 API 注册
-- **KV** — Token 存储（`token:{userId}`）、OAuth state（`state:{hex}`）、路由配置（`config:routes`）、分组配置（`config:groups`）、管理员会话（`session:{id}`）、投递去重（`delivery:{id}`）、消息更新追踪（`msg:*`）
+- **KV** — Token 存储（`token:{userId}`）、OAuth state（`state:{hex}`）、路由配置（`config:routes`）、分组配置（`config:groups`）、管理员会话（`session:{id}`）、投递去重（`delivery:{provider}:{groupId}:{id}`）、投递状态（`delivery-state:*`）、消息更新追踪（`msg:*`）
 - **D1** — 发送日志（`send_logs`）、Discord↔GitHub 绑定（`discord_links`）、Telegram↔GitHub 绑定（`telegram_links`）
+- **Queue** — 绑定 `QUEUE` 时异步投递：`webhooker-delivery`（指数退避重试）+ 死信队列 `webhooker-delivery-dlq`；超大负载暂存于 KV（`queue:payload:*`）
 
 ## 快速开始
 
@@ -156,7 +158,7 @@ bunx wrangler dev    # 启动本地开发服务器
 - **GitHub App** — 创建应用、订阅事件、配置 OAuth 与 _Setup URL_（租户隔离）：见 [GitHub App 配置](https://webhooker.docs.worldexecute.me/zh/guide/deployment#github-app-设置)
 - **Discord 机器人** — 创建机器人、以 `applications.commands` scope 邀请（组合权限整数 `274877910016`）、配置 Interactions Endpoint：见 [Discord Bot 配置](https://webhooker.docs.worldexecute.me/zh/guide/deployment#discord-bot-设置)。bot 从不连接 Discord Gateway，因此显示为**离线**——消息推送不受影响（始终走 REST）。
 - **Telegram 机器人** — 用 [@BotFather](https://t.me/BotFather) 创建机器人，设置 `TELEGRAM_TOKEN`（可选 `TELEGRAM_WEBHOOK_SECRET`）；webhook 由定时任务自动同步：见 [Telegram 机器人配置](https://webhooker.docs.worldexecute.me/zh/guide/deployment#telegram-机器人配置)
-- **部署** — KV 命名空间、D1 数据库与迁移、密钥、部署：见[部署指南](https://webhooker.docs.worldexecute.me/zh/guide/deployment)
+- **部署** — KV 命名空间、D1 数据库与迁移、可选 Queues、密钥、部署：见[部署指南](https://webhooker.docs.worldexecute.me/zh/guide/deployment)
 
 ### Bot 指令（以本人身份评论 GitHub）
 

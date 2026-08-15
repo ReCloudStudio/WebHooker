@@ -13,6 +13,7 @@ import {
 } from "../web/groups";
 import { getDriver } from "../drivers";
 import type { SendResult } from "../drivers/types";
+import type { DispatchFailure, DispatchSummary } from "../queue/delivery";
 
 /** One dispatch attempt (route × target), collected for the group webhook log. */
 interface DispatchAttempt {
@@ -22,6 +23,8 @@ interface DispatchAttempt {
   target: string;
   ok: boolean;
   error?: string;
+  errorCode?: string;
+  status?: number;
 }
 
 export async function dispatchEvent(
@@ -29,7 +32,7 @@ export async function dispatchEvent(
   event: WebhookEvent,
   env: Env,
   groups?: Group[],
-): Promise<void> {
+): Promise<DispatchSummary> {
   const loadedGroups = groups ?? (await loadGroups(env.KV));
   const groupById = new Map(loadedGroups.map((g) => [g.id, g]));
 
@@ -75,6 +78,16 @@ export async function dispatchEvent(
   await Promise.allSettled(tasks);
 
   await sendGroupLogs(attempts);
+
+  const failures: DispatchFailure[] = attempts
+    .filter((a) => !a.ok)
+    .map((a) => ({
+      target: a.target,
+      error: a.error,
+      errorCode: a.errorCode,
+      status: a.status,
+    }));
+  return { attempts: attempts.length, failures };
 
   async function sendGroupLogs(list: DispatchAttempt[]): Promise<void> {
     const byGroup = new Map<string, DispatchAttempt[]>();
@@ -309,6 +322,8 @@ export async function dispatchEvent(
             target: targetStr,
             ok: false,
             error,
+            errorCode: result.errorCode,
+            status: result.status,
           });
           await recordSend(env.DB, {
             ...base,

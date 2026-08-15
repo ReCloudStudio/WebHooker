@@ -29,4 +29,27 @@
 			"database_id": "214a0104-3235-47c0-b7bf-ddda95f3c8ac"
 		},
 	],
+	"queues": {
+		"producers": [
+			{
+				"binding": "QUEUE",
+				"queue": "webhooker-delivery"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "webhooker-delivery",
+				"max_batch_size": 10,
+				"max_batch_timeout": 30,
+				"max_retries": 5,
+				"dead_letter_queue": "webhooker-delivery-dlq"
+			},
+			{
+				"queue": "webhooker-delivery-dlq",
+				"max_batch_size": 10,
+				"max_batch_timeout": 30,
+				"max_retries": 1
+			}
+		]
+	},
 }
