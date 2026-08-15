@@ -112,7 +112,7 @@ bunx wrangler dev    # 启动本地开发服务器
 
 ### 过滤器类型
 
-所有过滤器均支持纯文本、`*`/`?` 通配符与 `/正则/`（不区分大小写）；设置 `exclude: true` 可取反。模式语法与完整过滤器参考见[过滤器教程](https://webhooker.docs.worldexecute.me/zh/guide/filters)。
+所有过滤器均支持纯文本、`*`/`?` 通配符与 `/正则/`（不区分大小写）；设置 `exclude: true` 可取反。过滤器还可通过路由上可选的 `ast`（`all` / `any` / `not` 节点）组合为 AST，以表达默认 AND 列表之外的布尔组合。模式语法与完整过滤器参考见[过滤器教程](https://webhooker.docs.worldexecute.me/zh/guide/filters)。
 
 ## API
 

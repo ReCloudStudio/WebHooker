@@ -1,6 +1,7 @@
 import type { Env, Group, GroupMember, GroupRole } from "../types";
 import { isAdminUser } from "./session";
 import { log } from "../lib/log";
+import { migrateGroups, validateGroups } from "../config/schema";
 
 const GROUPS_KEY = "config:groups";
 
@@ -39,7 +40,7 @@ export function normalizeGroupMembers(group: Group): GroupMember[] {
 export async function loadGroups(kv: KVNamespace): Promise<Group[]> {
   try {
     const stored = await kv.get<Group[]>(GROUPS_KEY, "json");
-    if (Array.isArray(stored)) return stored;
+    if (Array.isArray(stored)) return validateGroups(migrateGroups(stored));
   } catch (err) {
     log.warn({ err }, "Failed to load groups from KV");
   }

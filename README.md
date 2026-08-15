@@ -112,7 +112,7 @@ Sign out at `/admin/logout`. Every group has `members` with a role (`owner` / `a
 
 ### Filter Types
 
-Every filter supports plain text, `*`/`?` globs, and `/regex/` patterns (case-insensitive); set `exclude: true` to invert. See the [Filter Tutorial](https://webhooker.docs.worldexecute.me/guide/filters) for the pattern syntax and the full filter reference.
+Every filter supports plain text, `*`/`?` globs, and `/regex/` patterns (case-insensitive); set `exclude: true` to invert. Filters can also be grouped into an AST via an optional `ast` on a route (`all` / `any` / `not` nodes) to express boolean combinations beyond the default AND-list. See the [Filter Tutorial](https://webhooker.docs.worldexecute.me/guide/filters) for the pattern syntax and the full filter reference.
 
 ## API
 

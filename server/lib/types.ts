@@ -61,6 +61,12 @@ export interface Route {
   targets: RouteTarget[];
   groupId?: string;
   /**
+   * Optional explicit filter expression tree. When present it replaces the
+   * flat `filters` array (which is equivalent to `{ all: filters }`). Omitted
+   * on routes stored without an AST — matching falls back to `filters`.
+   */
+  ast?: FilterNode;
+  /**
    * Fallback route: only fires when no other (non-fallback) route matched the
    * event. Multiple fallback routes may exist; they are all skipped whenever at
    * least one regular route matches. Its own filters are ignored.
@@ -153,6 +159,35 @@ export interface Filter {
   match: string | string[];
   exclude?: boolean;
 }
+
+/**
+ * A filter node matches an event when every child matches.
+ */
+export interface FilterAll {
+  all: FilterNode[];
+}
+
+/**
+ * A filter node matches an event when any child matches.
+ */
+export interface FilterAny {
+  any: FilterNode[];
+}
+
+/**
+ * A filter node matches an event when its child does not match.
+ */
+export interface FilterNot {
+  not: FilterNode;
+}
+
+/**
+ * A composable filter expression tree. Leaf nodes are `Filter`; the `all`,
+ * `any` and `not` nodes compose them. A route's `filters` array stays the
+ * flat AND-of-filters form (equivalent to `{ all: filters }`); `ast` optionally
+ * replaces it with an explicit tree.
+ */
+export type FilterNode = Filter | FilterAll | FilterAny | FilterNot;
 
 export type WebhookProvider = "github" | "gitea" | "gitlab" | "custom";
 

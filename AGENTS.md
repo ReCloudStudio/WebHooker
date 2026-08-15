@@ -48,6 +48,8 @@ server/                  # Nitro server
 └── lib/
     ├── types.ts         # Env, Config, Route, Filter, Group, WebhookEvent, NeutralMessage
     ├── config.ts        # loadRoutes/saveRoutes (KV config:routes, cache w/ 60s TTL), loadConfig from env
+    ├── config/          # config schema + migration + validation
+    │   └── schema.ts    # CONFIG_SCHEMA_VERSION, valibot route/group/filter schemas, migrateRoutes/Groups, validateRoutes/Groups (non-destructive), explainRoute
     ├── cf.ts            # cfEnv(event) — env bindings from event.context.cloudflare
     ├── http.ts          # shared HTTP helpers
     ├── webhook.ts       # processWebhook/handleWebhook: tenant lookup, provider detect/verify/parse, dedup, enqueue (or inline dispatch)
@@ -57,7 +59,8 @@ server/                  # Nitro server
     ├── core/
     │   └── dispatch.ts  # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter + per-group webhook log)
     ├── events/
-    │   └── match.ts     # matchRoute, eventOwners, extractBranch; unified pattern syntax (*/? globs + //-wrapped regex)
+    │   ├── match.ts     # matchRoute, eventOwners; unified pattern syntax (*/? globs + //-wrapped regex)
+    │   └── filter-ast.ts # FilterNode evaluator (all/any/not), containsKeyword, explainFilter/explainFilterNode; pattern helpers (regex/glob compile)
     ├── providers/       # Forge webhook providers (verify + parse/normalize to GitHub-shaped events)
     │   ├── types.ts     # Provider interface (matches/verify/parse)
     │   ├── hmac.ts      # HMAC-SHA256 + timing-safe compare helpers
@@ -128,6 +131,8 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
 - Verify Discord interactions (Web Crypto Ed25519, X-Signature-Ed25519 over timestamp + body)
 - Verify Telegram webhook calls (X-Telegram-Bot-Api-Secret-Token when configured)
 - Filter events by: event type, repo name, actor, action, branch, keyword — every filter type supports `*`/`?` glob matching and `//`-wrapped regular expressions (case-insensitive)
+- Combine filters into an AST (`Route.ast`: `all`/`any`/`not` nodes) that overrides the flat `filters` AND-list; `explainRoute`/`explainFilterNode` render a human-readable description of the tree
+- Validate route/group config against valibot schemas on load (non-destructive: invalid entries log a warning but still load); `CONFIG_SCHEMA_VERSION` marks the schema version and `migrateRoutes`/`migrateGroups` migrate legacy shapes (e.g. `target` → `targets`)
 - Filter routes by group owner restriction (`Group.owners`), group source-platform restriction (`Group.providers`: github/gitea), GitHub App installation restriction (`Group.installationId`), and skip fallback routes whenever a regular route matched; stop evaluating further routes when a matched route has `stop: true`
 - Auto-provision GitHub App installs: the App's Setup URL flow (`/auth/github/install` choice page + `POST /auth/github/install/bind`, owner-role verified for existing groups) and the `installation.created` webhook fallback both create `inst-{installationId}` groups or bind existing groups
 - Enforce role-based access on every admin API: super admins bypass, `owner` manages the group (routes/members/invites/settings), `admin` edits routes, `viewer` is read-only; legacy `adminIds` groups resolve to `owner` members
