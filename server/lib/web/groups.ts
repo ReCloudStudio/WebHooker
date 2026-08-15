@@ -120,36 +120,57 @@ export async function ensureInstallationGroup(
   installationId: number,
   accountLogin: string,
 ): Promise<Group | null> {
-  const groups = await loadGroups(kv);
-  const existing = groups.find((g) => g.installationId === installationId);
-  if (existing) return existing;
-
-  const login = accountLogin.trim().toLowerCase();
-  const candidates = groups.filter(
-    (g) =>
-      g.installationId == null &&
-      login.length > 0 &&
-      (g.owners ?? []).some((o) => o.trim().toLowerCase() === login),
-  );
-  if (candidates.length > 0) {
-    const next = groups.map((g) => (candidates.includes(g) ? { ...g, installationId } : g));
-    await saveGroups(kv, next);
-    return next.find((g) => g.id === candidates[0]!.id) ?? null;
+  // A per-installation lock serializes concurrent `installation.created`
+  // webhooks: without it two requests both pass the "no group bound" check,
+  // both create `inst-{id}`, and the second save overwrites the first.
+  const lockKey = `inst:lock:${installationId}`;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const holder = await kv.get(lockKey);
+    if (!holder) break;
+    const groups = await loadGroups(kv);
+    const existing = groups.find((g) => g.installationId === installationId);
+    if (existing) return existing;
+    await new Promise((r) => setTimeout(r, 40 * (attempt + 1)));
   }
 
-  const gid = `inst-${installationId}`;
-  const dedicated = groups.find((g) => g.id === gid);
-  const group: Group = {
-    id: gid,
-    name: accountLogin.trim() || `Installation ${installationId}`,
-    adminIds: [],
-    installationId,
-  };
-  await saveGroups(
-    kv,
-    dedicated ? groups.map((g) => (g.id === gid ? { ...g, ...group } : g)) : [...groups, group],
-  );
-  return group;
+  let locked = false;
+  try {
+    await kv.put(lockKey, "1", { expirationTtl: 60 });
+    locked = true;
+
+    const groups = await loadGroups(kv);
+    const existing = groups.find((g) => g.installationId === installationId);
+    if (existing) return existing;
+
+    const login = accountLogin.trim().toLowerCase();
+    const candidates = groups.filter(
+      (g) =>
+        g.installationId == null &&
+        login.length > 0 &&
+        (g.owners ?? []).some((o) => o.trim().toLowerCase() === login),
+    );
+    if (candidates.length > 0) {
+      const next = groups.map((g) => (candidates.includes(g) ? { ...g, installationId } : g));
+      await saveGroups(kv, next);
+      return next.find((g) => g.id === candidates[0]!.id) ?? null;
+    }
+
+    const gid = `inst-${installationId}`;
+    const dedicated = groups.find((g) => g.id === gid);
+    const group: Group = {
+      id: gid,
+      name: accountLogin.trim() || `Installation ${installationId}`,
+      adminIds: [],
+      installationId,
+    };
+    await saveGroups(
+      kv,
+      dedicated ? groups.map((g) => (g.id === gid ? { ...g, ...group } : g)) : [...groups, group],
+    );
+    return group;
+  } finally {
+    if (locked) await kv.delete(lockKey);
+  }
 }
 
 export interface AccessScope {

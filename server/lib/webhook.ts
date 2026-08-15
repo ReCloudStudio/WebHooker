@@ -50,7 +50,16 @@ export async function processWebhook(
     return { status: 400, body: { error: "Unknown webhook provider" } };
   }
 
-  if (!(await provider.verify(body, headers, effectiveEnv))) {
+  let verified = false;
+  try {
+    verified = await provider.verify(body, headers, effectiveEnv);
+  } catch (err) {
+    // A malformed secret or an unavailable crypto implementation must fail as
+    // a clean 401, never an uncaught 500.
+    log.warn({ provider: provider.id, err: String(err) }, "Webhook signature verification failed");
+    return { status: 401, body: { error: "Invalid signature" } };
+  }
+  if (!verified) {
     // Log the actual cause: a missing provider secret is a deployment problem,
     // while a mismatched signature usually means the sender used the wrong secret.
     const secret =

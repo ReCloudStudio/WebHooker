@@ -197,60 +197,131 @@ export async function dispatchEvent(
         if (message.updateKey) {
           const groupPrefix = route.groupId ? `${route.groupId}:` : "";
           const kvKey = `msg:${groupPrefix}${route.id}:${message.updateKey}:${targetStr}`;
-          const existingId = await env.KV.get(kvKey);
-          if (existingId) {
-            result = await driver.edit(message, target, env, existingId);
-            if (result.ok) {
-              attempts.push({
-                groupId: route.groupId,
-                routeId: route.id,
-                routeName: route.name,
-                target: targetStr,
-                ok: true,
-              });
-              await recordSend(env.DB, {
-                ...base,
-                ok: true,
-                status: result.status,
-                messageId: existingId,
-                platform: driver.id,
-                attempts: result.attempts,
-                durationMs: Date.now() - started,
-                errorCode: result.errorCode,
-              });
+          const lockKey = `msg:lock:${kvKey}`;
+
+          // Acquire a short-lived lock so concurrent events for the same
+          // updateKey don't race (both read null, both send, the later put
+          // overwrites). KV is eventually consistent so the lock is
+          // best-effort; a retry loop further shrinks the window.
+          let locked = false;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            const holder = await env.KV.get(lockKey);
+            if (holder) {
+              const existing = await env.KV.get(kvKey);
+              if (existing) {
+                result = await driver.edit(message, target, env, existing);
+                if (result.ok || /not modified/i.test(result.error ?? "")) {
+                  const ok = result.ok || /not modified/i.test(result.error ?? "");
+                  attempts.push({
+                    groupId: route.groupId,
+                    routeId: route.id,
+                    routeName: route.name,
+                    target: targetStr,
+                    ok: true,
+                  });
+                  await recordSend(env.DB, {
+                    ...base,
+                    ok: true,
+                    status: result.status,
+                    messageId: existing,
+                    platform: driver.id,
+                    attempts: result.attempts,
+                    durationMs: Date.now() - started,
+                    errorCode: result.errorCode,
+                  });
+                  if (!ok) await env.KV.delete(kvKey);
+                  continue;
+                }
+                await env.KV.delete(kvKey);
+                break;
+              }
+              await new Promise((r) => setTimeout(r, 50 * (attempt + 1)));
               continue;
             }
-            if (/not modified/i.test(result.error ?? "")) {
-              attempts.push({
-                groupId: route.groupId,
-                routeId: route.id,
-                routeName: route.name,
-                target: targetStr,
-                ok: true,
-              });
-              await recordSend(env.DB, {
-                ...base,
-                ok: true,
-                status: result.status,
-                messageId: existingId,
-                platform: driver.id,
-                attempts: result.attempts,
-                durationMs: Date.now() - started,
-                errorCode: result.errorCode,
-              });
-              continue;
-            }
-            await env.KV.delete(kvKey);
+            await env.KV.put(lockKey, "1", { expirationTtl: 60 });
+            locked = true;
+            break;
           }
-          result = await driver.send(message, target, env);
-          if (result.ok && result.messageId) {
-            await env.KV.put(kvKey, result.messageId, { expirationTtl: 604800 });
+
+          try {
+            const existingId = await env.KV.get(kvKey);
+            if (existingId) {
+              result = await driver.edit(message, target, env, existingId);
+              if (result.ok) {
+                attempts.push({
+                  groupId: route.groupId,
+                  routeId: route.id,
+                  routeName: route.name,
+                  target: targetStr,
+                  ok: true,
+                });
+                await recordSend(env.DB, {
+                  ...base,
+                  ok: true,
+                  status: result.status,
+                  messageId: existingId,
+                  platform: driver.id,
+                  attempts: result.attempts,
+                  durationMs: Date.now() - started,
+                  errorCode: result.errorCode,
+                });
+                continue;
+              }
+              if (/not modified/i.test(result.error ?? "")) {
+                attempts.push({
+                  groupId: route.groupId,
+                  routeId: route.id,
+                  routeName: route.name,
+                  target: targetStr,
+                  ok: true,
+                });
+                await recordSend(env.DB, {
+                  ...base,
+                  ok: true,
+                  status: result.status,
+                  messageId: existingId,
+                  platform: driver.id,
+                  attempts: result.attempts,
+                  durationMs: Date.now() - started,
+                  errorCode: result.errorCode,
+                });
+                continue;
+              }
+              await env.KV.delete(kvKey);
+            }
+            result = await driver.send(message, target, env);
+            if (result.ok && result.messageId) {
+              await env.KV.put(kvKey, result.messageId, { expirationTtl: 604800 });
+            }
+          } finally {
+            if (locked) await env.KV.delete(lockKey);
           }
         } else {
           result = await driver.send(message, target, env);
         }
         const durationMs = Date.now() - started;
-        if (!result.ok) throw new Error(result.error ?? "Send failed");
+        if (!result.ok) {
+          const error = result.error ?? "Send failed";
+          attempts.push({
+            groupId: route.groupId,
+            routeId: route.id,
+            routeName: route.name,
+            target: targetStr,
+            ok: false,
+            error,
+          });
+          await recordSend(env.DB, {
+            ...base,
+            ok: false,
+            error,
+            durationMs,
+            status: result.status,
+            platform: driver.id,
+            attempts: result.attempts,
+            errorCode: result.errorCode,
+          });
+          continue;
+        }
         attempts.push({
           groupId: route.groupId,
           routeId: route.id,

@@ -33,6 +33,19 @@ const GITHUB_COMMENT_RE =
   /github\.com\/([^/\s]+)\/([^/\s]+)\/(?:issues|pull)\/\d+#issuecomment-(\d+)/;
 const GITHUB_ISSUE_RE = /github\.com\/([^/\s]+)\/([^/\s]+)\/(?:issues|pull)\/(\d+)/;
 
+/**
+ * Split a pipe-delimited custom-id suffix into [owner, repo, number]. The
+ * number is always the last segment (arbitrary-length owner/repo can contain
+ * pipes on non-GitHub forges), so we split from the right.
+ */
+function splitThree(rest: string): [string, string, string] {
+  const parts = rest.split("|");
+  const number = parts.pop();
+  const repo = parts.pop();
+  const owner = parts.join("|");
+  return [owner ?? "", repo ?? "", number ?? ""];
+}
+
 interface Interaction {
   id: string;
   token: string;
@@ -101,7 +114,8 @@ export async function handleInteractionRequest(request: Request, env: Env): Prom
     );
     return new Response("Invalid signature", { status: 401 });
   }
-  if (Math.abs(Math.floor(Date.now() / 1000) - Number(timestamp)) > TIMESTAMP_TOLERANCE_SECONDS) {
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts) || Math.abs(Math.floor(Date.now() / 1000) - ts) > TIMESTAMP_TOLERANCE_SECONDS) {
     return new Response("Invalid signature", { status: 401 });
   }
 
@@ -287,7 +301,7 @@ async function handleButton(
     return;
   }
 
-  const [owner, repo, number] = rest.split("|");
+  const [owner, repo, number] = splitThree(rest);
   if (!owner || !repo || !number) return;
 
   // Acknowledge first (deferred, ephemeral) so the clicker sees a spinner
@@ -494,7 +508,7 @@ async function modalSubmit(
 
   // ghc|add|owner|repo|issueNumber
   if (customId.startsWith(MODAL_ADD)) {
-    const [owner, repo, number] = customId.slice(MODAL_ADD.length).split("|");
+    const [owner, repo, number] = splitThree(customId.slice(MODAL_ADD.length));
     if (!owner || !repo || !number)
       return respond(env, id, token, "内部错误：无法解析目标 issue。");
     try {
@@ -514,7 +528,7 @@ async function modalSubmit(
 
   // ghc|edit|owner|repo|commentId
   if (customId.startsWith(MODAL_EDIT)) {
-    const [owner, repo, commentId] = customId.slice(MODAL_EDIT.length).split("|");
+    const [owner, repo, commentId] = splitThree(customId.slice(MODAL_EDIT.length));
     if (!owner || !repo || !commentId)
       return respond(env, id, token, "内部错误：无法解析目标评论。");
     try {
