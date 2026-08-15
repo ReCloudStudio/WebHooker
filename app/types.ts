@@ -189,3 +189,30 @@ export interface SendRecord {
   attempts?: number;
   detail?: Record<string, unknown>;
 }
+
+export interface MetricsBreakdown {
+  platform?: string;
+  event?: string;
+  total: number;
+  ok: number;
+  failed: number;
+}
+
+export interface MetricsStatus {
+  status: string;
+  count: number;
+}
+
+export interface DeliveryMetrics {
+  total: number;
+  ok: number;
+  failed: number;
+  failureRate: number;
+  byPlatform: MetricsBreakdown[];
+  byEvent: MetricsBreakdown[];
+  byStatus: MetricsStatus[];
+  avgDurationMs: number;
+  totalAttempts: number;
+  avgAttempts: number;
+  recentFailures: SendRecord[];
+}

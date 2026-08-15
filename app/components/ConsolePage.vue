@@ -108,6 +108,13 @@
             <button class="tab" :class="{ active: view === 'audit' }" @click="switchView('audit')">
               {{ t("tab.audit") }}
             </button>
+            <button
+              class="tab"
+              :class="{ active: view === 'metrics' }"
+              @click="switchView('metrics')"
+            >
+              {{ t("tab.metrics") }}
+            </button>
           </nav>
 
           <template v-if="view === 'groups'">
@@ -210,6 +217,15 @@
               @update:selected-group-id="auditFilterGroup = $event"
             />
           </template>
+
+          <template v-else-if="view === 'metrics'">
+            <MetricsPanel
+              :metrics="metrics"
+              :loading="metricsLoading"
+              :error="metricsError"
+              @refresh="loadMetrics"
+            />
+          </template>
         </template>
       </template>
     </main>
@@ -247,10 +263,10 @@ const router = useRouter();
  * The console view mirrors the URL path so tabs are deep-linkable:
  * /admin (groups) · /admin/logs · /admin/audit. Unknown slugs 404.
  */
-const view = computed<"groups" | "logs" | "audit" | null>(() => {
+const view = computed<"groups" | "logs" | "audit" | "metrics" | null>(() => {
   const seg = route.path.split("/").filter(Boolean)[1];
   if (!seg) return "groups";
-  if (seg === "groups" || seg === "logs" || seg === "audit") return seg;
+  if (seg === "groups" || seg === "logs" || seg === "audit" || seg === "metrics") return seg;
   return null;
 });
 
@@ -265,6 +281,7 @@ const {
   error: auditError,
   load: loadAudit,
 } = useAuditApi();
+const { metrics, loading: metricsLoading, error: metricsError, load: loadMetrics } = useMetrics();
 const {
   groups,
   isSuper,
@@ -319,11 +336,12 @@ watch(
   view,
   (v) => {
     if (v === "audit") loadAudit(50, auditFilterGroup.value || undefined);
+    if (v === "metrics") loadMetrics();
   },
   { immediate: true },
 );
 
-function switchView(next: "groups" | "logs" | "audit"): void {
+function switchView(next: "groups" | "logs" | "audit" | "metrics"): void {
   const path = next === "groups" ? "/admin" : `/admin/${next}`;
   if (route.path !== path) router.replace(path);
 }

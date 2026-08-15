@@ -20,7 +20,8 @@ import {
   clientIp,
   type GroupAccess,
 } from "./auth";
-import { getSendLog, getSendLogById } from "../lib/send-log";
+import { getSendLog, getSendLogById, getSendLogByDelivery } from "../lib/send-log";
+import { getDeliveryMetrics } from "../observability/metrics";
 import { getAuditLog, recordAudit } from "../lib/audit";
 import {
   createInvite,
@@ -1011,4 +1012,38 @@ export async function adminAudit(event: H3Event): Promise<Record<string, unknown
     ? entries
     : entries.filter((e) => e.groupId != null && auth.scope.groupIds.has(e.groupId));
   return { audit: visible };
+}
+
+/** GET /admin/api/metrics */
+export async function adminApiMetrics(event: H3Event): Promise<Record<string, unknown>> {
+  const auth = await requireAnyAccess(event);
+  const env = cfEnv(event);
+  const metrics = await getDeliveryMetrics(env.DB);
+  if (auth.scope.isSuper) return { metrics };
+  return {
+    metrics: {
+      ...metrics,
+      recentFailures: metrics.recentFailures.filter(
+        (f) => f.groupId != null && auth.scope.groupIds.has(f.groupId),
+      ),
+    },
+  };
+}
+
+/** GET /admin/api/delivery/:deliveryId */
+export async function adminApiDelivery(
+  event: H3Event,
+  deliveryId: string,
+): Promise<Record<string, unknown>> {
+  const auth = await requireAnyAccess(event);
+  const env = cfEnv(event);
+  const rows = await getSendLogByDelivery(env.DB, deliveryId);
+  if (rows.length === 0) return respondError(event, 404, "Delivery not found");
+  if (
+    !auth.scope.isSuper &&
+    rows.some((r) => r.groupId == null || !auth.scope.groupIds.has(r.groupId))
+  ) {
+    return respondError(event, 403, "Forbidden");
+  }
+  return { deliveryId, attempts: rows };
 }

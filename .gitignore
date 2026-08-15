@@ -2,7 +2,7 @@ node_modules/
 dist/
 .output/
 .nuxt/
-admin/
+/admin/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 .env

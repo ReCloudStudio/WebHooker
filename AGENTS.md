@@ -102,19 +102,21 @@ server/                  # Nitro server
     ├── web/             # HTTP UI/API logic (called from server/routes)
     │   ├── oauth.ts     # handleOAuthStart/Callback, install page + bind, personal-group self-signup
     │   ├── actions.ts   # POST /api/comment|merge|close|react (Bearer token auth via shared middleware)
-    │   ├── admin.ts     # adminLogin/Logout, adminApi* (routes|groups|me|logs|invites|audit|webhook)
+    │   ├── admin.ts     # adminLogin/Logout, adminApi* (routes|groups|me|logs|invites|audit|webhook|metrics|delivery)
     │   ├── auth.ts      # Shared auth middleware + guards: requireAnyAccess, requireGroup(Role), bearerUserId, clientIp
     │   ├── invites.ts   # Invite CRUD (KV invite:{token}, 7d TTL) + acceptInvite (join group as admin/viewer)
     │   ├── session.ts   # Session CRUD (KV session:{id}), isAdminUser, cookie helpers
     │   ├── groups.ts    # Group CRUD (config:groups), member roles (normalizeGroupMembers/memberRole), resolveScope + role helpers (roleAt/canEditRoutes/canEditGroup)
     │   ├── tenants.ts   # Per-group webhook secret CRUD (KV tenant:{groupId}, 32-byte random hex)
     │   └── richheader.ts # GET /api/richheader: Open Graph page for Telegram avatar link-preview card
+    ├── observability/  # delivery metrics aggregation
+    │   └── metrics.ts  # DeliveryMetrics + getDeliveryMetrics (SQL GROUP BY over send_logs: totals, per platform/event/status, duration, attempts, recent failures)
     └── lib/             # shared infra
         ├── i18n.ts      # loadTranslations (KV i18n:{lang} overrides), t() with param interpolation
         ├── idempotency.ts # IdempotencyStore interface + kvIdempotencyStore (delivery dedup via claim/has) + deliveryKey
         ├── correlation.ts # newCorrelationId() — per-request/delivery correlation id for logs + responses
         ├── message-tracker.ts # MessageTracker interface + kvMessageTracker (KV msg:{eventId}:{targetId} for workflow_run/check_run edits)
-        ├── send-log.ts  # SendRecord, recordSend/getSendLog/getSendLogById (D1 send_logs)
+        ├── send-log.ts  # SendRecord, recordSend/getSendLog/getSendLogById/getSendLogByDelivery/getFailedSendLog (D1 send_logs)
         ├── audit.ts     # recordAudit/getAuditLog/pruneAuditLogs (D1 audit_logs, best-effort writes)
         ├── log.ts       # JSON console logger (info/warn/error/fatal)
         └── locales/     # en.ts, zh.ts translation dictionaries
@@ -144,6 +146,8 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
 - Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, KV `msg:*` tracking)
 - Record every dispatch attempt to D1 `send_logs` (route id, event, target, ok/error, duration, error code)
+- Aggregate delivery metrics (`server/lib/observability/metrics.ts`) from `send_logs` — totals, ok/failed counts + failure rate, per-platform/per-event/per-status breakdowns, average duration and attempts, recent failures
+- Expose admin observability endpoints — `GET /admin/api/metrics` (delivery metrics, recent failures group-scoped for non-super) and `GET /admin/api/delivery/:deliveryId` (all send-log attempts for one delivery, group-scoped) — through the `/admin/api/[...slug]` catch-all route (`server/routes/admin/api/[...slug].ts`) that wires every admin API handler to its method+path
 - Serve a per-group webhook ingress (`POST /webhook/{groupId}`, per-group secret in KV `tenant:{groupId}`) for Gitea/classic-GitHub/custom senders; only that group's routes fire; dedup keys are provider- and tenant-scoped (`delivery:{provider}:{groupId}:{id}` via `kvIdempotencyStore`)
 - Issue a per-request correlation id (`requestId`) in webhook responses and dispatch logs
 - When the `QUEUE` binding is present, enqueue each verified webhook as a single Queue message (`webhooker-delivery`) instead of dispatching inline; the consumer resolves the payload, re-scopes routes to the tenant group, and dispatches; retryable failures (5xx/network/429-exhaustion) are retried with exponential backoff (5s/30s/2m/10m) up to the queue `max_retries`, then the DLQ marks the delivery dead

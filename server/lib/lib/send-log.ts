@@ -130,3 +130,32 @@ export async function getSendLogById(db: D1Database, id: number): Promise<SendRe
     return null;
   }
 }
+
+export async function getSendLogByDelivery(
+  db: D1Database,
+  deliveryId: string,
+): Promise<SendRecord[]> {
+  try {
+    const { results } = await db
+      .prepare(`SELECT ${COLUMNS} FROM send_logs WHERE delivery_id = ? ORDER BY ts DESC`)
+      .bind(deliveryId)
+      .all<LogRow>();
+    return results.map(toRecord);
+  } catch (err) {
+    log.warn({ err, deliveryId }, "Failed to load send log by delivery");
+    return [];
+  }
+}
+
+export async function getFailedSendLog(db: D1Database, limit = 20): Promise<SendRecord[]> {
+  try {
+    const { results } = await db
+      .prepare(`SELECT ${COLUMNS} FROM send_logs WHERE ok = 0 ORDER BY ts DESC LIMIT ?`)
+      .bind(limit)
+      .all<LogRow>();
+    return results.map(toRecord);
+  } catch (err) {
+    log.warn({ err }, "Failed to load failed send log");
+    return [];
+  }
+}
