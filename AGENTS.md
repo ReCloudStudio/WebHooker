@@ -70,7 +70,9 @@ server/                  # Nitro server
     │   │   └── parse.ts # parse + normalize Gitea payloads to GitHub shape
     │   └── custom/      # X-WebHooker-Signature (sha256= HMAC) + arbitrary JSON → `custom` events
     ├── formatters/      # Platform-neutral message formatters (was formatter.ts)
-    │   ├── index.ts     # formatEvent: 28-event switch + custom → NeutralMessage + re-exports
+    │   ├── index.ts     # formatEvent: builds FormatContext → findFormatter → .format (falls back to formatGeneric)
+    │   ├── types.ts     # FormatContext + EventFormatter (formatter plugin interface)
+    │   ├── registry.ts  # eventFormatters[] + findFormatter() — 29-event formatter plugin registry
     │   ├── colors.ts    # GITHUB_COLORS + WORKFLOW_CONCLUSION_EMOJI
     │   ├── helpers.ts   # emojiPrefix, T, buildMessage, commitLink/branchLink/tagLink
     │   └── *.ts         # push, pull-request, issues, comments, workflow, release, create,
@@ -108,6 +110,7 @@ server/                  # Nitro server
         ├── i18n.ts      # loadTranslations (KV i18n:{lang} overrides), t() with param interpolation
         ├── idempotency.ts # IdempotencyStore interface + kvIdempotencyStore (delivery dedup via claim/has) + deliveryKey
         ├── correlation.ts # newCorrelationId() — per-request/delivery correlation id for logs + responses
+        ├── message-tracker.ts # MessageTracker interface + kvMessageTracker (KV msg:{eventId}:{targetId} for workflow_run/check_run edits)
         ├── send-log.ts  # SendRecord, recordSend/getSendLog/getSendLogById (D1 send_logs)
         ├── audit.ts     # recordAudit/getAuditLog/pruneAuditLogs (D1 audit_logs, best-effort writes)
         ├── log.ts       # JSON console logger (info/warn/error/fatal)

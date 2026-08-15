@@ -169,6 +169,22 @@ export interface WebhookEvent {
   installationId?: number;
 }
 
+/**
+ * A forge-agnostic webhook event after provider verification and
+ * normalization: the canonical shape every provider's `parse` output conforms
+ * to, plus the tenant scope (`groupId`) and receipt time carried through the
+ * delivery pipeline.
+ */
+export interface NormalizedWebhook {
+  provider: WebhookProvider;
+  deliveryId: string;
+  event: string;
+  groupId?: string;
+  payload: Record<string, unknown>;
+  installationId?: number;
+  receivedAt: number;
+}
+
 export interface NeutralAuthor {
   name: string;
   iconUrl?: string;

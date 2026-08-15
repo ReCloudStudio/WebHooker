@@ -5,6 +5,7 @@ import { matchRoute, eventOwners } from "../events/match";
 import { log } from "../lib/log";
 import { loadTranslations, t as translate, type Translations } from "../lib/i18n";
 import { recordSend } from "../lib/send-log";
+import { kvMessageTracker } from "../lib/message-tracker";
 import {
   loadGroups,
   groupAcceptsOwners,
@@ -35,6 +36,7 @@ export async function dispatchEvent(
 ): Promise<DispatchSummary> {
   const loadedGroups = groups ?? (await loadGroups(env.KV));
   const groupById = new Map(loadedGroups.map((g) => [g.id, g]));
+  const tracker = kvMessageTracker(env.KV);
 
   // Message language is configured per group (Group.lang), not per route.
   const langs = [...new Set(loadedGroups.map((g) => g.lang ?? "en"))];
@@ -209,7 +211,8 @@ export async function dispatchEvent(
         let result: SendResult;
         if (message.updateKey) {
           const groupPrefix = route.groupId ? `${route.groupId}:` : "";
-          const kvKey = `msg:${groupPrefix}${route.id}:${message.updateKey}:${targetStr}`;
+          const eventId = `${groupPrefix}${route.id}:${message.updateKey}`;
+          const kvKey = `msg:${eventId}:${targetStr}`;
           const lockKey = `msg:lock:${kvKey}`;
 
           // Acquire a short-lived lock so concurrent events for the same
@@ -220,7 +223,7 @@ export async function dispatchEvent(
           for (let attempt = 0; attempt < 3; attempt++) {
             const holder = await env.KV.get(lockKey);
             if (holder) {
-              const existing = await env.KV.get(kvKey);
+              const existing = await tracker.get(eventId, targetStr);
               if (existing) {
                 result = await driver.edit(message, target, env, existing);
                 if (result.ok || /not modified/i.test(result.error ?? "")) {
@@ -242,10 +245,10 @@ export async function dispatchEvent(
                     durationMs: Date.now() - started,
                     errorCode: result.errorCode,
                   });
-                  if (!ok) await env.KV.delete(kvKey);
+                  if (!ok) await tracker.delete(eventId, targetStr);
                   continue;
                 }
-                await env.KV.delete(kvKey);
+                await tracker.delete(eventId, targetStr);
                 break;
               }
               await new Promise((r) => setTimeout(r, 50 * (attempt + 1)));
@@ -257,7 +260,7 @@ export async function dispatchEvent(
           }
 
           try {
-            const existingId = await env.KV.get(kvKey);
+            const existingId = await tracker.get(eventId, targetStr);
             if (existingId) {
               result = await driver.edit(message, target, env, existingId);
               if (result.ok) {
@@ -300,11 +303,11 @@ export async function dispatchEvent(
                 });
                 continue;
               }
-              await env.KV.delete(kvKey);
+              await tracker.delete(eventId, targetStr);
             }
             result = await driver.send(message, target, env);
             if (result.ok && result.messageId) {
-              await env.KV.put(kvKey, result.messageId, { expirationTtl: 604800 });
+              await tracker.set(eventId, targetStr, result.messageId);
             }
           } finally {
             if (locked) await env.KV.delete(lockKey);

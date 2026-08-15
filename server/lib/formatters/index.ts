@@ -1,27 +1,9 @@
 import type { Route, WebhookEvent, NeutralMessage, NeutralAuthor } from "../types";
 import type { Translations } from "../lib/i18n";
 import { makeT, senderProfileUrl, type T } from "./helpers";
-import { formatPush } from "./push";
-import { formatPullRequest } from "./pull-request";
-import { formatPullRequestReview, formatPullRequestReviewComment } from "./review";
-import { formatIssues } from "./issues";
-import { formatIssueComment } from "./comments";
-import { formatWorkflowRun, formatWorkflowJob } from "./workflow";
-import { formatRelease } from "./release";
-import { formatCreate, formatDelete } from "./create";
-import { formatStar, formatFork } from "./repo";
-import { formatCheckRun, formatCheckSuite, formatStatus } from "./check";
-import { formatCommitComment } from "./commit-comment";
-import { formatDeployment, formatDeploymentStatus } from "./deployment";
-import { formatMember } from "./member";
-import { formatLabel } from "./label";
-import { formatMilestone } from "./milestone";
-import { formatDiscussion, formatDiscussionComment } from "./discussion";
-import { formatRepository } from "./repository";
-import { formatCodeScanningAlert, formatDependabotAlert } from "./security";
 import { formatGeneric } from "./generic";
-import { formatPing } from "./ping";
-import { formatCustom } from "./custom";
+import type { FormatContext } from "./types";
+import { findFormatter } from "./registry";
 
 export function formatEvent(
   route: Route,
@@ -44,66 +26,10 @@ export function formatEvent(
     url: senderUrl ?? (sender ? senderProfileUrl(repoUrl, sender) : undefined),
   };
 
-  switch (eventType) {
-    case "push":
-      return formatPush(payload, repo, author, t, showEmoji);
-    case "pull_request":
-      return formatPullRequest(payload, repo, author, t, showEmoji);
-    case "pull_request_review":
-      return formatPullRequestReview(payload, repo, author, t, showEmoji);
-    case "pull_request_review_comment":
-      return formatPullRequestReviewComment(payload, repo, author, t, showEmoji);
-    case "issues":
-      return formatIssues(payload, repo, author, t, showEmoji);
-    case "issue_comment":
-      return formatIssueComment(payload, repo, author, t, showEmoji);
-    case "workflow_run":
-      return formatWorkflowRun(payload, repo, author, t, showEmoji);
-    case "workflow_job":
-      return formatWorkflowJob(payload, repo, author, t, showEmoji);
-    case "status":
-      return formatStatus(payload, repo, author, t, showEmoji);
-    case "deployment":
-      return formatDeployment(payload, repo, author, t, showEmoji);
-    case "ping":
-      return formatPing(payload, repo, author, t, showEmoji);
-    case "release":
-      return formatRelease(payload, repo, author, t, showEmoji);
-    case "create":
-      return formatCreate(payload, repo, author, t, showEmoji);
-    case "delete":
-      return formatDelete(payload, repo, author, t, showEmoji);
-    case "star":
-      return formatStar(payload, repo, repoUrl, author, t, showEmoji);
-    case "fork":
-      return formatFork(payload, repo, repoUrl, author, t, showEmoji);
-    case "check_run":
-      return formatCheckRun(payload, repo, author, t, showEmoji);
-    case "check_suite":
-      return formatCheckSuite(payload, repo, author, t, showEmoji);
-    case "commit_comment":
-      return formatCommitComment(payload, repo, author, t, showEmoji);
-    case "deployment_status":
-      return formatDeploymentStatus(payload, repo, author, t, showEmoji);
-    case "member":
-      return formatMember(payload, repo, author, t, showEmoji);
-    case "label":
-      return formatLabel(payload, repo, author, t, showEmoji);
-    case "milestone":
-      return formatMilestone(payload, repo, author, t, showEmoji);
-    case "discussion":
-      return formatDiscussion(payload, repo, author, t, showEmoji);
-    case "discussion_comment":
-      return formatDiscussionComment(payload, repo, author, t, showEmoji);
-    case "repository":
-      return formatRepository(payload, repo, repoUrl, author, t, showEmoji);
-    case "code_scanning_alert":
-      return formatCodeScanningAlert(payload, repo, author, t, showEmoji);
-    case "dependabot_alert":
-      return formatDependabotAlert(payload, repo, author, t, showEmoji);
-    case "custom":
-      return formatCustom(payload, repo, author, t, showEmoji);
-    default:
-      return formatGeneric(eventType, payload, repo, author, t, showEmoji);
-  }
+  const ctx: FormatContext = { payload, repo, repoUrl, author, t, showEmoji };
+
+  return (
+    findFormatter(eventType)?.format(ctx) ??
+    formatGeneric(eventType, payload, repo, author, t, showEmoji)
+  );
 }
