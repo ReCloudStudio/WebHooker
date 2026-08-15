@@ -9,6 +9,8 @@ import { getTenantSecret } from "./web/tenants";
 import { recordAudit } from "./lib/audit";
 import { cfEnv, cfWaitUntil, headersFrom } from "./cf";
 import { log } from "./lib/log";
+import { deliveryKey, kvIdempotencyStore } from "./lib/idempotency";
+import { newCorrelationId } from "./lib/correlation";
 
 const MAX_BODY_SIZE = 1024 * 1024;
 
@@ -32,6 +34,7 @@ export async function processWebhook(
   waitUntil: (promise: Promise<unknown>) => void,
   tenantId?: string,
 ): Promise<WebhookResult> {
+  const requestId = newCorrelationId();
   let effectiveEnv = env;
   const groups = await loadGroups(env.KV);
   if (tenantId) {
@@ -56,7 +59,10 @@ export async function processWebhook(
   } catch (err) {
     // A malformed secret or an unavailable crypto implementation must fail as
     // a clean 401, never an uncaught 500.
-    log.warn({ provider: provider.id, err: String(err) }, "Webhook signature verification failed");
+    log.warn(
+      { provider: provider.id, requestId, err: String(err) },
+      "Webhook signature verification failed",
+    );
     return { status: 401, body: { error: "Invalid signature" } };
   }
   if (!verified) {
@@ -67,9 +73,12 @@ export async function processWebhook(
         ? effectiveEnv.GITEA_WEBHOOK_SECRET
         : effectiveEnv.GITHUB_WEBHOOK_SECRET;
     if (!secret) {
-      log.warn({ provider: provider.id }, "Webhook rejected: provider secret is not configured");
+      log.warn(
+        { provider: provider.id, requestId },
+        "Webhook rejected: provider secret is not configured",
+      );
     } else {
-      log.warn({ provider: provider.id }, "Webhook rejected: invalid signature");
+      log.warn({ provider: provider.id, requestId }, "Webhook rejected: invalid signature");
     }
     return { status: 401, body: { error: "Invalid signature" } };
   }
@@ -111,16 +120,14 @@ export async function processWebhook(
   }
 
   if (event.deliveryId) {
-    // Tenant-scoped dedup keys: different accounts can reuse the same
-    // delivery id, so the global key would wrongly dedupe across tenants.
-    const key = tenantId
-      ? `delivery:${tenantId}:${event.deliveryId}`
-      : `delivery:${event.deliveryId}`;
-    const seen = await env.KV.get(key);
-    if (seen) {
-      return { status: 200, body: { ok: true, duplicate: true } };
+    // Dedup via the idempotency store: a provider/tenant-scoped key means
+    // different accounts may reuse a delivery id without colliding, while
+    // retries of the same delivery never dispatch twice.
+    const store = kvIdempotencyStore(env.KV);
+    const key = deliveryKey(provider.id, tenantId, event.deliveryId);
+    if (!(await store.claim(key, 300))) {
+      return { status: 200, body: { ok: true, duplicate: true, requestId } };
     }
-    await env.KV.put(key, "1", { expirationTtl: 300 });
   }
 
   const config = await loadConfig(env);
@@ -129,11 +136,11 @@ export async function processWebhook(
   }
 
   const dispatch = dispatchEvent(config, event, env, groups).catch((err) =>
-    log.error(err, "Dispatch failed"),
+    log.error({ requestId, err }, "Dispatch failed"),
   );
   waitUntil(dispatch);
 
-  return { status: 200, body: { ok: true } };
+  return { status: 200, body: { ok: true, requestId } };
 }
 
 /** h3 wrapper for `POST /webhook` / `POST /webhook/:groupId`. */

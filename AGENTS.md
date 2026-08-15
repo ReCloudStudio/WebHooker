@@ -101,6 +101,8 @@ server/                  # Nitro server
     │   └── richheader.ts # GET /api/richheader: Open Graph page for Telegram avatar link-preview card
     └── lib/             # shared infra
         ├── i18n.ts      # loadTranslations (KV i18n:{lang} overrides), t() with param interpolation
+        ├── idempotency.ts # IdempotencyStore interface + kvIdempotencyStore (delivery dedup via claim/has) + deliveryKey
+        ├── correlation.ts # newCorrelationId() — per-request/delivery correlation id for logs + responses
         ├── send-log.ts  # SendRecord, recordSend/getSendLog/getSendLogById (D1 send_logs)
         ├── audit.ts     # recordAudit/getAuditLog/pruneAuditLogs (D1 audit_logs, best-effort writes)
         ├── log.ts       # JSON console logger (info/warn/error/fatal)
@@ -113,7 +115,7 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
 
 - Verify GitHub webhook signatures (Web Crypto HMAC-SHA256, `X-Hub-Signature-256`)
 - Verify Gitea webhook signatures (Web Crypto HMAC-SHA256, plain hex `X-Gitea-Signature`)
-- Verify custom webhook signatures (Web Crypto HMAC-SHA256, GitHub-style `sha256=` via `X-WebHooker-Signature`)
+- Verify custom webhook signatures (Web Crypto HMAC-SHA256, GitHub-style `sha256=` via `X-WebHooker-Signature`; optional replay protection via `X-WebHooker-Timestamp` + `X-WebHooker-Nonce` — signature over `{timestamp}.{nonce}.{body}`, ±5 min window, nonce dedup in KV)
 - Normalize Gitea webhook payloads to a GitHub-shaped `WebhookEvent` (push `compare_url` → `compare`, `pull_request_comment` → `pull_request_review_comment`, ...)
 - Verify Discord interactions (Web Crypto Ed25519, X-Signature-Ed25519 over timestamp + body)
 - Verify Telegram webhook calls (X-Telegram-Bot-Api-Secret-Token when configured)
@@ -129,7 +131,8 @@ tests/                   # bun test unit tests (webhook, formatter, discord, tel
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
 - Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, KV `msg:*` tracking)
 - Record every dispatch attempt to D1 `send_logs` (route id, event, target, ok/error, duration, error code)
-- Serve a per-group webhook ingress (`POST /webhook/{groupId}`, per-group secret in KV `tenant:{groupId}`) for Gitea/classic-GitHub/custom senders; only that group's routes fire; dedup keys are tenant-scoped
+- Serve a per-group webhook ingress (`POST /webhook/{groupId}`, per-group secret in KV `tenant:{groupId}`) for Gitea/classic-GitHub/custom senders; only that group's routes fire; dedup keys are provider- and tenant-scoped (`delivery:{provider}:{groupId}:{id}` via `kvIdempotencyStore`)
+- Issue a per-request correlation id (`requestId`) in webhook responses and dispatch logs
 - Send a per-event summary (event, repo, delivery id, per route×target ✅/❌ outcome) to the group's `logTarget` when configured
 - Serve `/gh` slash commands + message context-menu commands + PR merge/close buttons + comment modals
 - Serve Telegram `/gh` commands (login/logout/comment/merge/close) via reply-message parsing

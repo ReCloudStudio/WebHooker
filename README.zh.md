@@ -6,7 +6,7 @@ GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare W
 
 - **28 种事件格式化** — push、pull_request、issues、issue_comment、workflow_run、workflow_job、status、deployment、deployment_status、check_run、check_suite、ping、release、create、delete、star、fork、pull_request_review、pull_request_review_comment、commit_comment、member、label、milestone、discussion、discussion_comment、repository、code_scanning_alert、dependabot_alert（+ 通用回退，+ `custom` 自定义 webhook）
 - **多平台 webhook** — GitHub（`X-Hub-Signature-256`）与 Gitea（`X-Gitea-Signature`）共用 `/webhook` 端点，自动识别来源平台
-- **分组级 webhook 入口** — 每个分组可拥有独立的 `POST /webhook/{groupId}` URL + secret（Gitea、classic GitHub webhook，以及用 `X-WebHooker-Signature` 签名的任意自定义 JSON）
+- **分组级 webhook 入口** — 每个分组可拥有独立的 `POST /webhook/{groupId}` URL + secret（Gitea、classic GitHub webhook，以及用 `X-WebHooker-Signature` 签名的任意自定义 JSON，可选的 timestamp+nonce 重放防护）
 - **GitHub App 租户隔离** — 将分组绑定到 GitHub App 安装 ID，只有该组织/用户的事件才能进入该分组
 - HMAC-SHA256 签名验证（Web Crypto API）
 - 按事件类型、仓库、操作人、操作、分支、关键词过滤（支持 `*`/`?` 通配符与 `/正则/`）

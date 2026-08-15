@@ -94,7 +94,7 @@ POST /webhook
 
 ### 自定义 Webhook
 
-任意 JSON 载荷用 `X-WebHooker-Signature: sha256=<hex>`（对原始 body 的 HMAC-SHA256，使用分组或全局 secret）签名后即可成为 `custom` 事件。用 `event: custom` 过滤器的路由接收。载荷格式见[配置 → 自定义 Webhook](../guide/ingress.md#自定义-webhook)。
+任意 JSON 载荷用 `X-WebHooker-Signature: sha256=<hex>`（对原始 body 的 HMAC-SHA256，使用分组或全局 secret）签名后即可成为 `custom` 事件。用 `event: custom` 过滤器的路由接收。可选的 `X-WebHooker-Timestamp` + `X-WebHooker-Nonce` 请求头启用重放防护（对 `{timestamp}.{nonce}.{body}` 签名、±5 分钟窗口、nonce 去重）。载荷格式见[配置 → 自定义 Webhook](../guide/ingress.md#自定义-webhook)。
 
 ### GitHub App 安装事件
 

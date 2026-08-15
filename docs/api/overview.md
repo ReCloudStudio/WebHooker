@@ -94,7 +94,7 @@ Verifies the payload against the **group's** secret (KV `tenant:{groupId}`, gene
 
 ### Custom Webhooks
 
-Any JSON payload signed with `X-WebHooker-Signature: sha256=<hex>` (HMAC-SHA256 of the raw body, group or global secret) becomes a `custom` event. Route it with a route whose filter is `event: custom`. Payload schema: see [Configuration → Custom webhooks](../guide/ingress.md#custom-webhooks).
+Any JSON payload signed with `X-WebHooker-Signature: sha256=<hex>` (HMAC-SHA256 of the raw body, group or global secret) becomes a `custom` event. Route it with a route whose filter is `event: custom`. Optional `X-WebHooker-Timestamp` + `X-WebHooker-Nonce` headers enable replay protection (signature over `{timestamp}.{nonce}.{body}`, ±5 min window, nonce dedup). Payload schema: see [Configuration → Custom webhooks](../guide/ingress.md#custom-webhooks).
 
 ### GitHub App Installation Events
 

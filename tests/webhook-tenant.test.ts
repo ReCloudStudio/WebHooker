@@ -198,7 +198,7 @@ describe("processWebhook", () => {
     const second = await processWebhook(env, body, headers, makeWait().waitUntil, "team-a");
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
-    expect(second.body).toEqual({ ok: true, duplicate: true });
+    expect(second.body).toEqual({ ok: true, duplicate: true, requestId: expect.any(String) });
     expect(fetched).toHaveLength(1);
   });
 

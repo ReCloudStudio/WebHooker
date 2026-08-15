@@ -23,12 +23,31 @@ Every group can opt into its own webhook ingress with an independent secret (gen
 
 - Supported for any provider: GitHub (`X-Hub-Signature-256`), Gitea (`X-Gitea-Signature`), custom (`X-WebHooker-Signature`)
 - The secret is a 64-char hex string; regenerate from the console invalidates the old one immediately
-- Delivery-id dedup keys are tenant-scoped (`delivery:{groupId}:{id}`)
+- Delivery-id dedup keys are provider- and tenant-scoped (`delivery:{provider}:{groupId}:{id}`)
 - When the group has no secret (or no longer exists) the endpoint returns `404`
 
 ## Custom Webhooks
 
 Post arbitrary JSON to `POST /webhook/{groupId}` (or the global endpoint) with the body signed as `X-WebHooker-Signature: sha256=<hmac-sha256 hex of the raw body>` using the group's secret. The payload becomes a `custom` event that flows through the normal route pipeline — create a route with `event: custom` (there is a console template) and it dispatches to that route's targets, records `send_logs`, and appears in the group's webhook log channel.
+
+### Replay Protection
+
+Custom webhooks support optional replay protection via two extra headers alongside the signature:
+
+- `X-WebHooker-Timestamp` — Unix seconds the request was sent
+- `X-WebHooker-Nonce` — a unique, unpredictable value per request (e.g. a UUID)
+
+When **both** headers are present, the signature is computed over `{timestamp}.{nonce}.{rawBody}` instead of the raw body, and the request is accepted only if:
+
+1. The timestamp is within ±5 minutes of the server clock (rejects replays and clock-drift abusers)
+2. The nonce has never been seen before (stored in KV for 10 minutes; a replayed nonce is rejected)
+
+```bash
+input="${timestamp}.${nonce}.${body}"
+signature="sha256=$(printf '%s' "$input" | openssl dgst -sha256 -hmac "$secret" -hex | sed 's/.*= //')"
+```
+
+When the headers are omitted, WebHooker falls back to the legacy body-only signature, so existing senders keep working unchanged.
 
 Payload schema:
 

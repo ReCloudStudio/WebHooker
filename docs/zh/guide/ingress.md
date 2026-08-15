@@ -23,12 +23,31 @@ Gitea 载荷会被归一化为与 GitHub 事件相同的内部结构，因此路
 
 - 支持任意提供方：GitHub（`X-Hub-Signature-256`）、Gitea（`X-Gitea-Signature`）、自定义（`X-WebHooker-Signature`）
 - 密钥为 64 位 hex 字符串；在控制台重新生成会立即失效旧密钥
-- 投递 id 去重键按租户隔离（`delivery:{groupId}:{id}`）
+- 投递 id 去重键按提供方与租户隔离（`delivery:{provider}:{groupId}:{id}`）
 - 分组没有密钥（或已不存在）时端点返回 `404`
 
 ## 自定义 Webhook
 
 向 `POST /webhook/{groupId}`（或全局端点）POST 任意 JSON，并使用分组密钥将原始 body 的 HMAC-SHA256 以 `X-WebHooker-Signature: sha256=<hex>` 签名。载荷会变成 `custom` 事件，走正常的路由管线——创建一条 `event: custom` 的路由（控制台有模板），即可分发到该路由的目标、记录 `send_logs`，并出现在分组的 webhook 日志频道中。
+
+### 重放防护
+
+自定义 webhook 支持可选的防重放机制，在签名之外再附带两个请求头：
+
+- `X-WebHooker-Timestamp` — 请求发送时的 Unix 秒数
+- `X-WebHooker-Nonce` — 每次请求唯一且不可预测的值（如 UUID）
+
+当**同时**提供这两个请求头时，签名改为对 `{timestamp}.{nonce}.{原始body}` 计算（而非仅原始 body），且仅当以下条件满足时才被接受：
+
+1. 时间戳与服务器时钟相差不超过 ±5 分钟（拒绝重放与时钟漂移滥用）
+2. nonce 从未被使用过（存入 KV 保留 10 分钟；重放的 nonce 会被拒绝）
+
+```bash
+input="${timestamp}.${nonce}.${body}"
+signature="sha256=$(printf '%s' "$input" | openssl dgst -sha256 -hmac "$secret" -hex | sed 's/.*= //')"
+```
+
+省略这些请求头时，WebHooker 回退到旧版的仅对 body 签名，现有发送方无需改动即可继续工作。
 
 载荷模式：
 
