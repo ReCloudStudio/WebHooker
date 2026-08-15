@@ -108,7 +108,10 @@ export function formatPullRequestReviewComment(
       }),
       url: comment.html_url,
       color: GITHUB_COLORS.pull_request_review_commented,
-      updateKey: repo && comment.id != null ? `pull_request_review_comment:${repo}:${comment.id}` : undefined,
+      updateKey:
+        repo && comment.id != null
+          ? `pull_request_review_comment:${repo}:${comment.id}`
+          : undefined,
       description: `${t("events.pr_review_comment.action_inline", { emoji: em("💬"), action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
       fields: fields.length > 0 ? fields : undefined,
     },
