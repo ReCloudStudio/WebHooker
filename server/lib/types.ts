@@ -6,12 +6,8 @@ export interface Env {
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   DISCORD_TOKEN?: string;
-  DISCORD_CHANNEL_ID?: string;
   BASE_URL?: string;
   ADMIN_USER_IDS?: string;
-  LEGAL_CONTACT?: string;
-  DOCS_URL?: string;
-  GITHUB_REPO_URL?: string;
   DISCORD_PUBLIC_KEY?: string;
   DISCORD_APPLICATION_ID?: string;
   TELEGRAM_TOKEN?: string;
