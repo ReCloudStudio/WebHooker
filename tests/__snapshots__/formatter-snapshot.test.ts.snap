@@ -1,0 +1,84 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`formatter snapshots push 1`] = `
+{
+  "author": {
+    "iconUrl": undefined,
+    "name": "octocat",
+    "url": "https://github.com/octocat",
+  },
+  "color": 3056719,
+  "description": "[View comparison](https://github.com/acme/widget/compare/aaa...bbb)",
+  "fields": [
+    {
+      "inline": false,
+      "name": "​",
+      "value": "[\`bbbbbbb\`](https://github.com/acme/widget/commit/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) Fix login bug",
+    },
+  ],
+  "footer": "acme/widget",
+  "timestamp": "TIMESTAMP",
+  "title": "acme/widget: Pushed 1 commit to [\`main\`](https://github.com/acme/widget/tree/main)",
+  "url": "https://github.com/acme/widget/compare/aaa...bbb",
+}
+`;
+
+exports[`formatter snapshots pull_request 1`] = `
+{
+  "actions": [
+    {
+      "id": "ghpr|merge|acme|widget|7",
+      "label": "Merge",
+      "style": "primary",
+    },
+    {
+      "id": "ghpr|close|acme|widget|7",
+      "label": "Close",
+      "style": "danger",
+    },
+  ],
+  "author": {
+    "iconUrl": undefined,
+    "name": "octocat",
+    "url": "https://github.com/octocat",
+  },
+  "color": 2991182,
+  "description": 
+"🟢 **Opened** pull request
+
+Implements the new feature."
+,
+  "fields": [
+    {
+      "inline": true,
+      "name": "Branch",
+      "value": "[\`feature\`](https://github.com/acme/widget/tree/feature) → [\`main\`](https://github.com/acme/widget/tree/main)",
+    },
+  ],
+  "footer": "acme/widget",
+  "timestamp": "TIMESTAMP",
+  "title": "acme/widget#7: Add feature",
+  "url": "https://github.com/acme/widget/pull/7",
+}
+`;
+
+exports[`formatter snapshots issues 1`] = `
+{
+  "author": {
+    "iconUrl": undefined,
+    "name": "octocat",
+    "url": "https://github.com/octocat",
+  },
+  "color": 2991182,
+  "description": 
+"🟢 **Opened** issue
+
+Login fails on iOS Safari."
+,
+  "fields": undefined,
+  "footer": "acme/widget",
+  "timestamp": "TIMESTAMP",
+  "title": "acme/widget#12: Broken login on mobile",
+  "url": "https://github.com/acme/widget/issues/12",
+}
+`;

@@ -122,6 +122,8 @@ server/                  # Nitro server
         └── locales/     # en.ts, zh.ts translation dictionaries
 
 tests/                   # bun test unit tests (webhook, formatter, discord, telegram, admin, groups, invites, audit, send-log, token-store, ...)
+tests/fixtures/          # provider payload fixtures (github/gitea/custom) feeding provider + formatter tests
+tests/__snapshots__/     # formatter snapshot golden files (toMatchSnapshot)
 ```
 
 ## Responsibilities
@@ -199,6 +201,13 @@ bun run typecheck     # Type checking (nuxt typecheck)
 bun run lint          # ESLint
 bun test              # Unit tests (under tests/)
 ```
+
+Test suites beyond the per-module unit tests: provider fixtures (`tests/fixtures/` +
+`tests/provider-fixtures.test.ts`), formatter snapshots (`tests/formatter-snapshot.test.ts` →
+`tests/__snapshots__/`), and platform contract tests (`tests/platform-contract.test.ts`, which
+assert the Discord/Telegram renderers clamp to their platform limits). CI
+(`.github/workflows/ci.yml`) runs `bun install --frozen-lockfile` + `bun test` + `bun run lint`;
+CodeQL (`codeql.yml`) and Dependabot (`dependabot.yml`) are configured under `.github/`.
 
 ## Documentation
 

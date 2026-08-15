@@ -75,7 +75,13 @@ server/                  # Nitro server (H3 handlers in server/routes/)
         └── locales/     # en.ts, zh.ts translation dictionaries
 
 tests/                   # Unit tests (bun test)
+tests/fixtures/          # Provider payload fixtures (github/gitea/custom)
+tests/__snapshots__/     # Formatter snapshot golden files
 ```
+
+Continuous integration (`.github/workflows/ci.yml`) runs `bun install --frozen-lockfile`,
+`bun test`, and `bun run lint`. CodeQL (`codeql.yml`) and Dependabot (`dependabot.yml`) are
+configured under `.github/`.
 
 ## Scripts
 
@@ -111,6 +117,12 @@ bun test
 # Or manually check the health endpoint
 curl http://localhost:8787/health
 ```
+
+Beyond the per-module unit tests, the suite includes provider fixtures
+(`tests/fixtures/` + `tests/provider-fixtures.test.ts`), formatter snapshots
+(`tests/formatter-snapshot.test.ts`), and platform contract tests
+(`tests/platform-contract.test.ts`) that assert the Discord/Telegram renderers clamp to their
+platform limits.
 
 ## Adding a New Event Formatter
 

@@ -75,7 +75,12 @@ server/                  # Nitro 服务器（H3 处理器位于 server/routes/�
         └── locales/     # en.ts、zh.ts 翻译字典
 
 tests/                   # 单元测试 (bun test)
+tests/fixtures/          # 提供方负载固件 (github/gitea/custom)
+tests/__snapshots__/     # 格式化器快照黄金文件
 ```
+
+持续集成（`.github/workflows/ci.yml`）运行 `bun install --frozen-lockfile`、`bun test` 与
+`bun run lint`。CodeQL（`codeql.yml`）与 Dependabot（`dependabot.yml`）配置在 `.github/` 下。
 
 ## 脚本
 
@@ -111,6 +116,11 @@ bun test
 # 或手动检查健康端点
 curl http://localhost:8787/health
 ```
+
+除各模块单元测试外，测试套件还包含提供方固件（`tests/fixtures/` +
+`tests/provider-fixtures.test.ts`）、格式化器快照（`tests/formatter-snapshot.test.ts`）以及
+平台契约测试（`tests/platform-contract.test.ts`，断言 Discord/Telegram 渲染器会截断到各自的
+平台限制）。
 
 ## 添加新事件格式化器
 
