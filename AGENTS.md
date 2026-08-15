@@ -166,11 +166,12 @@ tests/__snapshots__/     # formatter snapshot golden files (toMatchSnapshot)
   `{repo}{#number}: {subject}` (e.g. `acme/widget#7: Add feature`). Repo comes from
   `payload.repository.full_name`; fall back to `t("common.repository")` when missing.
 - Only the repo head is hyperlinked (never the whole title). Drivers split the title via
-  `splitMessageTitle`/`repoUrlFromMessage` (`server/lib/formatters/helpers.ts`): the Discord
-  embed title is `{repo}{#number}` linked to the repository URL and `: {subject}` renders as
-  the first description line; Telegram keeps the one-line title with an inline repo link and
-  a plain subject. Messages without a colon separator (a `:` followed by a space) keep the
-  legacy whole-title link — use colon-free wording for such titles.
+  `splitMessageTitle` (`server/lib/formatters/helpers.ts`): the Discord embed title is
+  `{repo}{#number}` linked to the event's object URL (`message.url`, e.g. the issue/PR/comment
+  `html_url`) and `: {subject}` renders as the first description line; Telegram keeps the
+  one-line title with an inline repo link and a plain subject. Messages without a colon
+  separator (a `:` followed by a space) keep the legacy whole-title link — use colon-free
+  wording for such titles.
 - Do NOT use `"Comment on org/repo"` / `"Review on org/repo"` prefixes. Comments, reviews
   and inline comments use the same `{repo}{#number}: {title}` title as their parent object.
 - All event-specific emoji live in `server/lib/formatters/` (via the `emojiPrefix` helper), never in

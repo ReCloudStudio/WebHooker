@@ -6,7 +6,6 @@ import {
   MAX_FIELD_VALUE,
   MAX_FOOTER,
   MAX_TITLE,
-  repoUrlFromMessage,
   splitMessageTitle,
 } from "../../formatters/helpers";
 
@@ -27,10 +26,9 @@ export function renderNeutralMessage(message: NeutralMessage): FormattedMessage 
     : undefined;
 
   // Discord embed titles can only be linked as a whole, so only the repo head
-  // goes into the title (linked to the repository); the `: subject` text is
-  // rendered as the first line of the description, unlinked.
+  // goes into the title (linked to the event's object URL); the `: subject`
+  // text is rendered as the first line of the description, unlinked.
   const { head, subject } = splitMessageTitle(message.title);
-  const repoUrl = repoUrlFromMessage(message.url);
   const rawDescription = subject
     ? message.description
       ? `${subject}\n${message.description}`
@@ -48,7 +46,7 @@ export function renderNeutralMessage(message: NeutralMessage): FormattedMessage 
     embeds: [
       {
         title: cap(head, MAX_TITLE),
-        url: subject ? repoUrl : message.url,
+        url: message.url,
         color: message.color,
         description: cap(rawDescription, MAX_DESCRIPTION) || undefined,
         author: message.author

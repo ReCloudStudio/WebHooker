@@ -31,23 +31,6 @@ export function splitMessageTitle(title: string): TitleParts {
   return { head: title.slice(0, idx), subject: title.slice(idx + 2) };
 }
 
-/**
- * Repository URL derived from an event URL (origin + owner + repo). Returns
- * undefined when there is no URL to derive from — callers then render the
- * title without a link.
- */
-export function repoUrlFromMessage(url: string | undefined): string | undefined {
-  if (!url) return undefined;
-  try {
-    const parsed = new URL(url);
-    const segments = parsed.pathname.split("/").filter(Boolean);
-    if (segments.length >= 2) return `${parsed.origin}/${segments[0]}/${segments[1]}`;
-  } catch {
-    // not a parseable URL — no link
-  }
-  return undefined;
-}
-
 export function buildMessage(
   partial: Omit<Partial<NeutralMessage>, "title"> & { title: string },
   t: T,

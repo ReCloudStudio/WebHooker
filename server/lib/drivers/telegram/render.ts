@@ -1,5 +1,5 @@
 import type { NeutralMessage } from "../../types";
-import { repoUrlFromMessage, splitMessageTitle } from "../../formatters/helpers";
+import { splitMessageTitle } from "../../formatters/helpers";
 
 /** Telegram caps a single message at 4096 characters (HTML entities included). */
 const MAX_TEXT = 4096;
@@ -64,11 +64,11 @@ export function renderNeutralMessage(message: NeutralMessage): string {
   const parts: string[] = [];
 
   // HTML allows partial links, so keep the `{repo}{#number}: {subject}` line
-  // intact with only the repo head linked (the subject stays plain text).
+  // intact with only the repo head linked to the event's object URL (the
+  // subject stays plain text).
   const { head, subject } = splitMessageTitle(message.title);
-  const repoUrl = repoUrlFromMessage(message.url);
   const title = subject
-    ? `<b>${repoUrl ? `<a href="${esc(repoUrl)}">${mdToHtml(head)}</a>` : mdToHtml(head)}: ${mdToHtml(subject)}</b>`
+    ? `<b>${message.url ? `<a href="${esc(message.url)}">${mdToHtml(head)}</a>` : mdToHtml(head)}: ${mdToHtml(subject)}</b>`
     : message.url
       ? `<b><a href="${esc(message.url)}">${mdToHtml(message.title)}</a></b>`
       : `<b>${mdToHtml(message.title)}</b>`;
