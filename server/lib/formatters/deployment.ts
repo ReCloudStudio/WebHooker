@@ -42,6 +42,7 @@ export function formatDeployment(
   showEmoji: boolean,
 ): NeutralMessage {
   const deployment = payload.deployment as {
+    id?: number;
     environment?: string;
     ref?: string;
     sha?: string;
@@ -88,6 +89,7 @@ export function formatDeployment(
       }),
       url: deployment.html_url ?? deployment.statuses_url,
       color: GITHUB_COLORS.deployment_pending,
+      updateKey: repo && deployment.id != null ? `deployment:${repo}:${deployment.id}` : undefined,
       fields,
     },
     t,
@@ -109,6 +111,7 @@ export function formatDeploymentStatus(
     description?: string;
   };
   const deployment = payload.deployment as {
+    id?: number;
     sha?: string;
     ref?: string;
     environment?: string;
@@ -163,6 +166,7 @@ export function formatDeploymentStatus(
       author,
       title: t("events.deployment.title", { repo: repo ?? t("common.repository"), env, state }),
       color: GITHUB_COLORS[colorKey],
+      updateKey: repo && deployment.id != null ? `deployment:${repo}:${deployment.id}` : undefined,
       fields,
     },
     t,

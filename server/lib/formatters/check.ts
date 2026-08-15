@@ -21,6 +21,7 @@ export function formatCheckSuite(
   showEmoji: boolean,
 ): NeutralMessage {
   const suite = payload.check_suite as {
+    id?: number;
     head_branch?: string;
     head_sha?: string;
     conclusion?: string;
@@ -78,6 +79,7 @@ export function formatCheckSuite(
         suite.html_url ??
         (baseUrl && suite.head_sha ? `${baseUrl}/commit/${suite.head_sha}/checks` : undefined),
       color: GITHUB_COLORS[colorKey],
+      updateKey: repo && suite.id != null ? `check_suite:${repo}:${suite.id}` : undefined,
       fields,
     },
     t,

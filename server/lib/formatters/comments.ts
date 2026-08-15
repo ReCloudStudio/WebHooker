@@ -16,6 +16,7 @@ export function formatIssueComment(
     html_url?: string;
   };
   const comment = payload.comment as {
+    id?: number;
     body?: string;
     html_url?: string;
   };
@@ -35,6 +36,7 @@ export function formatIssueComment(
       }),
       url: comment.html_url ?? issue.html_url,
       color: GITHUB_COLORS.issue_comment,
+      updateKey: repo && comment.id != null ? `issue_comment:${repo}:${comment.id}` : undefined,
       description: `${t("events.issue_comment.action_comment", { emoji: em("💬"), action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
     },
     t,

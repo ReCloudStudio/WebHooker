@@ -11,6 +11,7 @@ export function formatPullRequestReview(
 ): NeutralMessage {
   const action = (payload.action as string) ?? "submitted";
   const review = payload.review as {
+    id?: number;
     state?: string;
     body?: string;
     html_url?: string;
@@ -50,6 +51,7 @@ export function formatPullRequestReview(
       }),
       url: review.html_url,
       color: GITHUB_COLORS[colorKey],
+      updateKey: repo && review.id != null ? `pull_request_review:${repo}:${review.id}` : undefined,
       description: descriptionParts.join("\n"),
     },
     t,
@@ -66,6 +68,7 @@ export function formatPullRequestReviewComment(
 ): NeutralMessage {
   const action = (payload.action as string) ?? "created";
   const comment = payload.comment as {
+    id?: number;
     body?: string;
     path?: string;
     position?: number | null;
@@ -105,6 +108,7 @@ export function formatPullRequestReviewComment(
       }),
       url: comment.html_url,
       color: GITHUB_COLORS.pull_request_review_commented,
+      updateKey: repo && comment.id != null ? `pull_request_review_comment:${repo}:${comment.id}` : undefined,
       description: `${t("events.pr_review_comment.action_inline", { emoji: em("💬"), action: al })}\n\n> ${commentBody}${truncated ? "..." : ""}`,
       fields: fields.length > 0 ? fields : undefined,
     },
