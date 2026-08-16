@@ -116,7 +116,7 @@ export function formatPush(
         count,
         s: count !== 1 ? "s" : "",
         repo: repo ?? t("common.repository"),
-        ref,
+        ref: isTagPush ? tagLink(baseUrl, rawRef, ref) : branchLink(baseUrl, rawRef, ref),
       }),
       url: compareUrl,
       color: GITHUB_COLORS.push,

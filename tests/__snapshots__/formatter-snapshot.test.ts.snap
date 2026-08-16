@@ -18,7 +18,7 @@ exports[`formatter snapshots push 1`] = `
   ],
   "footer": "acme/widget",
   "timestamp": "TIMESTAMP",
-  "title": "acme/widget: Pushed 1 commit to main",
+  "title": "acme/widget: Pushed 1 commit to [\`main\`](https://github.com/acme/widget/tree/main)",
   "url": "https://github.com/acme/widget/compare/aaa...bbb",
 }
 `;
