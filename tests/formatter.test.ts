@@ -32,7 +32,7 @@ describe("message title spec", () => {
         sender,
       }),
     );
-expect(msg.title).toBe(
+    expect(msg.title).toBe(
       "acme/widget: Pushed 1 commit to [`main`](https://github.com/acme/widget/tree/main)",
     );
     expect(msg.description).toBe(
