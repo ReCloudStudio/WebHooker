@@ -159,7 +159,9 @@ export async function getFailedSendLog(
             `SELECT ${COLUMNS} FROM send_logs WHERE ok = 0 AND group_id = ? ORDER BY ts DESC LIMIT ?`,
           )
           .bind(groupId, limit)
-      : db.prepare(`SELECT ${COLUMNS} FROM send_logs WHERE ok = 0 ORDER BY ts DESC LIMIT ?`).bind(limit);
+      : db
+          .prepare(`SELECT ${COLUMNS} FROM send_logs WHERE ok = 0 ORDER BY ts DESC LIMIT ?`)
+          .bind(limit);
     const { results } = await stmt.all<LogRow>();
     return results.map(toRecord);
   } catch (err) {

@@ -54,7 +54,10 @@ const EMPTY: DeliveryMetrics = {
   recentFailures: [],
 };
 
-export async function getDeliveryMetrics(db: D1Database, groupId?: string): Promise<DeliveryMetrics> {
+export async function getDeliveryMetrics(
+  db: D1Database,
+  groupId?: string,
+): Promise<DeliveryMetrics> {
   const where = groupId ? " WHERE group_id = ?" : "";
   const and = groupId ? " AND group_id = ?" : "";
   const bindGroup = (stmt: D1PreparedStatement): D1PreparedStatement =>
@@ -86,7 +89,9 @@ export async function getDeliveryMetrics(db: D1Database, groupId?: string): Prom
       ),
     ).all<StatusRow>();
     const duration = await bindGroup(
-      db.prepare(`SELECT AVG(duration_ms) AS avg FROM send_logs WHERE duration_ms IS NOT NULL${and}`),
+      db.prepare(
+        `SELECT AVG(duration_ms) AS avg FROM send_logs WHERE duration_ms IS NOT NULL${and}`,
+      ),
     ).all<AvgRow>();
     const attempts = await bindGroup(
       db.prepare(

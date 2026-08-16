@@ -102,9 +102,9 @@
                   :placeholder="t('routeEditor.matchPlaceholder')"
                 />
                 <label class="inline">
-                  <input v-model="f.exclude" type="checkbox" /><span
-                    >{{ t("routeEditor.not") }}</span
-                  >
+                  <input v-model="f.exclude" type="checkbox" /><span>{{
+                    t("routeEditor.not")
+                  }}</span>
                 </label>
                 <button type="button" class="icon-btn danger" @click="form.filters.splice(i, 1)">
                   ✕

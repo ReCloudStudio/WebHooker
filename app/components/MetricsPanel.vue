@@ -208,7 +208,10 @@ function cycleSort(): void {
             v-for="s in metrics.byStatus"
             :key="s.status"
             class="metric-status"
-            :class="{ ok: !s.status.startsWith('5') && s.status !== '0', bad: s.status.startsWith('5') || s.status === '0' }"
+            :class="{
+              ok: !s.status.startsWith('5') && s.status !== '0',
+              bad: s.status.startsWith('5') || s.status === '0',
+            }"
           >
             {{ s.status }} · {{ s.count }}
           </span>

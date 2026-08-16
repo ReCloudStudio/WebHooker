@@ -58,11 +58,7 @@
           </p>
         </div>
         <div class="flex items-center gap-2">
-          <button
-            v-if="view === 'overview'"
-            class="btn btn-ghost btn-sm"
-            @click="refreshOverview"
-          >
+          <button v-if="view === 'overview'" class="btn btn-ghost btn-sm" @click="refreshOverview">
             {{ t("metrics.refresh") }}
           </button>
           <button class="btn btn-ghost btn-sm" @click="toggle">{{ t("app.langToggle") }}</button>
@@ -126,7 +122,9 @@
                 <button class="btn btn-ghost btn-sm" @click="exitGroup">
                   {{ t("group.back") }}
                 </button>
-                <span class="kpi-label">{{ t("group.routesIn", { name: selectedGroup.name }) }}</span>
+                <span class="kpi-label">{{
+                  t("group.routesIn", { name: selectedGroup.name })
+                }}</span>
                 <span class="kpi">{{ groupRoutes.length }}</span>
               </div>
               <div class="status">
@@ -155,7 +153,11 @@
 
             <section v-if="!groupRoutesLoading && !groupRoutes.length" class="empty">
               <p>{{ t("routes.emptyGroup") }}</p>
-              <button v-if="canEditRoutes(selectedGroup.id)" class="btn btn-accent" @click="openNew">
+              <button
+                v-if="canEditRoutes(selectedGroup.id)"
+                class="btn btn-accent"
+                @click="openNew"
+              >
                 {{ t("routes.createFirst") }}
               </button>
             </section>
@@ -331,7 +333,13 @@ type View = "overview" | "groups" | "logs" | "audit" | "metrics";
 const view = computed<View | null>(() => {
   const seg = route.path.split("/").filter(Boolean)[1];
   if (!seg) return "overview";
-  if (seg === "overview" || seg === "groups" || seg === "logs" || seg === "audit" || seg === "metrics")
+  if (
+    seg === "overview" ||
+    seg === "groups" ||
+    seg === "logs" ||
+    seg === "audit" ||
+    seg === "metrics"
+  )
     return seg;
   return null;
 });

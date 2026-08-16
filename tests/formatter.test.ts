@@ -32,14 +32,16 @@ describe("message title spec", () => {
         sender,
       }),
     );
-    expect(msg.title).toBe(
-      "acme/widget: Pushed 1 commit to main",
-    );
+    expect(msg.title).toBe("acme/widget: Pushed 1 commit to main");
     expect(msg.description).toBe(
       "[`abcd123`](https://github.com/acme/widget/commit/abcd1234ef) fix stuff",
     );
     expect(msg.fields).toEqual([
-      { name: "Changes", value: "[View comparison](https://github.com/acme/widget/compare/abc...def):", inline: false },
+      {
+        name: "Changes",
+        value: "[View comparison](https://github.com/acme/widget/compare/abc...def):",
+        inline: false,
+      },
     ]);
   });
 
