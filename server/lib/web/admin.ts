@@ -1018,7 +1018,12 @@ export async function adminAudit(event: H3Event): Promise<Record<string, unknown
 export async function adminApiMetrics(event: H3Event): Promise<Record<string, unknown>> {
   const auth = await requireAnyAccess(event);
   const env = cfEnv(event);
-  const metrics = await getDeliveryMetrics(env.DB);
+  const query = getQuery(event);
+  const groupId = String(query["groupId"] ?? "") || undefined;
+  if (groupId && !auth.scope.isSuper && !auth.scope.groupIds.has(groupId)) {
+    return respondError(event, 403, "Forbidden");
+  }
+  const metrics = await getDeliveryMetrics(env.DB, groupId);
   if (auth.scope.isSuper) return { metrics };
   return {
     metrics: {

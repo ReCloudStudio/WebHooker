@@ -6,12 +6,13 @@ export function useMetrics() {
   const loading = ref(false);
   const error = ref("");
 
-  async function load(): Promise<void> {
+  async function load(groupId?: string): Promise<void> {
     loading.value = true;
     error.value = "";
     needLogin.value = false;
     try {
-      const data = await apiFetch<{ metrics?: DeliveryMetrics }>("/admin/api/metrics");
+      const qs = groupId ? `?groupId=${encodeURIComponent(groupId)}` : "";
+      const data = await apiFetch<{ metrics?: DeliveryMetrics }>(`/admin/api/metrics${qs}`);
       metrics.value = data.metrics ?? null;
     } catch (err) {
       if (!needLogin.value) error.value = err instanceof Error ? err.message : String(err);

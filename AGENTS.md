@@ -18,7 +18,7 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Per-group webhook ingress: optional `POST /webhook/{groupId}` with a per-group secret in KV (`tenant:{groupId}`) — Gitea/classic-GitHub/custom webhooks are verified against the group's secret instead of the operator's global ones; only that group's routes fire. The legacy `POST /webhook` (global secrets, all routes) stays untouched
 - GitHub App tenant isolation: `Group.installationId` binds a group to one GitHub App installation; events whose `payload.installation.id` differs are rejected at dispatch (hard isolation on top of the optional `owners` list). The App's Setup URL points at `GET /auth/github/install`, which renders a choice page (create `inst-{installationId}` or bind to a group the signed-in user owns, verified by role); `POST /auth/github/install/bind` performs the provisioning. `installation.created` webhook events auto-provision as a fallback (create `inst-{installationId}` or bind existing groups whose `owners` match the installing account)
 - GitHub OAuth: octokit (token is stored hashed for reverse lookup)
-- Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist
+- Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist; left sidebar navigation (Overview / Groups / Send Logs / Audit / Stats) + topbar, deep-linkable routes (`/admin` overview · `/admin/groups` · `/admin/logs` · `/admin/audit` · `/admin/metrics`); the overview dashboard (`AdminHome.vue`) aggregates delivery KPIs, a routes table and recent send logs; the stats page (`MetricsPanel.vue`) renders KPI cards plus per-platform/per-event ok/failed bar legends and a per-status breakdown, and filters by group (`?groupId=`); the route/group editors (`RouteEditor.vue` / `GroupEditor.vue`) are slide-in drawers with an eyebrow header and sectioned form bodies
 - Access control: every group has role-based members (`owner` / `admin` / `viewer`); super admins bypass; legacy `adminIds` are read as owners (backward compatible); owners manage members + invites; `owners` field stays super-only
 - Invites: single-use 7-day links (`invite:{token}`) for joining a group as admin/viewer; `ALLOW_SELF_SIGNUP=1` gives access-less users a personal group on first login (self-service SaaS entry)
 - Audit log: every admin operation (logins, group/route/member/invite changes) recorded in D1 `audit_logs`; pruned by the scheduled trigger after `AUDIT_RETENTION_DAYS` (default 90)
@@ -34,8 +34,9 @@ app/                     # Vue 3 UI (Nuxt app dir)
 ├── app.vue              # root component (NuxtPage)
 ├── assets/css/main.css  # Tailwind entry: theme tokens (RGB-triplet vars) + @layer components (@apply) + Vue transition glue
 ├── pages/               # index (landing), terms, privacy, admin/[...slug] (console SPA)
-├── components/          # ConsolePage, RouteCard/Editor, GroupEditor, MembersPanel, WebhookPanel,
-│                        # SendLogs, AuditLog, AppToasts, LegalLayout
+├── components/          # ConsolePage (sidebar shell + topbar), AdminHome (overview dashboard),
+│                        # RouteCard/Editor, GroupEditor, MembersPanel, WebhookPanel,
+│                        # SendLogs, AuditLog, MetricsPanel, AppToasts, LegalLayout
 ├── composables/         # useI18n, useToasts, useGroups, useGroupRoutes, useLogs, useAudit, useInvites, useWebhook
 ├── types.ts             # shared client types (Route, Group, Filter, ...)
 └── utils/legal.ts       # terms/privacy HTML bodies (zh/en)
@@ -148,8 +149,8 @@ tests/__snapshots__/     # formatter snapshot golden files (toMatchSnapshot)
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
 - Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, KV `msg:*` tracking)
 - Record every dispatch attempt to D1 `send_logs` (route id, event, target, ok/error, duration, error code)
-- Aggregate delivery metrics (`server/lib/observability/metrics.ts`) from `send_logs` — totals, ok/failed counts + failure rate, per-platform/per-event/per-status breakdowns, average duration and attempts, recent failures
-- Expose admin observability endpoints — `GET /admin/api/metrics` (delivery metrics, recent failures group-scoped for non-super) and `GET /admin/api/delivery/:deliveryId` (all send-log attempts for one delivery, group-scoped) — through the `/admin/api/[...slug]` catch-all route (`server/routes/admin/api/[...slug].ts`) that wires every admin API handler to its method+path
+- Aggregate delivery metrics (`server/lib/observability/metrics.ts`) from `send_logs` — totals, ok/failed counts + failure rate, per-platform/per-event/per-status breakdowns, average duration and attempts, recent failures; `getDeliveryMetrics(db, groupId?)` scopes every query by `group_id` when a group is passed
+- Expose admin observability endpoints — `GET /admin/api/metrics?groupId=` (delivery metrics, optional group scope; recent failures group-scoped for non-super) and `GET /admin/api/delivery/:deliveryId` (all send-log attempts for one delivery, group-scoped) — through the `/admin/api/[...slug]` catch-all route (`server/routes/admin/api/[...slug].ts`) that wires every admin API handler to its method+path
 - Serve a per-group webhook ingress (`POST /webhook/{groupId}`, per-group secret in KV `tenant:{groupId}`) for Gitea/classic-GitHub/custom senders; only that group's routes fire; dedup keys are provider- and tenant-scoped (`delivery:{provider}:{groupId}:{id}` via `kvIdempotencyStore`)
 - Issue a per-request correlation id (`requestId`) in webhook responses and dispatch logs
 - When the `QUEUE` binding is present, enqueue each verified webhook as a single Queue message (`webhooker-delivery`) instead of dispatching inline; the consumer resolves the payload, re-scopes routes to the tenant group, and dispatches; retryable failures (5xx/network/429-exhaustion) are retried with exponential backoff (5s/30s/2m/10m) up to the queue `max_retries`, then the DLQ marks the delivery dead

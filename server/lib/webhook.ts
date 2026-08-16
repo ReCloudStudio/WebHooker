@@ -126,7 +126,7 @@ export async function processWebhook(
     // retries of the same delivery never dispatch twice.
     const store = kvIdempotencyStore(env.KV);
     const key = deliveryKey(provider.id, tenantId, event.deliveryId);
-    if (!(await store.claim(key, 300))) {
+    if (!(await store.claim(key, 120))) {
       return { status: 200, body: { ok: true, duplicate: true, requestId } };
     }
   }

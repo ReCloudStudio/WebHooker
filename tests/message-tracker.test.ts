@@ -31,7 +31,7 @@ describe("kvMessageTracker", () => {
     expect(await tracker.get("missing", "channel-1")).toBeNull();
   });
 
-  it("uses the msg:{eventId}:{targetId} key with a 7-day TTL", async () => {
+  it("uses the msg:{eventId}:{targetId} key with a 24h TTL", async () => {
     const kv = createMockKV();
     const keys = new Map<string, string>();
     const ttls = new Map<string, number>();
@@ -46,7 +46,7 @@ describe("kvMessageTracker", () => {
     const tracker = kvMessageTracker(kv);
     await tracker.set("event-1", "target-1", "msg-7");
     expect(keys.has("msg:event-1:target-1")).toBe(true);
-    expect(ttls.get("msg:event-1:target-1")).toBe(604800);
+    expect(ttls.get("msg:event-1:target-1")).toBe(86400);
   });
 
   it("deletes tracked entries", async () => {

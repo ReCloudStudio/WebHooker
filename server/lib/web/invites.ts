@@ -10,7 +10,7 @@ export interface Invite {
   note?: string;
 }
 
-const INVITE_TTL = 7 * 24 * 3600;
+const INVITE_TTL = 24 * 3600;
 
 function generateInviteToken(): string {
   const bytes = new Uint8Array(32);

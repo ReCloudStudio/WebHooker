@@ -7,7 +7,7 @@ import {
   handleTokenDelete,
 } from "../server/lib/web/oauth";
 import { createAdminSession, adminCookie } from "../server/lib/web/session";
-import { loadGroups } from "../server/lib/web/groups";
+import { loadGroups, invalidateGroupsCache } from "../server/lib/web/groups";
 import { getInstallationAccount } from "../server/lib/github/oauth";
 import { makeEvent, responseStatus, responseHeader } from "./helpers";
 import type { Env } from "../server/lib/types";
@@ -123,6 +123,7 @@ describe("GET /auth/github/install", () => {
   const restoredFetch = globalThis.fetch;
 
   beforeEach(() => {
+    invalidateGroupsCache();
     globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       void init;
       return Promise.resolve(
@@ -195,6 +196,7 @@ describe("POST /auth/github/install/bind", () => {
   const restoredFetch = globalThis.fetch;
 
   beforeEach(() => {
+    invalidateGroupsCache();
     globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       void init;
       return Promise.resolve(

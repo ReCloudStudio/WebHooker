@@ -2,7 +2,7 @@ import type { Env, Config, Route } from "./types";
 import { log } from "./lib/log";
 import { migrateRoutes, validateRoutes } from "./config/schema";
 
-const CONFIG_CACHE_TTL = 60_000;
+const CONFIG_CACHE_TTL = 300_000;
 const ROUTES_KEY = "config:routes";
 let configCache: { config: Config; expiresAt: number } | null = null;
 

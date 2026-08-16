@@ -6,149 +6,166 @@
     <Transition name="slide">
       <aside v-if="open" class="editor" role="dialog" aria-modal="true">
         <div class="editor-head">
-          <h2>{{ isEdit ? t("routeEditor.editTitle") : t("routeEditor.newTitle") }}</h2>
+          <div class="editor-heading">
+            <span class="editor-eyebrow">{{ t("routeEditor.eyebrow") }}</span>
+            <h2>{{ isEdit ? t("routeEditor.editTitle") : t("routeEditor.newTitle") }}</h2>
+          </div>
           <button class="icon-btn" :title="t('routeEditor.close')" @click="close">✕</button>
         </div>
         <form class="editor-body" @submit.prevent="save">
-          <div v-if="!isEdit" class="field">
-            <label
-              >{{ t("routeEditor.templates") }}
-              <span class="lbl-note">{{ t("routeEditor.templatesNote") }}</span></label
-            >
-            <div class="templates">
-              <button
-                v-for="tmpl in ROUTE_TEMPLATES"
-                :key="tmpl.id"
-                type="button"
-                class="template-chip"
-                :class="{ active: form.id === tmpl.id }"
-                @click="applyTemplate(tmpl)"
+          <section class="editor-section">
+            <h3 class="editor-section-title">{{ t("routeEditor.sectionBasic") }}</h3>
+            <div v-if="!isEdit" class="field">
+              <label
+                >{{ t("routeEditor.templates") }}
+                <span class="lbl-note">{{ t("routeEditor.templatesNote") }}</span></label
               >
-                {{ t(tmpl.nameKey) }}
-              </button>
+              <div class="templates">
+                <button
+                  v-for="tmpl in ROUTE_TEMPLATES"
+                  :key="tmpl.id"
+                  type="button"
+                  class="template-chip"
+                  :class="{ active: form.id === tmpl.id }"
+                  @click="applyTemplate(tmpl)"
+                >
+                  {{ t(tmpl.nameKey) }}
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label>{{ t("routeEditor.name") }}</label>
-            <input
-              v-model="form.name"
-              type="text"
-              class="input"
-              :placeholder="t('routeEditor.namePlaceholder')"
-              required
-            />
-          </div>
-          <div class="field">
-            <label>{{ t("routeEditor.id") }}</label>
-            <input v-model="form.id" type="text" class="input" placeholder="my-route" required />
-            <div class="hint">{{ t("routeEditor.idHint") }}</div>
-          </div>
-          <div class="field inline">
-            <input v-model="form.enabled" type="checkbox" />
-            <span>{{ t("routeEditor.enabled") }}</span>
-          </div>
-          <div class="field inline">
-            <input v-model="form.fallback" type="checkbox" />
-            <span
-              >{{ t("routeEditor.fallback") }}
-              <span class="lbl-note">{{ t("routeEditor.fallbackHint") }}</span></span
-            >
-          </div>
-          <div class="field inline">
-            <input v-model="form.stop" type="checkbox" />
-            <span
-              >{{ t("routeEditor.stop") }}
-              <span class="lbl-note">{{ t("routeEditor.stopHint") }}</span></span
-            >
-          </div>
-          <div class="field">
-            <label
-              >{{ t("routeEditor.discordRoles") }}
-              <span class="lbl-note">{{ t("routeEditor.discordRolesNote") }}</span></label
-            >
-            <input
-              v-model="form.discordRolesText"
-              type="text"
-              class="input"
-              :placeholder="t('routeEditor.discordRolesPlaceholder')"
-            />
-            <div class="hint">{{ t("routeEditor.discordRolesHint") }}</div>
-          </div>
-          <div class="field">
-            <label
-              >{{ t("routeEditor.filters") }}
-              <span class="lbl-note">{{ t("routeEditor.filtersNote") }}</span></label
-            >
-            <div v-for="(f, i) in form.filters" :key="i" class="filter-row">
-              <select v-model="f.type">
-                <option v-for="ft in FILTER_TYPES" :key="ft" :value="ft">
-                  {{ t("filter." + ft) }}
-                </option>
-              </select>
+            <div class="field">
+              <label>{{ t("routeEditor.name") }}</label>
               <input
-                v-model="f.matchText"
+                v-model="form.name"
                 type="text"
-                :placeholder="t('routeEditor.matchPlaceholder')"
+                class="input"
+                :placeholder="t('routeEditor.namePlaceholder')"
+                required
               />
-              <label class="inline">
-                <input v-model="f.exclude" type="checkbox" /><span>{{ t("routeEditor.not") }}</span>
-              </label>
-              <button type="button" class="icon-btn danger" @click="form.filters.splice(i, 1)">
-                ✕
-              </button>
             </div>
-            <button type="button" class="btn btn-ghost add-filter" @click="addFilter">
-              {{ t("routeEditor.addFilter") }}
-            </button>
-            <div class="err">{{ filterError }}</div>
-          </div>
-          <div class="field">
-            <label
-              >{{ t("routeEditor.targets") }}
-              <span class="lbl-note">{{ t("routeEditor.targetsNote") }}</span></label
-            >
-            <div v-for="(tg, i) in form.targets" :key="i" class="target-row">
-              <select v-model="tg.platform">
-                <option value="discord">Discord</option>
-                <option value="telegram">Telegram</option>
-              </select>
-              <template v-if="tg.platform === 'discord'">
-                <input
-                  v-model="tg.channelId"
-                  type="text"
-                  class="tg-in1"
-                  :placeholder="t('routeEditor.channelPlaceholder')"
-                />
-                <input
-                  v-model="tg.threadId"
-                  type="text"
-                  class="tg-in2"
-                  :placeholder="t('routeEditor.threadPlaceholder')"
-                />
-              </template>
-              <template v-else>
-                <input
-                  v-model="tg.chatId"
-                  type="text"
-                  class="tg-in1"
-                  :placeholder="t('routeEditor.chatPlaceholder')"
-                />
-                <input
-                  v-model="tg.topicId"
-                  type="text"
-                  class="tg-in2"
-                  :placeholder="t('routeEditor.topicPlaceholder')"
-                />
-              </template>
-              <button type="button" class="icon-btn danger" @click="form.targets.splice(i, 1)">
-                ✕
-              </button>
+            <div class="field">
+              <label>{{ t("routeEditor.id") }}</label>
+              <input v-model="form.id" type="text" class="input" placeholder="my-route" required />
+              <div class="hint">{{ t("routeEditor.idHint") }}</div>
             </div>
-            <button type="button" class="btn btn-ghost add-filter" @click="addTarget">
-              {{ t("routeEditor.addTarget") }}
-            </button>
-            <div class="err">{{ targetError }}</div>
-          </div>
+          </section>
+          <section class="editor-section">
+            <h3 class="editor-section-title">{{ t("routeEditor.sectionOptions") }}</h3>
+            <div class="field inline">
+              <input v-model="form.enabled" type="checkbox" />
+              <span>{{ t("routeEditor.enabled") }}</span>
+            </div>
+            <div class="field inline">
+              <input v-model="form.fallback" type="checkbox" />
+              <span
+                >{{ t("routeEditor.fallback") }}
+                <span class="lbl-note">{{ t("routeEditor.fallbackHint") }}</span></span
+              >
+            </div>
+            <div class="field inline">
+              <input v-model="form.stop" type="checkbox" />
+              <span
+                >{{ t("routeEditor.stop") }}
+                <span class="lbl-note">{{ t("routeEditor.stopHint") }}</span></span
+              >
+            </div>
+            <div class="field">
+              <label
+                >{{ t("routeEditor.discordRoles") }}
+                <span class="lbl-note">{{ t("routeEditor.discordRolesNote") }}</span></label
+              >
+              <input
+                v-model="form.discordRolesText"
+                type="text"
+                class="input"
+                :placeholder="t('routeEditor.discordRolesPlaceholder')"
+              />
+              <div class="hint">{{ t("routeEditor.discordRolesHint") }}</div>
+            </div>
+          </section>
+          <section class="editor-section">
+            <h3 class="editor-section-title">{{ t("routeEditor.sectionFilters") }}</h3>
+            <div class="field">
+              <label
+                >{{ t("routeEditor.filters") }}
+                <span class="lbl-note">{{ t("routeEditor.filtersNote") }}</span></label
+              >
+              <div v-for="(f, i) in form.filters" :key="i" class="filter-row">
+                <select v-model="f.type">
+                  <option v-for="ft in FILTER_TYPES" :key="ft" :value="ft">
+                    {{ t("filter." + ft) }}
+                  </option>
+                </select>
+                <input
+                  v-model="f.matchText"
+                  type="text"
+                  :placeholder="t('routeEditor.matchPlaceholder')"
+                />
+                <label class="inline">
+                  <input v-model="f.exclude" type="checkbox" /><span
+                    >{{ t("routeEditor.not") }}</span
+                  >
+                </label>
+                <button type="button" class="icon-btn danger" @click="form.filters.splice(i, 1)">
+                  ✕
+                </button>
+              </div>
+              <button type="button" class="btn btn-ghost add-filter" @click="addFilter">
+                {{ t("routeEditor.addFilter") }}
+              </button>
+              <div class="err">{{ filterError }}</div>
+            </div>
+          </section>
+          <section class="editor-section">
+            <h3 class="editor-section-title">{{ t("routeEditor.sectionTargets") }}</h3>
+            <div class="field">
+              <label
+                >{{ t("routeEditor.targets") }}
+                <span class="lbl-note">{{ t("routeEditor.targetsNote") }}</span></label
+              >
+              <div v-for="(tg, i) in form.targets" :key="i" class="target-row">
+                <select v-model="tg.platform">
+                  <option value="discord">Discord</option>
+                  <option value="telegram">Telegram</option>
+                </select>
+                <template v-if="tg.platform === 'discord'">
+                  <input
+                    v-model="tg.channelId"
+                    type="text"
+                    class="tg-in1"
+                    :placeholder="t('routeEditor.channelPlaceholder')"
+                  />
+                  <input
+                    v-model="tg.threadId"
+                    type="text"
+                    class="tg-in2"
+                    :placeholder="t('routeEditor.threadPlaceholder')"
+                  />
+                </template>
+                <template v-else>
+                  <input
+                    v-model="tg.chatId"
+                    type="text"
+                    class="tg-in1"
+                    :placeholder="t('routeEditor.chatPlaceholder')"
+                  />
+                  <input
+                    v-model="tg.topicId"
+                    type="text"
+                    class="tg-in2"
+                    :placeholder="t('routeEditor.topicPlaceholder')"
+                  />
+                </template>
+                <button type="button" class="icon-btn danger" @click="form.targets.splice(i, 1)">
+                  ✕
+                </button>
+              </div>
+              <button type="button" class="btn btn-ghost add-filter" @click="addTarget">
+                {{ t("routeEditor.addTarget") }}
+              </button>
+              <div class="err">{{ targetError }}</div>
+            </div>
+          </section>
           <div class="err">{{ formError }}</div>
         </form>
         <div class="editor-foot">

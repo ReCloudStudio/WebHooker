@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { createHmac } from "crypto";
 import { processWebhook } from "../server/lib/webhook";
 import { invalidateConfigCache } from "../server/lib/config";
-import { loadGroups } from "../server/lib/web/groups";
+import { invalidateGroupsCache, loadGroups } from "../server/lib/web/groups";
 import type { Env, Route } from "../server/lib/types";
 
 function githubSign(body: string, secret: string): string {
@@ -70,6 +70,7 @@ describe("processWebhook", () => {
 
   beforeEach(() => {
     invalidateConfigCache();
+    invalidateGroupsCache();
   });
 
   /** waitUntil collector: lets the test await the dispatched work. */

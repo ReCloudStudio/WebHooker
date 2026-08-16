@@ -29,7 +29,7 @@ The console itself is served at `/admin`; its tabs are deep-linkable via the URL
 | `GET /admin/api/logs`                           | Send logs (scoped to accessible routes)                                                                                                        |
 | `GET /admin/api/logs/:id`                       | Single send-log entry (scoped)                                                                                                                 |
 | `GET /admin/api/audit`                          | Audit log (scoped to accessible groups)                                                                                                        |
-| `GET /admin/api/metrics`                        | Delivery metrics (totals, failure rate, per platform/event/status, recent failures; recent failures scoped to accessible groups for non-super) |
+| `GET /admin/api/metrics`                        | Delivery stats (totals, failure rate, per platform/event/status, recent failures); optional `?groupId=` scope; recent failures scoped to accessible groups for non-super |
 | `GET /admin/api/delivery/:deliveryId`           | All send-log attempts for one delivery (group-scoped)                                                                                          |
 
 ## Validation

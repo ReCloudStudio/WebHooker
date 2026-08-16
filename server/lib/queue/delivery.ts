@@ -31,8 +31,8 @@ export const DELIVERY_QUEUE = "webhooker-delivery";
 export const DELIVERY_DLQ = "webhooker-delivery-dlq";
 
 const MAX_QUEUE_MESSAGE_BYTES = 100_000;
-const PAYLOAD_KV_TTL_SECONDS = 60 * 60 * 24;
-const STATE_KV_TTL_SECONDS = 60 * 60 * 24;
+const PAYLOAD_KV_TTL_SECONDS = 3600;
+const STATE_KV_TTL_SECONDS = 3600;
 
 const RETRYABLE_ERROR_CODES = new Set(["DISCORD_5XX", "TELEGRAM_5XX", "NETWORK", "RETRIES"]);
 

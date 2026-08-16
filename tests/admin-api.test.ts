@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
   adminGroupRename,
   adminGroupRoutesGet,
@@ -6,7 +6,7 @@ import {
   adminApiMe,
 } from "../server/lib/web/admin";
 import { createAdminSession, adminCookie } from "../server/lib/web/session";
-import { loadGroups } from "../server/lib/web/groups";
+import { loadGroups, invalidateGroupsCache } from "../server/lib/web/groups";
 import { loadRoutes } from "../server/lib/config";
 import { createInvite, listInvites } from "../server/lib/web/invites";
 import { getTenantSecret, setTenantSecret } from "../server/lib/web/tenants";
@@ -57,6 +57,8 @@ function createEnv(overrides: Partial<Env> = {}): Env {
 }
 
 describe("admin handlers (h3)", () => {
+  beforeEach(() => invalidateGroupsCache());
+
   it("renames an owned group and follows routes, secret and invites", async () => {
     const kv = createMockKV();
     await kv.put(

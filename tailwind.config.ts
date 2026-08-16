@@ -26,6 +26,8 @@ const themeColors = {
   "warn-dim": "rgb(var(--warn-dim) / <alpha-value>)",
   bad: "rgb(var(--bad) / <alpha-value>)",
   "bad-dim": "rgb(var(--bad-dim) / <alpha-value>)",
+  info: "rgb(var(--info) / <alpha-value>)",
+  "info-dim": "rgb(var(--info-dim) / <alpha-value>)",
   "body-text": "rgb(var(--body-text) / <alpha-value>)",
   "code-bg": "rgb(var(--code-bg) / <alpha-value>)",
 };

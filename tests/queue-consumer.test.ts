@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, mock } from "bun:test";
 import { handleQueueBatch } from "../server/lib/queue/consumer";
 import { invalidateConfigCache } from "../server/lib/config";
+import { invalidateGroupsCache } from "../server/lib/web/groups";
 import type { Env } from "../server/lib/types";
 import type { DeliveryMessage, DispatchSummary } from "../server/lib/queue/delivery";
 
@@ -86,6 +87,7 @@ const STATE_KEY = "delivery-state:github:global:d1";
 describe("handleQueueBatch", () => {
   beforeEach(() => {
     invalidateConfigCache();
+    invalidateGroupsCache();
     summary = { attempts: 0, failures: [] };
     dispatchCalls = 0;
   });

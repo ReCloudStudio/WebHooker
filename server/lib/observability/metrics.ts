@@ -54,42 +54,47 @@ const EMPTY: DeliveryMetrics = {
   recentFailures: [],
 };
 
-export async function getDeliveryMetrics(db: D1Database): Promise<DeliveryMetrics> {
+export async function getDeliveryMetrics(db: D1Database, groupId?: string): Promise<DeliveryMetrics> {
+  const where = groupId ? " WHERE group_id = ?" : "";
+  const and = groupId ? " AND group_id = ?" : "";
+  const bindGroup = (stmt: D1PreparedStatement): D1PreparedStatement =>
+    groupId ? stmt.bind(groupId) : stmt;
+
   try {
-    const totals = await db
-      .prepare(`SELECT COUNT(*) AS total, COALESCE(SUM(ok), 0) AS ok FROM send_logs`)
-      .all<TotalsRow>();
+    const totals = await bindGroup(
+      db.prepare(`SELECT COUNT(*) AS total, COALESCE(SUM(ok), 0) AS ok FROM send_logs${where}`),
+    ).all<TotalsRow>();
     const total = Number(totals.results[0]?.total) || 0;
     const ok = Number(totals.results[0]?.ok) || 0;
 
-    const byPlatform = await db
-      .prepare(
+    const byPlatform = await bindGroup(
+      db.prepare(
         `SELECT platform AS key, COUNT(*) AS total, COALESCE(SUM(ok), 0) AS ok
-         FROM send_logs GROUP BY platform`,
-      )
-      .all<BreakdownRow>();
-    const byEvent = await db
-      .prepare(
+         FROM send_logs${where} GROUP BY platform`,
+      ),
+    ).all<BreakdownRow>();
+    const byEvent = await bindGroup(
+      db.prepare(
         `SELECT event AS key, COUNT(*) AS total, COALESCE(SUM(ok), 0) AS ok
-         FROM send_logs GROUP BY event`,
-      )
-      .all<BreakdownRow>();
-    const byStatus = await db
-      .prepare(
+         FROM send_logs${where} GROUP BY event`,
+      ),
+    ).all<BreakdownRow>();
+    const byStatus = await bindGroup(
+      db.prepare(
         `SELECT status, COUNT(*) AS count FROM send_logs
-         WHERE status IS NOT NULL GROUP BY status`,
-      )
-      .all<StatusRow>();
-    const duration = await db
-      .prepare(`SELECT AVG(duration_ms) AS avg FROM send_logs WHERE duration_ms IS NOT NULL`)
-      .all<AvgRow>();
-    const attempts = await db
-      .prepare(
+         WHERE status IS NOT NULL${and} GROUP BY status`,
+      ),
+    ).all<StatusRow>();
+    const duration = await bindGroup(
+      db.prepare(`SELECT AVG(duration_ms) AS avg FROM send_logs WHERE duration_ms IS NOT NULL${and}`),
+    ).all<AvgRow>();
+    const attempts = await bindGroup(
+      db.prepare(
         `SELECT COALESCE(SUM(attempts), 0) AS total, AVG(attempts) AS avg
-         FROM send_logs WHERE attempts IS NOT NULL`,
-      )
-      .all<AttemptsRow>();
-    const recentFailures = await getFailedSendLog(db, 20);
+         FROM send_logs WHERE attempts IS NOT NULL${and}`,
+      ),
+    ).all<AttemptsRow>();
+    const recentFailures = await getFailedSendLog(db, 20, groupId);
 
     return {
       total,

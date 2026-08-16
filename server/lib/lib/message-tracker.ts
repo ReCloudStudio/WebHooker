@@ -4,7 +4,7 @@ export interface MessageTracker {
   delete(eventId: string, targetId: string): Promise<void>;
 }
 
-const MESSAGE_KEY_TTL_SECONDS = 604800;
+const MESSAGE_KEY_TTL_SECONDS = 86400;
 
 export function kvMessageTracker(kv: KVNamespace): MessageTracker {
   const key = (eventId: string, targetId: string): string => `msg:${eventId}:${targetId}`;

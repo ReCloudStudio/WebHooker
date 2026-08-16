@@ -152,7 +152,7 @@ bunx wrangler dev    # 启动本地开发服务器
 - `GET /admin/api/me` — 当前会话 / 权限范围 / 角色
 - `GET /admin/api/logs` — 发送日志（按权限过滤）
 - `GET /admin/api/logs/:id` — 单条发送日志
-- `GET /admin/api/metrics` — 投递指标（总计、失败率、按平台/事件/状态、最近失败）
+- `GET /admin/api/metrics` — 投递统计（总计、失败率、按平台/事件/状态、最近失败）；可选 `?groupId=` 按分组过滤
 - `GET /admin/api/delivery/:deliveryId` — 单次投递的全部发送日志
 
 ## 配置教程

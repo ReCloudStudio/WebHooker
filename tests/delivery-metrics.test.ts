@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import { getDeliveryMetrics } from "../server/lib/observability/metrics";
 import {
   getSendLogByDelivery,
@@ -7,6 +7,7 @@ import {
 } from "../server/lib/lib/send-log";
 import { adminApiMetrics, adminApiDelivery } from "../server/lib/web/admin";
 import { createAdminSession, adminCookie } from "../server/lib/web/session";
+import { invalidateGroupsCache } from "../server/lib/web/groups";
 import { makeEvent, responseStatus } from "./helpers";
 import type { Env } from "../server/lib/types";
 
@@ -156,6 +157,7 @@ describe("delivery metrics", () => {
 });
 
 describe("admin metrics/delivery handlers", () => {
+  beforeEach(() => invalidateGroupsCache());
   it("returns global metrics for super admins", async () => {
     const kv = createMockKV();
     const db = createMetricsDB({ "COUNT(*) AS total": [{ total: 5, ok: 4 }] });

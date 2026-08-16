@@ -152,7 +152,7 @@ Every filter supports plain text, `*`/`?` globs, and `/regex/` patterns (case-in
 - `GET /admin/api/me` — Current session / scope / roles
 - `GET /admin/api/logs` — Send logs (scoped)
 - `GET /admin/api/logs/:id` — Single send-log entry
-- `GET /admin/api/metrics` — Delivery metrics (totals, failure rate, per-platform/event/status, recent failures)
+- `GET /admin/api/metrics` — Delivery stats (totals, failure rate, per-platform/event/status, recent failures); optional `?groupId=` scope
 - `GET /admin/api/delivery/:deliveryId` — All send-log attempts for one delivery
 
 ## Setup Guides

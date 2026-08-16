@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { sendMessage } from "../server/lib/drivers/discord/rest";
 import { renderNeutralMessage } from "../server/lib/drivers/discord/render";
 import { dispatchEvent } from "../server/lib/core/dispatch";
+import { invalidateGroupsCache } from "../server/lib/web/groups";
 import type { Env, Route } from "../server/lib/types";
 
 function mockFetch(handler: (url: string, init?: RequestInit) => Response): void {
@@ -102,6 +103,7 @@ describe("discord role mentions", () => {
 });
 
 describe("dispatchEvent fallback routing", () => {
+  beforeEach(() => invalidateGroupsCache());
   function createMockKV(): KVNamespace {
     const store = new Map<string, string>();
     return {

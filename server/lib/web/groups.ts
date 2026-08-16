@@ -4,6 +4,8 @@ import { log } from "../lib/log";
 import { migrateGroups, validateGroups } from "../config/schema";
 
 const GROUPS_KEY = "config:groups";
+const GROUPS_CACHE_TTL = 300_000;
+let groupsCache: { groups: Group[]; expiresAt: number } | null = null;
 
 /**
  * Normalizes a group's member list. Groups stored with the legacy `adminIds`
@@ -38,9 +40,14 @@ export function normalizeGroupMembers(group: Group): GroupMember[] {
 }
 
 export async function loadGroups(kv: KVNamespace): Promise<Group[]> {
+  if (groupsCache && Date.now() < groupsCache.expiresAt) {
+    return groupsCache.groups;
+  }
   try {
     const stored = await kv.get<Group[]>(GROUPS_KEY, "json");
-    if (Array.isArray(stored)) return validateGroups(migrateGroups(stored));
+    const groups = Array.isArray(stored) ? validateGroups(migrateGroups(stored)) : [];
+    groupsCache = { groups, expiresAt: Date.now() + GROUPS_CACHE_TTL };
+    return groups;
   } catch (err) {
     log.warn({ err }, "Failed to load groups from KV");
   }
@@ -49,6 +56,11 @@ export async function loadGroups(kv: KVNamespace): Promise<Group[]> {
 
 export async function saveGroups(kv: KVNamespace, groups: Group[]): Promise<void> {
   await kv.put(GROUPS_KEY, JSON.stringify(groups));
+  groupsCache = null;
+}
+
+export function invalidateGroupsCache(): void {
+  groupsCache = null;
 }
 
 /** Case-insensitive match of a GitHub userId or login against a list of ids/logins. */

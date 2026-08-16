@@ -6,7 +6,7 @@ import {
   revokeInvite,
   acceptInvite,
 } from "../server/lib/web/invites";
-import { saveGroups, loadGroups } from "../server/lib/web/groups";
+import { saveGroups, loadGroups, invalidateGroupsCache } from "../server/lib/web/groups";
 import type { Group } from "../server/lib/types";
 
 function createMockKV(): KVNamespace {
@@ -49,6 +49,7 @@ describe("invites", () => {
 
   beforeEach(() => {
     kv = createMockKV();
+    invalidateGroupsCache();
   });
 
   it("creates and reads back an invite", async () => {

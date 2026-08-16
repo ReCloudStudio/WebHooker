@@ -147,12 +147,20 @@ export async function getSendLogByDelivery(
   }
 }
 
-export async function getFailedSendLog(db: D1Database, limit = 20): Promise<SendRecord[]> {
+export async function getFailedSendLog(
+  db: D1Database,
+  limit = 20,
+  groupId?: string,
+): Promise<SendRecord[]> {
   try {
-    const { results } = await db
-      .prepare(`SELECT ${COLUMNS} FROM send_logs WHERE ok = 0 ORDER BY ts DESC LIMIT ?`)
-      .bind(limit)
-      .all<LogRow>();
+    const stmt = groupId
+      ? db
+          .prepare(
+            `SELECT ${COLUMNS} FROM send_logs WHERE ok = 0 AND group_id = ? ORDER BY ts DESC LIMIT ?`,
+          )
+          .bind(groupId, limit)
+      : db.prepare(`SELECT ${COLUMNS} FROM send_logs WHERE ok = 0 ORDER BY ts DESC LIMIT ?`).bind(limit);
+    const { results } = await stmt.all<LogRow>();
     return results.map(toRecord);
   } catch (err) {
     log.warn({ err }, "Failed to load failed send log");

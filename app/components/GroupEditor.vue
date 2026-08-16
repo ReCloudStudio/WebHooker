@@ -6,55 +6,64 @@
     <Transition name="slide">
       <aside v-if="open" class="editor" role="dialog" aria-modal="true">
         <div class="editor-head">
-          <h2>{{ isEdit ? t("groupEditor.editTitle") : t("groupEditor.newTitle") }}</h2>
+          <div class="editor-heading">
+            <span class="editor-eyebrow">{{ t("groupEditor.eyebrow") }}</span>
+            <h2>{{ isEdit ? t("groupEditor.editTitle") : t("groupEditor.newTitle") }}</h2>
+          </div>
           <button class="icon-btn" :title="t('groupEditor.close')" @click="close">✕</button>
         </div>
         <form class="editor-body" @submit.prevent="save">
-          <div class="row2">
-            <div class="field">
-              <label>{{ t("groupEditor.name") }}</label>
-              <input
-                v-model="form.name"
-                type="text"
-                class="input"
-                :placeholder="t('groupEditor.namePlaceholder')"
-                required
-              />
-            </div>
-            <div class="field">
-              <label>{{ t("groupEditor.id") }}</label>
-              <input
-                v-model="form.id"
-                type="text"
-                class="input"
-                :placeholder="t('groupEditor.idPlaceholder')"
-                required
-              />
-              <div class="hint">
-                {{ isEdit ? t("groupEditor.renameHint") : t("groupEditor.idHint") }}
+          <section class="editor-section">
+            <h3 class="editor-section-title">{{ t("groupEditor.sectionBasic") }}</h3>
+            <div class="row2">
+              <div class="field">
+                <label>{{ t("groupEditor.name") }}</label>
+                <input
+                  v-model="form.name"
+                  type="text"
+                  class="input"
+                  :placeholder="t('groupEditor.namePlaceholder')"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label>{{ t("groupEditor.id") }}</label>
+                <input
+                  v-model="form.id"
+                  type="text"
+                  class="input"
+                  :placeholder="t('groupEditor.idPlaceholder')"
+                  required
+                />
+                <div class="hint">
+                  {{ isEdit ? t("groupEditor.renameHint") : t("groupEditor.idHint") }}
+                </div>
               </div>
             </div>
-          </div>
-          <div class="row2">
-            <div class="field">
-              <label>{{ t("groupEditor.language") }}</label>
-              <input
-                v-model="form.lang"
-                type="text"
-                class="input"
-                :placeholder="t('groupEditor.langPlaceholder')"
-              />
-              <div class="hint">{{ t("groupEditor.langHint") }}</div>
-            </div>
-            <div class="field">
-              <label
-                >{{ t("groupEditor.emoji") }}
-                <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
-              >
-              <label class="inline">
-                <input v-model="form.emoji" type="checkbox" />
-                <span>{{ t("groupEditor.emojiLabel") }}</span>
-              </label>
+          </section>
+          <section class="editor-section">
+            <h3 class="editor-section-title">{{ t("groupEditor.sectionPreferences") }}</h3>
+            <div class="row2">
+              <div class="field">
+                <label>{{ t("groupEditor.language") }}</label>
+                <input
+                  v-model="form.lang"
+                  type="text"
+                  class="input"
+                  :placeholder="t('groupEditor.langPlaceholder')"
+                />
+                <div class="hint">{{ t("groupEditor.langHint") }}</div>
+              </div>
+              <div class="field">
+                <label
+                  >{{ t("groupEditor.emoji") }}
+                  <span class="lbl-note">{{ t("groupEditor.emojiNote") }}</span></label
+                >
+                <label class="inline">
+                  <input v-model="form.emoji" type="checkbox" />
+                  <span>{{ t("groupEditor.emojiLabel") }}</span>
+                </label>
+              </div>
             </div>
             <div class="field">
               <label
@@ -91,115 +100,124 @@
               </button>
               <div class="hint">{{ t("groupEditor.forgeSourcesHint") }}</div>
             </div>
-          </div>
-          <div class="field">
-            <label
-              >{{ t("groupEditor.membersNote") }}
-              <span class="lbl-note">{{ t("groupEditor.membersHint") }}</span></label
-            >
-            <p class="hint">
-              {{ t("groupEditor.membersGoPanel") }}
-            </p>
-          </div>
-          <div v-if="superAdmin" class="field">
-            <label
-              >{{ t("groupEditor.owners") }}
-              <span class="lbl-note">{{ t("groupEditor.ownersNote") }}</span></label
-            >
-            <input
-              v-model="form.owners"
-              type="text"
-              class="input"
-              :placeholder="t('groupEditor.ownersPlaceholder')"
-            />
-            <div class="hint">{{ t("groupEditor.ownersHint") }}</div>
-          </div>
-          <div v-else class="field">
-            <label
-              >{{ t("groupEditor.owners") }}
-              <span class="lbl-note">{{ t("groupEditor.ownersSuperOnly") }}</span></label
-            >
-            <input v-model="ownersReadonly" type="text" class="input opacity-60" disabled />
-          </div>
-          <div class="field">
-            <label
-              >{{ t("groupEditor.providers") }}
-              <span class="lbl-note">{{ t("groupEditor.providersNote") }}</span></label
-            >
-            <div class="flex flex-wrap gap-4">
-              <label class="inline">
-                <input
-                  type="checkbox"
-                  :checked="form.providers.includes('github')"
-                  @change="toggleProvider('github', $event)"
-                />
-                <span>GitHub</span>
-              </label>
-              <label class="inline">
-                <input
-                  type="checkbox"
-                  :checked="form.providers.includes('gitea')"
-                  @change="toggleProvider('gitea', $event)"
-                />
-                <span>Gitea</span>
-              </label>
+          </section>
+          <section class="editor-section">
+            <h3 class="editor-section-title">{{ t("groupEditor.sectionAccess") }}</h3>
+            <div class="field">
+              <label
+                >{{ t("groupEditor.membersNote") }}
+                <span class="lbl-note">{{ t("groupEditor.membersHint") }}</span></label
+              >
+              <p class="hint">
+                {{ t("groupEditor.membersGoPanel") }}
+              </p>
             </div>
-            <div class="hint">{{ t("groupEditor.providersHint") }}</div>
-          </div>
-          <div class="field">
-            <label
-              >{{ t("groupEditor.installationId") }}
-              <span class="lbl-note">{{ t("groupEditor.installationIdNote") }}</span></label
-            >
-            <input
-              v-model="form.installationId"
-              type="text"
-              class="input"
-              inputmode="numeric"
-              :placeholder="t('groupEditor.installationIdPlaceholder')"
-            />
-            <div class="hint">{{ t("groupEditor.installationIdHint") }}</div>
-          </div>
-          <div class="field">
-            <label
-              >{{ t("groupEditor.logTarget") }}
-              <span class="lbl-note">{{ t("groupEditor.logTargetNote") }}</span></label
-            >
-            <select v-model="form.logPlatform" class="select">
-              <option value="">{{ t("groupEditor.logDisabled") }}</option>
-              <option value="discord">Discord</option>
-              <option value="telegram">Telegram</option>
-            </select>
-            <template v-if="form.logPlatform === 'discord'">
+            <div v-if="superAdmin" class="field">
+              <label
+                >{{ t("groupEditor.owners") }}
+                <span class="lbl-note">{{ t("groupEditor.ownersNote") }}</span></label
+              >
               <input
-                v-model="form.logChannelId"
+                v-model="form.owners"
                 type="text"
-                class="input mt-2"
-                :placeholder="t('routeEditor.channelPlaceholder')"
+                class="input"
+                :placeholder="t('groupEditor.ownersPlaceholder')"
               />
+              <div class="hint">{{ t("groupEditor.ownersHint") }}</div>
+            </div>
+            <div v-else class="field">
+              <label
+                >{{ t("groupEditor.owners") }}
+                <span class="lbl-note">{{ t("groupEditor.ownersSuperOnly") }}</span></label
+              >
+              <input v-model="ownersReadonly" type="text" class="input opacity-60" disabled />
+            </div>
+          </section>
+          <section class="editor-section">
+            <h3 class="editor-section-title">{{ t("groupEditor.sectionProviders") }}</h3>
+            <div class="field">
+              <label
+                >{{ t("groupEditor.providers") }}
+                <span class="lbl-note">{{ t("groupEditor.providersNote") }}</span></label
+              >
+              <div class="flex flex-wrap gap-4">
+                <label class="inline">
+                  <input
+                    type="checkbox"
+                    :checked="form.providers.includes('github')"
+                    @change="toggleProvider('github', $event)"
+                  />
+                  <span>GitHub</span>
+                </label>
+                <label class="inline">
+                  <input
+                    type="checkbox"
+                    :checked="form.providers.includes('gitea')"
+                    @change="toggleProvider('gitea', $event)"
+                  />
+                  <span>Gitea</span>
+                </label>
+              </div>
+              <div class="hint">{{ t("groupEditor.providersHint") }}</div>
+            </div>
+            <div class="field">
+              <label
+                >{{ t("groupEditor.installationId") }}
+                <span class="lbl-note">{{ t("groupEditor.installationIdNote") }}</span></label
+              >
               <input
-                v-model="form.logThreadId"
+                v-model="form.installationId"
                 type="text"
-                class="input mt-2"
-                :placeholder="t('routeEditor.threadPlaceholder')"
+                class="input"
+                inputmode="numeric"
+                :placeholder="t('groupEditor.installationIdPlaceholder')"
               />
-            </template>
-            <template v-else-if="form.logPlatform === 'telegram'">
-              <input
-                v-model="form.logChatId"
-                type="text"
-                class="input mt-2"
-                :placeholder="t('routeEditor.chatPlaceholder')"
-              />
-              <input
-                v-model="form.logTopicId"
-                type="text"
-                class="input mt-2"
-                :placeholder="t('routeEditor.topicPlaceholder')"
-              />
-            </template>
-            <div class="hint">{{ t("groupEditor.logTargetHint") }}</div>
-          </div>
+              <div class="hint">{{ t("groupEditor.installationIdHint") }}</div>
+            </div>
+          </section>
+          <section class="editor-section">
+            <h3 class="editor-section-title">{{ t("groupEditor.sectionLog") }}</h3>
+            <div class="field">
+              <label
+                >{{ t("groupEditor.logTarget") }}
+                <span class="lbl-note">{{ t("groupEditor.logTargetNote") }}</span></label
+              >
+              <select v-model="form.logPlatform" class="select">
+                <option value="">{{ t("groupEditor.logDisabled") }}</option>
+                <option value="discord">Discord</option>
+                <option value="telegram">Telegram</option>
+              </select>
+              <template v-if="form.logPlatform === 'discord'">
+                <input
+                  v-model="form.logChannelId"
+                  type="text"
+                  class="input mt-2"
+                  :placeholder="t('routeEditor.channelPlaceholder')"
+                />
+                <input
+                  v-model="form.logThreadId"
+                  type="text"
+                  class="input mt-2"
+                  :placeholder="t('routeEditor.threadPlaceholder')"
+                />
+              </template>
+              <template v-else-if="form.logPlatform === 'telegram'">
+                <input
+                  v-model="form.logChatId"
+                  type="text"
+                  class="input mt-2"
+                  :placeholder="t('routeEditor.chatPlaceholder')"
+                />
+                <input
+                  v-model="form.logTopicId"
+                  type="text"
+                  class="input mt-2"
+                  :placeholder="t('routeEditor.topicPlaceholder')"
+                />
+              </template>
+              <div class="hint">{{ t("groupEditor.logTargetHint") }}</div>
+            </div>
+          </section>
           <div class="err">{{ formError }}</div>
         </form>
         <div class="editor-foot">

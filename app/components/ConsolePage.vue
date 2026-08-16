@@ -1,123 +1,181 @@
 <template>
-  <div class="shell">
-    <header class="header">
-      <div class="brand">
+  <div class="flex min-h-screen bg-bg text-text">
+    <!-- Sidebar -->
+    <aside
+      class="sticky top-0 z-30 flex h-screen w-[240px] flex-shrink-0 flex-col border-r border-border bg-surface max-lg:hidden"
+    >
+      <div class="flex items-center gap-3 px-5 py-5">
         <div class="brand-mark">WH</div>
         <div>
-          <h1>WebHooker</h1>
-          <span class="tagline">{{ t("app.tagline") }}</span>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button class="btn btn-ghost btn-sm" @click="toggle">{{ t("app.langToggle") }}</button>
-        <button
-          v-if="!needLogin && selectedGroup && canEditRoutes(selectedGroup.id)"
-          class="btn btn-accent"
-          @click="openNew"
-        >
-          {{ t("app.newRoute") }}
-        </button>
-        <button
-          v-if="!needLogin && !selectedGroup && view === 'groups' && isSuper"
-          class="btn btn-accent"
-          @click="openNewGroup"
-        >
-          {{ t("app.newGroup") }}
-        </button>
-        <a v-if="!needLogin" class="btn btn-ghost" href="/admin/logout">{{ t("app.signOut") }}</a>
-      </div>
-    </header>
-
-    <main class="main">
-      <div v-if="needLogin" class="login">
-        <div class="login-card">
-          <h2>{{ t("login.title") }}</h2>
-          <p v-if="forbidden">{{ t("login.forbidden") }}</p>
-          <p v-else>{{ t("login.prompt") }}</p>
-          <a class="btn btn-accent btn-lg" href="/admin/login">{{ t("login.button") }}</a>
+          <div class="text-sm font-extrabold tracking-tight">WebHooker</div>
+          <div class="text-[10px] font-semibold uppercase tracking-[2px] text-faint">
+            {{ t("app.tagline") }}
+          </div>
         </div>
       </div>
 
-      <template v-else>
-        <!-- Group detail view -->
-        <template v-if="selectedGroup">
-          <section class="toolbar">
-            <div class="crumbs">
-              <button class="btn btn-ghost btn-sm" @click="exitGroup">{{ t("group.back") }}</button>
-              <span class="kpi-label">{{ t("group.routesIn", { name: selectedGroup.name }) }}</span>
-              <span class="kpi">{{ groupRoutes.length }}</span>
-            </div>
-            <div class="status">
-              <span class="dot" :class="groupRoutesLoading ? '' : 'ok'"></span>
-              <span>{{ groupRoutesLoading ? t("status.loading") : t("status.connected") }}</span>
-            </div>
-          </section>
-
-          <p v-if="groupRoutesError" class="err">{{ groupRoutesError }}</p>
-
-          <section class="routes">
-            <RouteCard
-              v-for="(r, i) in groupRoutes"
-              :key="r.id"
-              :route="r"
-              :at-first="i === 0"
-              :at-last="i === groupRoutes.length - 1"
-              :readonly="!canEditRoutes(selectedGroup.id)"
-              :style="{ animationDelay: i * 45 + 'ms' }"
-              @toggle="onToggle"
-              @edit="openEdit"
-              @delete="onDelete"
-              @move="onMove"
-            />
-          </section>
-
-          <section v-if="!groupRoutesLoading && !groupRoutes.length" class="empty">
-            <p>{{ t("routes.emptyGroup") }}</p>
-            <button v-if="canEditRoutes(selectedGroup.id)" class="btn btn-accent" @click="openNew">
-              {{ t("routes.createFirst") }}
-            </button>
-          </section>
-
-          <MembersPanel
-            :group="selectedGroup"
-            :can-edit="canEditGroup(selectedGroup.id)"
-            :saving="savingGroup"
-            @save="onSaveGroupFromPanel"
+      <nav class="flex-1 space-y-0.5 px-3">
+        <button
+          v-for="n in nav"
+          :key="n.id"
+          class="flex w-full items-center gap-3 rounded-[8px] px-3 py-2 text-[13px] font-semibold transition-colors"
+          :class="
+            n.id === activeNav
+              ? 'bg-accent-dim text-accent'
+              : 'text-muted hover:bg-surface-2 hover:text-text'
+          "
+          @click="switchView(n.id)"
+        >
+          <span
+            class="h-1.5 w-1.5 rounded-full"
+            :class="n.id === activeNav ? 'bg-accent' : 'bg-border-strong'"
           />
+          {{ n.label }}
+        </button>
+      </nav>
 
-          <WebhookPanel
-            v-if="canEditGroup(selectedGroup.id)"
-            :group-id="selectedGroup.id"
-            :can-edit="canEditGroup(selectedGroup.id)"
-          />
-        </template>
+      <div class="border-t border-border px-3 py-4">
+        <a
+          class="block rounded-[8px] px-3 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-surface-2"
+          href="/admin/logout"
+        >
+          {{ t("app.signOut") }}
+        </a>
+      </div>
+    </aside>
 
-        <!-- Top-level views -->
+    <!-- Main column -->
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header
+        class="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-border px-6 py-3"
+        style="background: var(--header-bg); backdrop-filter: blur(12px)"
+      >
+        <div>
+          <h1 class="text-[15px] font-extrabold tracking-tight">{{ pageTitle }}</h1>
+          <p v-if="needLogin" class="text-[11px] text-faint">{{ t("login.title") }}</p>
+          <p v-else class="text-[11px] text-faint">
+            {{ loadingAny ? t("status.loading") : t("status.connected") }}
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            v-if="view === 'overview'"
+            class="btn btn-ghost btn-sm"
+            @click="refreshOverview"
+          >
+            {{ t("metrics.refresh") }}
+          </button>
+          <button class="btn btn-ghost btn-sm" @click="toggle">{{ t("app.langToggle") }}</button>
+          <button
+            v-if="!needLogin && selectedGroup && canEditRoutes(selectedGroup.id)"
+            class="btn btn-accent btn-sm"
+            @click="openNew"
+          >
+            {{ t("app.newRoute") }}
+          </button>
+          <button
+            v-if="!needLogin && !selectedGroup && view === 'groups' && isSuper"
+            class="btn btn-accent btn-sm"
+            @click="openNewGroup"
+          >
+            {{ t("app.newGroup") }}
+          </button>
+        </div>
+      </header>
+
+      <!-- Mobile nav -->
+      <nav class="flex gap-1 overflow-x-auto border-b border-border px-4 py-2 lg:hidden">
+        <button
+          v-for="n in nav"
+          :key="n.id"
+          class="whitespace-nowrap rounded-[7px] px-3 py-1.5 text-[13px] font-semibold transition-colors"
+          :class="n.id === activeNav ? 'bg-accent-dim text-accent' : 'text-muted'"
+          @click="switchView(n.id)"
+        >
+          {{ n.label }}
+        </button>
+      </nav>
+
+      <main class="mx-auto w-full max-w-[1180px] px-6 pb-24 pt-6 max-sm:px-4">
+        <div v-if="needLogin" class="login">
+          <div class="login-card">
+            <h2>{{ t("login.title") }}</h2>
+            <p v-if="forbidden">{{ t("login.forbidden") }}</p>
+            <p v-else>{{ t("login.prompt") }}</p>
+            <a class="btn btn-accent btn-lg" href="/admin/login">{{ t("login.button") }}</a>
+          </div>
+        </div>
+
         <template v-else>
-          <nav class="tabs">
-            <button
-              class="tab"
-              :class="{ active: view === 'groups' }"
-              @click="switchView('groups')"
-            >
-              {{ t("tab.groups") }}
-            </button>
-            <button class="tab" :class="{ active: view === 'logs' }" @click="switchView('logs')">
-              {{ t("tab.logs") }}
-            </button>
-            <button class="tab" :class="{ active: view === 'audit' }" @click="switchView('audit')">
-              {{ t("tab.audit") }}
-            </button>
-            <button
-              class="tab"
-              :class="{ active: view === 'metrics' }"
-              @click="switchView('metrics')"
-            >
-              {{ t("tab.metrics") }}
-            </button>
-          </nav>
+          <!-- Overview dashboard -->
+          <AdminHome
+            v-if="view === 'overview'"
+            :key="refreshKey"
+            :groups="groups"
+            :logs="logs"
+            :metrics="metrics"
+            :groups-loading="groupsLoading"
+            :logs-loading="logsLoading"
+            :metrics-loading="metricsLoading"
+          />
 
-          <template v-if="view === 'groups'">
+          <!-- Group detail view -->
+          <template v-else-if="selectedGroup">
+            <section class="toolbar">
+              <div class="crumbs">
+                <button class="btn btn-ghost btn-sm" @click="exitGroup">
+                  {{ t("group.back") }}
+                </button>
+                <span class="kpi-label">{{ t("group.routesIn", { name: selectedGroup.name }) }}</span>
+                <span class="kpi">{{ groupRoutes.length }}</span>
+              </div>
+              <div class="status">
+                <span class="dot" :class="groupRoutesLoading ? '' : 'ok'"></span>
+                <span>{{ groupRoutesLoading ? t("status.loading") : t("status.connected") }}</span>
+              </div>
+            </section>
+
+            <p v-if="groupRoutesError" class="err">{{ groupRoutesError }}</p>
+
+            <section class="routes">
+              <RouteCard
+                v-for="(r, i) in groupRoutes"
+                :key="r.id"
+                :route="r"
+                :at-first="i === 0"
+                :at-last="i === groupRoutes.length - 1"
+                :readonly="!canEditRoutes(selectedGroup.id)"
+                :style="{ animationDelay: i * 45 + 'ms' }"
+                @toggle="onToggle"
+                @edit="openEdit"
+                @delete="onDelete"
+                @move="onMove"
+              />
+            </section>
+
+            <section v-if="!groupRoutesLoading && !groupRoutes.length" class="empty">
+              <p>{{ t("routes.emptyGroup") }}</p>
+              <button v-if="canEditRoutes(selectedGroup.id)" class="btn btn-accent" @click="openNew">
+                {{ t("routes.createFirst") }}
+              </button>
+            </section>
+
+            <MembersPanel
+              :group="selectedGroup"
+              :can-edit="canEditGroup(selectedGroup.id)"
+              :saving="savingGroup"
+              @save="onSaveGroupFromPanel"
+            />
+
+            <WebhookPanel
+              v-if="canEditGroup(selectedGroup.id)"
+              :group-id="selectedGroup.id"
+              :can-edit="canEditGroup(selectedGroup.id)"
+            />
+          </template>
+
+          <!-- Top-level views -->
+          <template v-else-if="view === 'groups'">
             <section class="toolbar">
               <div>
                 <span class="kpi-label">{{ t("kpi.groups") }}</span>
@@ -223,12 +281,16 @@
               :metrics="metrics"
               :loading="metricsLoading"
               :error="metricsError"
-              @refresh="loadMetrics"
+              :groups="groups"
+              :selected-group-id="metricsFilterGroup"
+              @refresh="loadMetrics(metricsFilterGroup || undefined)"
+              @filter="loadMetrics(metricsFilterGroup || undefined)"
+              @update:selected-group-id="metricsFilterGroup = $event"
             />
           </template>
         </template>
-      </template>
-    </main>
+      </main>
+    </div>
 
     <RouteEditor
       :open="editorOpen"
@@ -253,6 +315,7 @@
 import type { Group, Route } from "~/types";
 import { useAuditApi } from "~/composables/useAudit";
 import WebhookPanel from "~/components/WebhookPanel.vue";
+import AdminHome from "~/components/AdminHome.vue";
 
 const { t, toggle } = useI18n();
 const { push } = useToasts();
@@ -260,19 +323,59 @@ const route = useRoute();
 const router = useRouter();
 
 /**
- * The console view mirrors the URL path so tabs are deep-linkable:
- * /admin (groups) · /admin/logs · /admin/audit. Unknown slugs 404.
+ * The console view mirrors the URL path so navigation is deep-linkable:
+ * /admin (overview) · /admin/groups · /admin/logs · /admin/audit · /admin/metrics.
+ * Unknown slugs 404.
  */
-const view = computed<"groups" | "logs" | "audit" | "metrics" | null>(() => {
+type View = "overview" | "groups" | "logs" | "audit" | "metrics";
+const view = computed<View | null>(() => {
   const seg = route.path.split("/").filter(Boolean)[1];
-  if (!seg) return "groups";
-  if (seg === "groups" || seg === "logs" || seg === "audit" || seg === "metrics") return seg;
+  if (!seg) return "overview";
+  if (seg === "overview" || seg === "groups" || seg === "logs" || seg === "audit" || seg === "metrics")
+    return seg;
   return null;
 });
 
 if (view.value === null) {
   throw createError({ statusCode: 404, statusMessage: "Page not found", fatal: false });
 }
+
+const nav = computed(() => [
+  { id: "overview" as View, label: t("tab.overview"), path: "/admin" },
+  { id: "groups" as View, label: t("tab.groups"), path: "/admin/groups" },
+  { id: "logs" as View, label: t("tab.logs"), path: "/admin/logs" },
+  { id: "audit" as View, label: t("tab.audit"), path: "/admin/audit" },
+  { id: "metrics" as View, label: t("tab.metrics"), path: "/admin/metrics" },
+]);
+
+const activeNav = computed<View>(() => view.value ?? "overview");
+
+const pageTitle = computed(() => {
+  if (selectedGroup.value) return t("group.routesIn", { name: selectedGroup.value.name });
+  switch (view.value) {
+    case "overview":
+      return t("tab.overview");
+    case "groups":
+      return t("tab.groups");
+    case "logs":
+      return t("tab.logs");
+    case "audit":
+      return t("tab.audit");
+    case "metrics":
+      return t("tab.metrics");
+    default:
+      return "";
+  }
+});
+
+const loadingAny = computed(
+  () =>
+    groupsLoading.value ||
+    logsLoading.value ||
+    metricsLoading.value ||
+    groupRoutesLoading.value ||
+    auditLoading.value,
+);
 
 const { logs, loading: logsLoading, error: logsError, load: loadLogs } = useSendLogs();
 const {
@@ -316,6 +419,8 @@ const savingGroup = ref(false);
 
 const logFilterGroup = ref("");
 const auditFilterGroup = ref("");
+const metricsFilterGroup = ref("");
+const refreshKey = ref(0);
 
 onMounted(() => {
   if (typeof window !== "undefined") {
@@ -328,6 +433,7 @@ onMounted(() => {
   }
   loadGroups();
   loadLogs(50, logFilterGroup.value || undefined);
+  loadMetrics();
 });
 
 // Tab switches are client-side navigations (no remount), so load the audit
@@ -336,18 +442,25 @@ watch(
   view,
   (v) => {
     if (v === "audit") loadAudit(50, auditFilterGroup.value || undefined);
-    if (v === "metrics") loadMetrics();
+    if (v === "metrics") loadMetrics(metricsFilterGroup.value || undefined);
   },
   { immediate: true },
 );
 
-function switchView(next: "groups" | "logs" | "audit" | "metrics"): void {
-  const path = next === "groups" ? "/admin" : `/admin/${next}`;
+function switchView(next: View): void {
+  const path = next === "overview" ? "/admin" : `/admin/${next}`;
   if (route.path !== path) router.replace(path);
+}
+
+async function refreshOverview(): Promise<void> {
+  refreshKey.value++;
+  await Promise.all([loadGroups(), loadLogs(50, logFilterGroup.value || undefined), loadMetrics()]);
+  push(t("overview.refreshed"));
 }
 
 function enterGroup(group: Group): void {
   selectedGroup.value = group;
+  groupRoutes.value = [];
   loadGroupRoutes(group.id);
 }
 

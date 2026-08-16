@@ -1,7 +1,7 @@
 import type { Env } from "../types";
 
 const SESSION_COOKIE = "wh_admin_session";
-const SESSION_TTL = 7 * 24 * 3600;
+const SESSION_TTL = 24 * 3600;
 
 export interface AdminSession {
   userId: string;

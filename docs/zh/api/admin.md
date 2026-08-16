@@ -29,7 +29,7 @@
 | `GET /admin/api/logs`                           | 发送日志（按可访问的路由过滤）                                                       |
 | `GET /admin/api/logs/:id`                       | 单条发送日志（按权限过滤）                                                           |
 | `GET /admin/api/audit`                          | 审计日志（按可访问的分组过滤）                                                       |
-| `GET /admin/api/metrics`                        | 投递指标（总计、失败率、按平台/事件/状态、最近失败；非超管按可访问分组过滤最近失败） |
+| `GET /admin/api/metrics`                        | 投递统计（总计、失败率、按平台/事件/状态、最近失败）；可选 `?groupId=` 按分组过滤；非超管按可访问分组过滤最近失败 |
 | `GET /admin/api/delivery/:deliveryId`           | 单次投递的全部发送日志（按分组过滤）                                                 |
 
 ## 校验

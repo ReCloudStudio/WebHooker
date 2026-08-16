@@ -13,6 +13,7 @@ import {
   ensureInstallationGroup,
   loadGroups,
   saveGroups,
+  invalidateGroupsCache,
 } from "../server/lib/web/groups";
 import { validateGroups } from "../server/lib/web/admin";
 import {
@@ -97,6 +98,7 @@ describe("admin-session", () => {
 
   beforeEach(() => {
     kv = createMockKV();
+    invalidateGroupsCache();
   });
 
   it("creates and retrieves a session from cookie", async () => {
