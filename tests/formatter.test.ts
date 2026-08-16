@@ -33,11 +33,14 @@ describe("message title spec", () => {
       }),
     );
     expect(msg.title).toBe(
-      "acme/widget: Pushed 1 commit to [`main`](https://github.com/acme/widget/tree/main)",
+      "acme/widget: Pushed 1 commit to main",
     );
     expect(msg.description).toBe(
-      "[View comparison](https://github.com/acme/widget/compare/abc...def)",
+      "[`abcd123`](https://github.com/acme/widget/commit/abcd1234ef) fix stuff",
     );
+    expect(msg.fields).toEqual([
+      { name: "Changes", value: "[View comparison](https://github.com/acme/widget/compare/abc...def):", inline: false },
+    ]);
   });
 
   it("pull_request title is repo#number: title", () => {
@@ -346,8 +349,7 @@ describe("group emoji toggle", () => {
         sender,
       }),
     );
-    expect(msg.fields![0].name).toBe("\u200b");
-    expect(msg.fields![0].value).toBe(
+    expect(msg.description).toBe(
       "[`abcd123`](https://github.com/acme/widget/commit/abcd1234ef) fix stuff",
     );
   });
@@ -450,7 +452,7 @@ describe("limits and localization", () => {
         sender,
       }),
     );
-    expect(msg.fields![0].value).toBe(`${link} ${"x".repeat(MAX_COMMIT_SUBJECT)}`);
+    expect(msg.description).toBe(`${link} ${"x".repeat(MAX_COMMIT_SUBJECT)}`);
   });
 
   it("tag push created mentions the tag", () => {

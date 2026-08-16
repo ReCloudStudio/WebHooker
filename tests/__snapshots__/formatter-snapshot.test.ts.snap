@@ -8,17 +8,17 @@ exports[`formatter snapshots push 1`] = `
     "url": "https://github.com/octocat",
   },
   "color": 3056719,
-  "description": "[View comparison](https://github.com/acme/widget/compare/aaa...bbb)",
+  "description": "[\`bbbbbbb\`](https://github.com/acme/widget/commit/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) Fix login bug",
   "fields": [
     {
       "inline": false,
-      "name": "​",
-      "value": "[\`bbbbbbb\`](https://github.com/acme/widget/commit/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) Fix login bug",
+      "name": "Changes",
+      "value": "[View comparison](https://github.com/acme/widget/compare/aaa...bbb):",
     },
   ],
   "footer": "acme/widget",
   "timestamp": "TIMESTAMP",
-  "title": "acme/widget: Pushed 1 commit to [\`main\`](https://github.com/acme/widget/tree/main)",
+  "title": "acme/widget: Pushed 1 commit to main",
   "url": "https://github.com/acme/widget/compare/aaa...bbb",
 }
 `;

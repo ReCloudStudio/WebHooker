@@ -148,7 +148,7 @@ describe("gitea event parsing", () => {
     };
     const msg = formatEvent(route, event!);
     expect(msg.title).toContain("org/repo");
-    expect(msg.fields![0].value).toBe(
+    expect(msg.description).toContain(
       "[`abcd123`](https://git.example.com/org/repo/commit/abcd1234ef) fix stuff",
     );
   });

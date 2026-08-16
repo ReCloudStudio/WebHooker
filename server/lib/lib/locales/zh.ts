@@ -92,7 +92,7 @@ export const zh = {
       branch_created: "分支已创建",
       tag_created: "标签已创建",
       commits_pushed: "**{count}** 个提交已推送到 {ref}",
-      view_comparison: "[查看比较]({url})",
+      view_comparison: "[查看比较]({url}):",
       added: "+{count} 新增",
       removed: "-{count} 删除",
       modified: "~{count} 修改",

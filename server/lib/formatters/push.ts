@@ -57,61 +57,55 @@ export function formatPush(
     );
   }
 
-  const descriptionParts: string[] = [];
+  const descLines: string[] = [];
 
   if (forced) {
-    descriptionParts.push(em("⚠️") + t("events.push.force_push"));
+    descLines.push(em("⚠️") + t("events.push.force_push"));
   }
   if (created) {
-    descriptionParts.push(
+    descLines.push(
       em("🆕") + t(isTagPush ? "events.push.tag_created" : "events.push.branch_created"),
     );
   }
 
-  if (compareUrl) {
-    descriptionParts.push(t("events.push.view_comparison", { url: compareUrl }));
-  }
-
-  const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
-
-  const commitField = (c: (typeof commits)[number]): { name: string; value: string } => {
+  const commitsToShow = count <= 5 ? commits : commits.slice(0, 3);
+  for (const c of commitsToShow) {
     const shortId = c.id?.slice(0, 7) ?? "???????";
     const msg =
       (c.message?.split("\n")[0] ?? "").slice(0, MAX_COMMIT_SUBJECT) || t("common.no_message");
     const url = baseUrl && c.id ? `${baseUrl}/commit/${c.id}` : null;
     const hash = url ? `[\`${shortId}\`](${url})` : `\`${shortId}\``;
-    return { name: `\u200b`, value: `${hash} ${msg}` };
-  };
-
-  if (count <= 5) {
-    for (const c of commits) {
-      fields.push({ ...commitField(c), inline: false });
-    }
-  } else {
-    const first3 = commits.slice(0, 3);
-    for (const c of first3) {
-      fields.push({ ...commitField(c), inline: false });
-    }
-    fields.push({
-      name: `\u200b`,
-      value: t("common.and_n_more", { count: count - 3 }),
-      inline: false,
-    });
+    descLines.push(`${hash} ${msg}`);
+  }
+  if (count > 5) {
+    descLines.push(t("common.and_n_more", { count: count - 3 }));
   }
 
   const added = commits.flatMap((c) => c.added ?? []);
   const removed = commits.flatMap((c) => c.removed ?? []);
   const modified = commits.flatMap((c) => c.modified ?? []);
 
-  if (added.length > 0 || removed.length > 0 || modified.length > 0) {
-    const changes: string[] = [];
-    if (added.length > 0) changes.push(t("events.push.added", { count: added.length }));
-    if (removed.length > 0) changes.push(t("events.push.removed", { count: removed.length }));
-    if (modified.length > 0) changes.push(t("events.push.modified", { count: modified.length }));
+  const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
+  const changeParts: string[] = [];
+  if (added.length > 0) changeParts.push(t("events.push.added", { count: added.length }));
+  if (removed.length > 0) changeParts.push(t("events.push.removed", { count: removed.length }));
+  if (modified.length > 0) changeParts.push(t("events.push.modified", { count: modified.length }));
+
+  let changesValue = "";
+  if (compareUrl) {
+    changesValue = t("events.push.view_comparison", { url: compareUrl });
+    if (changeParts.length > 0) {
+      changesValue += " " + changeParts.join(" | ");
+    }
+  } else if (changeParts.length > 0) {
+    changesValue = changeParts.join(" | ");
+  }
+
+  if (changesValue) {
     fields.push({
       name: t("fields.changes"),
-      value: changes.join(" | "),
-      inline: true,
+      value: changesValue,
+      inline: false,
     });
   }
 
@@ -122,11 +116,11 @@ export function formatPush(
         count,
         s: count !== 1 ? "s" : "",
         repo: repo ?? t("common.repository"),
-        ref: isTagPush ? tagLink(baseUrl, rawRef, ref) : branchLink(baseUrl, rawRef, ref),
+        ref,
       }),
       url: compareUrl,
       color: GITHUB_COLORS.push,
-      description: descriptionParts.join("\n"),
+      description: descLines.join("\n"),
       fields: fields.length > 0 ? fields : undefined,
     },
     t,

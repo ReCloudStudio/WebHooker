@@ -91,7 +91,7 @@ export const en = {
       force_push: "**Force push**",
       branch_created: "Branch created",
       tag_created: "Tag created",
-      view_comparison: "[View comparison]({url})",
+      view_comparison: "[View comparison]({url}):",
       added: "+{count} added",
       removed: "-{count} removed",
       modified: "~{count} modified",
