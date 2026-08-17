@@ -9,10 +9,7 @@ import {
   kvMessageTracker,
   messageTracker,
 } from "../server/lib/lib/message-tracker";
-import {
-  getDeliveryState,
-  setDeliveryState,
-} from "../server/lib/queue/delivery";
+import { getDeliveryState, setDeliveryState } from "../server/lib/queue/delivery";
 import { canUseD1 } from "../server/lib/storage/d1";
 import type { Env } from "../server/lib/types";
 
@@ -45,10 +42,7 @@ function createMockD1(): {
   const messageRows = new Map<string, { messageId: string; updatedAt: number }>();
   const deliveryRows = new Map<string, { status: string; updatedAt: number }>();
 
-  const run = (
-    sql: string,
-    args: unknown[],
-  ): { success: boolean; meta: { changes: number } } => {
+  const run = (sql: string, args: unknown[]): { success: boolean; meta: { changes: number } } => {
     if (sql.includes("INSERT INTO dedup_keys")) {
       const [key, claimedAt, expiresAt] = args as [string, number, number];
       const existing = dedupKeys.get(key);
@@ -63,12 +57,7 @@ function createMockD1(): {
       return { success: true, meta: { changes: 0 } };
     }
     if (sql.includes("INSERT INTO message_tracking")) {
-      const [eventId, targetId, messageId, updatedAt] = args as [
-        string,
-        string,
-        string,
-        number,
-      ];
+      const [eventId, targetId, messageId, updatedAt] = args as [string, string, string, number];
       messageRows.set(`${eventId}\u0000${targetId}`, { messageId, updatedAt });
       return { success: true, meta: { changes: 1 } };
     }
@@ -106,14 +95,18 @@ function createMockD1(): {
   };
 
   const db = {
-    prepare: (sql: string): {
+    prepare: (
+      sql: string,
+    ): {
       bind: (...args: unknown[]) => {
         run: () => Promise<{ success: boolean; meta: { changes: number } }>;
         all: () => Promise<{ results: unknown[] }>;
         first: () => Promise<Row | null>;
       };
     } => ({
-      bind: (...args: unknown[]): {
+      bind: (
+        ...args: unknown[]
+      ): {
         run: () => Promise<{ success: boolean; meta: { changes: number } }>;
         all: () => Promise<{ results: unknown[] }>;
         first: () => Promise<Row | null>;
@@ -196,9 +189,7 @@ describe("delivery state backed by D1", () => {
   it("returns null when no state exists", async () => {
     const { db } = createMockD1();
     const env = envWith(db, createMockKV());
-    await expect(
-      getDeliveryState(env, "delivery-state:github:g9:nope"),
-    ).resolves.toBeNull();
+    await expect(getDeliveryState(env, "delivery-state:github:g9:nope")).resolves.toBeNull();
   });
 });
 
@@ -211,8 +202,16 @@ describe("factory fallback decision", () => {
 
   it("idempotencyStore falls back to KV semantics without batch", async () => {
     const db = {
-      prepare: (): { bind: () => { run: () => Promise<{ success: boolean }>; all: () => Promise<{ results: unknown[] }> } } => ({
-        bind: (): { run: () => Promise<{ success: boolean }>; all: () => Promise<{ results: unknown[] }> } => ({
+      prepare: (): {
+        bind: () => {
+          run: () => Promise<{ success: boolean }>;
+          all: () => Promise<{ results: unknown[] }>;
+        };
+      } => ({
+        bind: (): {
+          run: () => Promise<{ success: boolean }>;
+          all: () => Promise<{ results: unknown[] }>;
+        } => ({
           run: async () => ({ success: true }),
           all: async () => ({ results: [] }),
         }),

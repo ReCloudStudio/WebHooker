@@ -24,9 +24,7 @@ export default defineTask({
         .bind(now - DELIVERY_STATE_RETENTION_MS)
         .run();
       removed += delivery.meta?.changes ?? 0;
-      const messages = await env.DB.prepare(
-        "DELETE FROM message_tracking WHERE updated_at < ?",
-      )
+      const messages = await env.DB.prepare("DELETE FROM message_tracking WHERE updated_at < ?")
         .bind(now - MESSAGE_TRACKING_RETENTION_MS)
         .run();
       removed += messages.meta?.changes ?? 0;

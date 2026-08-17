@@ -7,8 +7,5 @@
  * while production eagerly routes through D1.
  */
 export function canUseD1(db: D1Database | undefined | null): boolean {
-  return (
-    typeof db?.prepare === "function" &&
-    typeof (db as D1Database).batch === "function"
-  );
+  return typeof db?.prepare === "function" && typeof (db as D1Database).batch === "function";
 }

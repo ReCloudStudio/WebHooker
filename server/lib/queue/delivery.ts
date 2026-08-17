@@ -3,7 +3,7 @@ import { r2PayloadStore } from "../storage/payload";
 import { canUseD1 } from "../storage/d1";
 
 export type DeliveryStatus =
-  | "pending" | "processing" | "delivered" | "retrying" | "failed" | "dead";
+  "pending" | "processing" | "delivered" | "retrying" | "failed" | "dead";
 
 export interface DeliveryMessage {
   deliveryId: string;

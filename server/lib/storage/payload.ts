@@ -41,9 +41,7 @@ export function r2PayloadStore(env: Env): PayloadStore {
   return {
     async put(payload: string, ttl?: number): Promise<string> {
       const key = generateKey();
-      const expires = new Date(
-        Date.now() + (ttl ?? DEFAULT_TTL_SECONDS) * 1000,
-      );
+      const expires = new Date(Date.now() + (ttl ?? DEFAULT_TTL_SECONDS) * 1000);
       await bucket.put(key, payload, {
         httpMetadata: { contentType: "application/json" },
         customMetadata: { expires: expires.toISOString() },

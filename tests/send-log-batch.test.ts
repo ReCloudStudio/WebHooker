@@ -86,9 +86,7 @@ describe("recordSendBatch", () => {
 
   it("serializes detail and encodes ok/error", async () => {
     const { db, rows } = createMockDB();
-    await recordSendBatch(db, [
-      record({ detail: { a: 1 }, ok: false, error: "x", status: 500 }),
-    ]);
+    await recordSendBatch(db, [record({ detail: { a: 1 }, ok: false, error: "x", status: 500 })]);
     expect(rows[0].detail).toBe('{"a":1}');
     expect(rows[0].ok).toBe(0);
     expect(rows[0].status).toBe(500);
@@ -105,8 +103,6 @@ describe("recordSendBatch", () => {
         throw new Error("batch failed");
       },
     } as unknown as D1Database;
-    await expect(
-      recordSendBatch(db, [record()]),
-    ).resolves.toBeUndefined();
+    await expect(recordSendBatch(db, [record()])).resolves.toBeUndefined();
   });
 });

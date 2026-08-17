@@ -29,17 +29,17 @@ KV 只保留缓存数据和短期/临时状态。高频写入（webhook 去重�
 
 D1 数据库（`DB` 绑定，数据库 `webhooker`）保存配置、投递日志和高频临时状态的权威数据源：
 
-| 表                 | 用途                                                                   |
-| ------------------ | ---------------------------------------------------------------------- |
-| `d1_groups`        | 分组（权威配置，从旧版 KV `config:groups` 播种）                        |
-| `d1_routes`        | 每组分组的路由（权威配置，从旧版 KV `config:routes` 播种）               |
-| `send_logs`        | 每次分发尝试一行（路由 id、事件、目标、ok/error、耗时、错误码、详情）  |
-| `audit_logs`       | 每次管理员操作一行（登录/登出、分组/路由/成员/邀请变更）               |
-| `dedup_keys`       | Webhook 投递去重（原子 `INSERT ... ON CONFLICT` UPSERT，键 + 过期时间）  |
+| 表                 | 用途                                                                          |
+| ------------------ | ----------------------------------------------------------------------------- |
+| `d1_groups`        | 分组（权威配置，从旧版 KV `config:groups` 播种）                              |
+| `d1_routes`        | 每组分组的路由（权威配置，从旧版 KV `config:routes` 播种）                    |
+| `send_logs`        | 每次分发尝试一行（路由 id、事件、目标、ok/error、耗时、错误码、详情）         |
+| `audit_logs`       | 每次管理员操作一行（登录/登出、分组/路由/成员/邀请变更）                      |
+| `dedup_keys`       | Webhook 投递去重（原子 `INSERT ... ON CONFLICT` UPSERT，键 + 过期时间）       |
 | `delivery_state`   | 队列投递状态（`pending`/`processing`/`delivered`/`retrying`/`failed`/`dead`） |
-| `message_tracking` | 原地更新用消息 id 追踪（`event_id` + `target_id` → `message_id`）       |
-| `discord_links`    | 映射 `discord_user_id` → `github_user_id`，供 `/gh` Discord 命令使用   |
-| `telegram_links`   | 映射 `telegram_user_id` → `github_user_id`，供 `/gh` Telegram 命令使用 |
+| `message_tracking` | 原地更新用消息 id 追踪（`event_id` + `target_id` → `message_id`）             |
+| `discord_links`    | 映射 `discord_user_id` → `github_user_id`，供 `/gh` Discord 命令使用          |
+| `telegram_links`   | 映射 `telegram_user_id` → `github_user_id`，供 `/gh` Telegram 命令使用        |
 
 `audit_logs` 由定时任务在 `AUDIT_RETENTION_DAYS`（默认 90）后自动清理。`storage-prune` 任务会清理过期的 `dedup_keys`、超过 7 天的 `delivery_state` 行以及超过 30 天的 `message_tracking` 行。日志行字段说明见[日志](./logs)。
 
@@ -47,9 +47,9 @@ D1 数据库（`DB` 绑定，数据库 `webhooker`）保存配置、投递日志
 
 R2（`PAYLOAD` 绑定，bucket `webhooker-payloads`）存储对队列消息或 KV 来说过大的 webhook 负载：
 
-| 对象模式                        | 用途                                            | 保留期       |
-| ------------------------------- | ----------------------------------------------- | ------------ |
-| `webhooks/YYYY/MM/DD/<uuid>.json` | 暂存供队列消费者读取的超大负载                    | 分发后删除   |
+| 对象模式                          | 用途                           | 保留期     |
+| --------------------------------- | ------------------------------ | ---------- |
+| `webhooks/YYYY/MM/DD/<uuid>.json` | 暂存供队列消费者读取的超大负载 | 分发后删除 |
 
 当缺少 `PAYLOAD` 绑定时，超大负载回退到 KV 键 `queue:payload:{provider}:{groupId}:{id}`（1 小时 TTL）。
 

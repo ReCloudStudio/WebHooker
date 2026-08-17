@@ -1,10 +1,7 @@
 import type { SendRecord } from "./send-log";
 import { log } from "./log";
 
-export async function recordSendBatch(
-  db: D1Database,
-  records: SendRecord[],
-): Promise<void> {
+export async function recordSendBatch(db: D1Database, records: SendRecord[]): Promise<void> {
   if (records.length === 0) return;
   try {
     const stmts = records.map((r) =>
