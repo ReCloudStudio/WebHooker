@@ -25,12 +25,15 @@
 			"id": "a471e264837d4f51b077e078022f0cf0"
 		},
 	],
-	"r2_buckets": [
-		{
-			"binding": "PAYLOAD",
-			"bucket_name": "webhooker-payloads",
-		}
-	],
+	// Optional: R2 for oversized payloads. Uncomment after enabling R2 and running
+	// `bunx wrangler r2 bucket create webhooker-payloads`. Without this binding the
+	// worker falls back to KV `queue:payload:*`.
+	// "r2_buckets": [
+	// 	{
+	// 		"binding": "PAYLOAD",
+	// 		"bucket_name": "webhooker-payloads",
+	// 	}
+	// ],
 	"d1_databases": [
 		{
 			"binding": "DB",
