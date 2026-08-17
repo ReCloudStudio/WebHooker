@@ -18,8 +18,8 @@ GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook event
 - **Web UI config console** (`/admin`) — manage routes and groups with GitHub OAuth + admin whitelist, view send logs
 - **Discord Interactions Endpoint** (Ed25519-verified) for `/gh` slash commands, message context-menu commands, PR merge/close buttons, and comment modals
 - **Telegram `/gh` commands** (login/logout/comment/merge/close) via the Telegram webhook, with avatar link-preview cards
-- Cloudflare KV for token/state/config/session storage + D1 for send logs and platform account links
-- **Async delivery via Cloudflare Queues** — when the `QUEUE` binding is present, verified webhooks are enqueued to `webhooker-delivery` and dispatched by a consumer with exponential retry backoff (5s/30s/2m/10m) and a dead-letter queue (`webhooker-delivery-dlq`); oversized payloads are parked in KV. Without the binding, dispatch stays inline
+- Cloudflare D1 for config (routes/groups), send logs, platform account links, dedup, delivery state and message tracking + KV for ephemeral state/cache/security tokens, + optional R2 for oversized payloads
+- **Async delivery via Cloudflare Queues** — when the `QUEUE` binding is present, verified webhooks are enqueued to `webhooker-delivery` and dispatched by a consumer with exponential retry backoff (5s/30s/2m/10m) and a dead-letter queue (`webhooker-delivery-dlq`); oversized payloads are parked in R2 (`PAYLOAD` binding, falling back to KV `queue:payload:*`). Without the binding, dispatch stays inline
 - Graceful degradation (webhook-only mode if Discord unavailable)
 
 ## Architecture
@@ -38,9 +38,9 @@ GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 
 - **Cloudflare Worker** — HTTP ingress, signature verification, routing, platform dispatch
 - **Interactions Endpoint** — HTTPS callback (no Discord Gateway connection, no Durable Object); the bot stays offline and commands are registered via the API
-- **KV** — token storage (`token:{userId}`), OAuth state (`state:{hex}`), route config (`config:routes`), group config (`config:groups`), admin sessions (`session:{id}`), delivery dedup (`delivery:{provider}:{groupId}:{id}`), delivery state (`delivery-state:*`), message-update tracking (`msg:*`)
-- **D1** — send logs (`send_logs`), Discord↔GitHub links (`discord_links`), Telegram↔GitHub links (`telegram_links`)
-- **Queue** — async delivery when `QUEUE` is bound: `webhooker-delivery` (exponential retry) + DLQ `webhooker-delivery-dlq`; oversized payloads parked in KV (`queue:payload:*`)
+- **KV** — cache + ephemeral state: token storage (`token:{userId}`), OAuth state (`state:{hex}`), admin sessions (`session:{id}`), per-group webhook secrets (`tenant:{groupId}`), invites, config cache, delivery dedup/state/message-tracking **fallback** (`delivery:*`, `delivery-state:*`, `msg:*` used only when D1 is unavailable) and message-update locks (`msg:lock:*`)
+- **D1** — source of truth for routes/groups (`d1_routes`/`d1_groups`), send logs (`send_logs`), audit logs (`audit_logs`), dedup (`dedup_keys`), delivery state (`delivery_state`), message-update tracking (`message_tracking`), Discord↔GitHub links (`discord_links`), Telegram↔GitHub links (`telegram_links`)
+- **Queue** — async delivery when `QUEUE` is bound: `webhooker-delivery` (exponential retry) + DLQ `webhooker-delivery-dlq`; oversized payloads parked in R2 (`PAYLOAD` binding, `webhooks/YYYY/MM/DD/*.json`, falling back to KV `queue:payload:*`)
 
 ## Quick Start
 
@@ -79,7 +79,7 @@ bunx wrangler dev    # Start local dev server
 
 ### Routes
 
-Routes are stored in KV (`config:routes` as JSON). There are **no default routes** — every route (including its target) must be defined explicitly, either via the Web UI (`/admin`) or by storing a JSON array in KV. A route may carry multiple `targets`, so one rule can forward to several channels at once:
+Routes are stored in D1 (`d1_routes`, seeded from legacy KV `config:routes` on first load). There are **no default routes** — every route (including its target) must be defined explicitly, either via the Web UI (`/admin`) or by storing a JSON array in D1. A route may carry multiple `targets`, so one rule can forward to several channels at once:
 
 ```json
 [
@@ -98,7 +98,7 @@ Routes are stored in KV (`config:routes` as JSON). There are **no default routes
 ]
 ```
 
-`target.platform` selects the push target: `discord` (default) or `telegram`. Discord targets require `target.channelId` (optional `threadId` for a thread); Telegram targets require `target.chatId` (optional `topicId` for a topic). Routes belong to **groups** (KV `config:groups`) that scope admin access and can restrict which org/user events flow in. See the [Routes & Targets](https://webhooker.docs.worldexecute.me/guide/routes) and [Groups & Access Control](https://webhooker.docs.worldexecute.me/guide/groups) guides for the full schema.
+`target.platform` selects the push target: `discord` (default) or `telegram`. Discord targets require `target.channelId` (optional `threadId` for a thread); Telegram targets require `target.chatId` (optional `topicId` for a topic). Routes belong to **groups** (D1 `d1_groups`, seeded from legacy KV `config:groups`) that scope admin access and can restrict which org/user events flow in. See the [Routes & Targets](https://webhooker.docs.worldexecute.me/guide/routes) and [Groups & Access Control](https://webhooker.docs.worldexecute.me/guide/groups) guides for the full schema.
 
 ### Web UI (`/admin`)
 
@@ -106,7 +106,7 @@ The built-in config console lets you manage routes and groups in the browser (ad
 
 1. Set `ADMIN_USER_IDS` to the GitHub user IDs (or logins) allowed to manage the console, e.g. `ADMIN_USER_IDS=12345,RhenCloud`.
 2. Visit `/admin` and sign in with GitHub. Users with no access get `403` — unless `ALLOW_SELF_SIGNUP=1` (they receive a personal group) or they follow a group invite link.
-3. Changes are written to KV immediately and picked up by the webhook pipeline.
+3. Changes are written to D1 immediately, the config cache is invalidated, and the webhook pipeline picks them up on the next run.
 
 Sign out at `/admin/logout`. Every group has `members` with a role (`owner` / `admin` / `viewer`); all admin operations are recorded in the D1 `audit_logs` table.
 

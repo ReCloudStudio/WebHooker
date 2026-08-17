@@ -81,11 +81,24 @@ bunx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.
 bunx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
 bunx wrangler d1 execute webhooker --remote --file ./migrations/0004_add_group_id.sql
 bunx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0006_config_d1.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0007_send_logs_index.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0008_storage_d1.sql
 ```
 
 :::
 
-### 4. 创建队列（可选）
+### 4. 创建 R2 Bucket（可选）
+
+`PAYLOAD` 绑定将超大 webhook 负载暂存在 R2（`webhooker-payloads`）而非 KV。未设置时，超大负载回退到 KV 键 `queue:payload:*`。布局见[存储](/zh/guide/storage)。
+
+```bash
+bunx wrangler r2 bucket create webhooker-payloads
+```
+
+bucket 已在 `wrangler.jsonc` 中声明（`r2_buckets`），无需修改绑定。
+
+### 5. 创建队列（可选）
 
 `QUEUE` 绑定会通过 Cloudflare Queues 投递 webhook（异步分发，带重试退避与死信队列）。跳过此步则保持同步内联分发。
 
@@ -96,7 +109,7 @@ bunx wrangler queues create webhooker-delivery-dlq
 
 队列已在 `wrangler.jsonc` 中声明（`queues.producers` / `queues.consumers`），无需修改绑定。`webhooker-delivery` 消费者对可重试失败做指数退避重试（5s/30s/2m/10m），达到 `max_retries` 后消息进入 `webhooker-delivery-dlq` 并标记为 dead。
 
-### 5. 部署
+### 6. 部署
 
 ```bash
 bunx wrangler deploy
@@ -104,13 +117,13 @@ bunx wrangler deploy
 
 Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问。
 
-### 6. 配置 GitHub Webhook
+### 7. 配置 GitHub Webhook
 
 1. 进入 GitHub App 设置页面
 2. 设置 **Webhook URL** 为 `https://webhooker.<your-subdomain>.workers.dev/webhook`
 3. 设置 **Webhook secret** 与 `GITHUB_WEBHOOK_SECRET` 一致
 
-### 7.（可选）配置 Gitea Webhook
+### 8.（可选）配置 Gitea Webhook
 
 1. 在 Gitea 仓库中进入 **设置 → Web 钩子 → 添加 Web 钩子 → Gitea**
 2. 设置 **目标 URL** 为 `https://webhooker.<your-subdomain>.workers.dev/webhook`

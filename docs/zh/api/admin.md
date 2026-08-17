@@ -34,7 +34,7 @@
 
 ## 校验
 
-- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、组内唯一 id、name、enabled、groupId、过滤器——**仅 `fallback` 路由允许空过滤器**——可选的 `discordRoleIds`（身份组 id 字符串列表）、平台感知的 targets：Discord 需 `target.channelId`，Telegram 需 `target.chatId`）并持久化到 KV `config:routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }` / `403 { error }`。未变更的路由跳过完整校验。
+- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、组内唯一 id、name、enabled、groupId、过滤器——**仅 `fallback` 路由允许空过滤器**——可选的 `discordRoleIds`（身份组 id 字符串列表）、平台感知的 targets：Discord 需 `target.channelId`，Telegram 需 `target.chatId`）并持久化到 D1 `d1_routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }` / `403 { error }`。未变更的路由跳过完整校验。
 - `PUT /admin/api/groups` — 校验分组 id、成员角色（至少一个 `owner`）、`providers`（`github` / `gitea`）与 `installationId`。
 - 上限：每个实例最多 200 条路由与 100 个分组。
 

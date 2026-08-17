@@ -1,6 +1,6 @@
 # Routes & Targets
 
-Routes define which events get forwarded to which channel (Discord or Telegram). They are stored in Cloudflare KV under the key `config:routes` as a JSON array, managed via the [Web UI](./configuration#web-ui), the [Admin API](../api/admin), or `config.example.yaml`.
+Routes define which events get forwarded to which channel (Discord or Telegram). They are stored in D1 (`d1_routes`, seeded from the legacy KV `config:routes` key on first load), managed via the [Web UI](./configuration#web-ui), the [Admin API](../api/admin), or `config.example.yaml`.
 
 There are **no default routes** — each route must define its own target. If no routes are configured, no events are forwarded. At most **200 routes** can be saved per instance.
 

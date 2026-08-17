@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_send_logs_group_id_ts ON send_logs (group_id, ts DESC);

@@ -1,6 +1,6 @@
 # 分组与访问控制
 
-路由归属于分组。分组用于划分管理权限，并可限制进入其中的事件。它们以 JSON 数组形式存储在 Cloudflare KV 的 `config:groups` 键下，可通过 [Web 控制台](./configuration#web-控制台)或 [Admin API](../api/admin) 管理。每个实例最多可保存 **100 个分组**。
+路由归属于分组。分组用于划分管理权限，并可限制进入其中的事件。它们存储在 D1（`d1_groups`，首次加载时从旧版 KV `config:groups` 键同步），可通过 [Web 控制台](./configuration#web-控制台)或 [Admin API](../api/admin) 管理。每个实例最多可保存 **100 个分组**。
 
 ## 分组模式
 

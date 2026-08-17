@@ -60,7 +60,7 @@ WebHooker ships with a built-in config console at `/admin` for managing routes, 
 
 The console is served as an SPA at `/admin`; its tabs are deep-linkable via the URL path (`/admin/groups`, `/admin/logs`, `/admin/audit`). URLs outside `/admin` that do not match an endpoint return a plain `404` instead of the console.
 
-All management endpoints (`/admin/api/*`) are documented in the [Admin API](../api/admin). Saved routes are written to KV `config:routes` immediately and the config cache is invalidated so the webhook pipeline picks them up on the next run.
+All management endpoints (`/admin/api/*`) are documented in the [Admin API](../api/admin). Saved routes and groups are persisted to D1 (`d1_routes` / `d1_groups`) immediately, the KV cache is invalidated and the config cache is refreshed so the webhook pipeline picks them up on the next run.
 
 ## Filter Types
 

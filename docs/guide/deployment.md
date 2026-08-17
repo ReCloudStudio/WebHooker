@@ -81,11 +81,24 @@ bunx wrangler d1 execute webhooker --remote --file ./migrations/0002_log_detail.
 bunx wrangler d1 execute webhooker --remote --file ./migrations/0003_telegram_links.sql
 bunx wrangler d1 execute webhooker --remote --file ./migrations/0004_add_group_id.sql
 bunx wrangler d1 execute webhooker --remote --file ./migrations/0005_audit_logs.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0006_config_d1.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0007_send_logs_index.sql
+bunx wrangler d1 execute webhooker --remote --file ./migrations/0008_storage_d1.sql
 ```
 
 :::
 
-### 4. Create Queues (Optional)
+### 4. Create R2 Bucket (Optional)
+
+The `PAYLOAD` binding parks oversized webhook payloads in R2 (`webhooker-payloads`) instead of KV. Without it, oversized payloads fall back to the KV key `queue:payload:*`. See [Storage](/guide/storage) for the layout.
+
+```bash
+bunx wrangler r2 bucket create webhooker-payloads
+```
+
+The bucket is already declared in `wrangler.jsonc` (`r2_buckets`), so no binding change is needed.
+
+### 5. Create Queues (Optional)
 
 The `QUEUE` binding routes webhook delivery through Cloudflare Queues (async dispatch with retry backoff and a dead-letter queue). Skip this step to keep dispatch inline (synchronous).
 
@@ -96,7 +109,7 @@ bunx wrangler queues create webhooker-delivery-dlq
 
 The queues are already declared in `wrangler.jsonc` (`queues.producers` / `queues.consumers`), so no binding change is needed. The `webhooker-delivery` consumer retries retryable failures with exponential backoff (5s/30s/2m/10m) up to `max_retries`, after which the message is moved to `webhooker-delivery-dlq` and marked dead.
 
-### 5. Deploy
+### 6. Deploy
 
 ```bash
 bunx wrangler deploy
@@ -104,13 +117,13 @@ bunx wrangler deploy
 
 Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
 
-### 6. Configure GitHub Webhook
+### 7. Configure GitHub Webhook
 
 1. Go to your GitHub App settings
 2. Set **Webhook URL** to `https://webhooker.<your-subdomain>.workers.dev/webhook`
 3. Set **Webhook secret** to match `GITHUB_WEBHOOK_SECRET`
 
-### 7. (Optional) Configure Gitea Webhook
+### 8. (Optional) Configure Gitea Webhook
 
 1. In your Gitea repo, go to **Settings → Webhooks → Add Webhook → Gitea**
 2. Set **Target URL** to `https://webhooker.<your-subdomain>.workers.dev/webhook`

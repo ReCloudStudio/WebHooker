@@ -14,6 +14,7 @@ import {
 } from "./groups";
 import { findUserIdByToken } from "../github/store";
 import { cfEnv } from "../cf";
+import { initConfigStore } from "../config";
 
 export interface AuthContext {
   session: AdminSession;
@@ -26,6 +27,7 @@ const AUTH_KEY = "auth";
 /** Read the admin session + access scope for a request (null when logged out). */
 export async function loadAuth(event: H3Event): Promise<AuthContext | null> {
   const env = cfEnv(event);
+  initConfigStore(env);
   const session = await getAdminSession(env.KV, getHeader(event, "cookie"));
   if (!session) return null;
   const groups = await loadGroups(env.KV);

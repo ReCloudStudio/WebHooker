@@ -44,7 +44,7 @@ async function readIndex(kv: KVNamespace, groupId: string): Promise<string[]> {
 }
 
 async function writeIndex(kv: KVNamespace, groupId: string, tokens: string[]): Promise<void> {
-  await kv.put(indexKey(groupId), JSON.stringify(tokens));
+  await kv.put(indexKey(groupId), JSON.stringify(tokens), { expirationTtl: INVITE_TTL });
 }
 
 async function removeFromIndex(kv: KVNamespace, groupId: string, token: string): Promise<void> {
@@ -142,7 +142,7 @@ export async function migrateInvites(kv: KVNamespace, from: string, to: string):
         moved.push(token);
       }
     }
-    await kv.put(indexKey(to), JSON.stringify(moved));
+    await kv.put(indexKey(to), JSON.stringify(moved), { expirationTtl: INVITE_TTL });
     await kv.delete(indexKey(from));
   } catch (err) {
     log.warn({ err, from, to }, "Failed to migrate invites on group rename");

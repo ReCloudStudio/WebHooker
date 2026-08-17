@@ -22,14 +22,14 @@ GitHub / Gitea Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Cloudflare Worker**     | HTTP 入口、签名验证、投递去重、事件解析、路由匹配、平台分发                                                                                                     |
 | **Interactions Endpoint** | 验证 Ed25519 签名并处理 `/gh` 交互（斜杠命令、右键菜单、按钮、modal）                                                                                           |
-| **KV**                    | Token 存储 (`token:{userId}`)、OAuth 状态 (`state:{hex}`)、路由配置 (`config:routes`)、分组配置 (`config:groups`)、管理员会话、投递去重、消息更新追踪 (`msg:*`) |
-| **D1**                    | 发送日志 (`send_logs`)、Discord↔GitHub 绑定 (`discord_links`)、Telegram↔GitHub 绑定 (`telegram_links`)                                                          |
+| **KV**                    | Token 存储 (`token:{userId}`)、OAuth 状态 (`state:{hex}`)、管理员会话、分组级 secret、配置缓存、投递去重/投递状态/消息更新追踪的回退（`delivery:*`、`delivery-state:*`、`msg:*`，仅在 D1 不可用时使用）、消息更新锁 (`msg:lock:*`) |
+| **D1**                    | 路由/分组 (`d1_routes`/`d1_groups`)、发送日志 (`send_logs`)、审计日志 (`audit_logs`)、去重 (`dedup_keys`)、投递状态 (`delivery_state`)、消息追踪 (`message_tracking`)、Discord↔GitHub 绑定 (`discord_links`)、Telegram↔GitHub 绑定 (`telegram_links`)，超大负载可选的 R2 存储 |
 
 ### 数据流
 
 1. 某个 forge（GitHub 或 Gitea）发送 webhook 到 `POST /webhook`
 2. Worker 根据请求头识别提供方（`X-GitHub-Event` / `X-Gitea-Event`）并验证对应提供的 HMAC-SHA256 签名
-3. Worker 按投递 ID 去重（KV，短 TTL），丢弃重复投递
+3. Worker 按投递 ID 去重（D1，短 TTL，KV 回退），丢弃重复投递
 4. Worker 解析事件类型并将载荷归一化为 GitHub 形状的事件
 5. 根据过滤器（event、repo、actor、action、branch、keyword）与分组所有者限制评估路由
 6. 匹配的路由触发格式化器函数生成平台中立消息
@@ -42,7 +42,7 @@ GitHub / Gitea Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 - **Discord 投递**: Discord REST API（交互通过 Ed25519 验签的 HTTPS Interactions Endpoint）
 - **Telegram 投递**: Telegram Bot API（webhook 带可选 secret-token 校验）
 - **Web UI**: Nuxt 4（Vue 3 + Tailwind CSS v3）——首页/法律页面服务端渲染，`/admin` 控制台客户端渲染
-- **存储**: Cloudflare KV + D1
+- **存储**: Cloudflare D1（配置与日志权威）+ KV（缓存/临时状态）+ 可选 R2（超大负载）
 - **鉴权**: Web Crypto API (HMAC-SHA256、Ed25519)、octokit (GitHub API)
 - **语言**: TypeScript
 

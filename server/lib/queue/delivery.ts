@@ -1,7 +1,9 @@
 import type { Env } from "../types";
+import { r2PayloadStore } from "../storage/payload";
+import { canUseD1 } from "../storage/d1";
 
 export type DeliveryStatus =
-  "pending" | "processing" | "delivered" | "retrying" | "failed" | "dead";
+  | "pending" | "processing" | "delivered" | "retrying" | "failed" | "dead";
 
 export interface DeliveryMessage {
   deliveryId: string;
@@ -9,7 +11,10 @@ export interface DeliveryMessage {
   provider: string;
   event: string;
   payload?: Record<string, unknown>;
+  /** R2 object key (new) or KV key (legacy `queue:payload:*`). */
   payloadRef?: string;
+  /** Distinguishes R2 payload refs from legacy KV keys. */
+  payloadRefType?: "r2" | "kv";
   installationId?: number;
   receivedAt: number;
   requestId?: string;
@@ -79,12 +84,32 @@ export async function setDeliveryState(
   key: string,
   status: DeliveryStatus,
 ): Promise<void> {
+  const db = env.DB;
+  if (canUseD1(db)) {
+    await db
+      .prepare(
+        `INSERT INTO delivery_state (key, status, updated_at)
+         VALUES (?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at`,
+      )
+      .bind(key, status, Date.now())
+      .run();
+    return;
+  }
   await env.KV.put(key, JSON.stringify({ status, at: Date.now() }), {
     expirationTtl: STATE_KV_TTL_SECONDS,
   });
 }
 
 export async function getDeliveryState(env: Env, key: string): Promise<DeliveryStatus | null> {
+  const db = env.DB;
+  if (canUseD1(db)) {
+    const row = await db
+      .prepare("SELECT status FROM delivery_state WHERE key = ?")
+      .bind(key)
+      .first<{ status: DeliveryStatus }>();
+    return row?.status ?? null;
+  }
   const raw = await env.KV.get(key);
   if (!raw) return null;
   try {
@@ -103,11 +128,18 @@ export async function enqueueWebhook(env: Env, message: DeliveryMessage): Promis
     await queue.send(direct);
     return;
   }
+  const bucket = env.PAYLOAD;
+  if (bucket) {
+    const store = r2PayloadStore(env);
+    const key = await store.put(JSON.stringify(payload ?? {}), PAYLOAD_KV_TTL_SECONDS);
+    await queue.send({ ...rest, payloadRef: key, payloadRefType: "r2" });
+    return;
+  }
   const payloadRef = payloadKey(message.provider, message.groupId, message.deliveryId);
   await env.KV.put(payloadRef, JSON.stringify(payload ?? {}), {
     expirationTtl: PAYLOAD_KV_TTL_SECONDS,
   });
-  await queue.send({ ...rest, payloadRef });
+  await queue.send({ ...rest, payloadRef, payloadRefType: "kv" });
 }
 
 export async function resolvePayload(
@@ -116,6 +148,17 @@ export async function resolvePayload(
 ): Promise<Record<string, unknown>> {
   if (message.payload) return message.payload;
   if (message.payloadRef) {
+    if (message.payloadRefType === "r2" && env.PAYLOAD) {
+      const store = r2PayloadStore(env);
+      const raw = await store.get(message.payloadRef);
+      if (raw) {
+        try {
+          return JSON.parse(raw) as Record<string, unknown>;
+        } catch {
+          return {};
+        }
+      }
+    }
     const raw = await env.KV.get(message.payloadRef);
     if (raw) {
       try {
@@ -129,5 +172,11 @@ export async function resolvePayload(
 }
 
 export async function discardPayload(env: Env, message: DeliveryMessage): Promise<void> {
-  if (message.payloadRef) await env.KV.delete(message.payloadRef);
+  if (!message.payloadRef) return;
+  if (message.payloadRefType === "r2" && env.PAYLOAD) {
+    const store = r2PayloadStore(env);
+    await store.delete(message.payloadRef);
+    return;
+  }
+  await env.KV.delete(message.payloadRef);
 }

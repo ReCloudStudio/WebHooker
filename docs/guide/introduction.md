@@ -22,14 +22,14 @@ GitHub / Gitea Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Cloudflare Worker**     | HTTP ingress, signature verification, delivery dedup, event parsing, route matching, platform dispatch                                                                                           |
 | **Interactions Endpoint** | Verifies Ed25519 signatures and handles `/gh` interactions (slash commands, context-menu commands, buttons, modals)                                                                              |
-| **KV**                    | Token storage (`token:{userId}`), OAuth state (`state:{hex}`), route config (`config:routes`), group config (`config:groups`), admin sessions, delivery dedup, message-update tracking (`msg:*`) |
-| **D1**                    | Send logs (`send_logs`), Discord↔GitHub links (`discord_links`), Telegram↔GitHub links (`telegram_links`)                                                                                        |
+| **KV**                    | Token storage (`token:{userId}`), OAuth state (`state:{hex}`), admin sessions, per-group secrets, config cache, delivery dedup/state/message-tracking fallback when D1 is unavailable (`delivery:*`, `delivery-state:*`, `msg:*`), message-update locks (`msg:lock:*`)                                                                 |
+| **D1**                    | Routes/groups (`d1_routes`/`d1_groups`), send logs (`send_logs`), audit logs (`audit_logs`), dedup (`dedup_keys`), delivery state (`delivery_state`), message tracking (`message_tracking`), Discord↔GitHub links (`discord_links`), Telegram↔GitHub links (`telegram_links`), with R2 optionally parking oversized payloads |
 
 ### Data Flow
 
 1. A forge (GitHub or Gitea) sends a webhook to `POST /webhook`
 2. Worker detects the provider from its headers (`X-GitHub-Event` / `X-Gitea-Event`) and verifies the provider-specific HMAC-SHA256 signature
-3. Worker deduplicates by the delivery id (KV, short TTL) to drop repeat deliveries
+3. Worker deduplicates by the delivery id (D1, short TTL, KV fallback) to drop repeat deliveries
 4. Worker parses the event type and normalizes the payload to a GitHub-shaped event
 5. Routes are evaluated against filters (event, repo, actor, action, branch, keyword) and group owner restrictions
 6. Matching routes trigger formatter functions that produce platform-neutral messages
@@ -42,7 +42,7 @@ GitHub / Gitea Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 - **Discord delivery**: Discord REST API (interactions via an Ed25519-verified HTTPS Interactions Endpoint)
 - **Telegram delivery**: Telegram Bot API (webhook with optional secret-token verification)
 - **Web UI**: Nuxt 4 (Vue 3 + Tailwind CSS v3) — server-rendered home/legal pages, client-side `/admin` console
-- **Storage**: Cloudflare KV + D1
+- **Storage**: Cloudflare D1 (authoritative for config & logs) + KV (cache/transient state) + optional R2 (oversized payloads)
 - **Auth**: Web Crypto API (HMAC-SHA256, Ed25519), octokit (GitHub API)
 - **Language**: TypeScript
 

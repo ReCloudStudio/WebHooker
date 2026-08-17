@@ -1,12 +1,41 @@
 import type { Env, Config, Route } from "./types";
 import { log } from "./lib/log";
 import { migrateRoutes, validateRoutes } from "./config/schema";
+import { d1ConfigStore, type ConfigStore } from "./storage/config-store";
 
 const CONFIG_CACHE_TTL = 300_000;
 const ROUTES_KEY = "config:routes";
 let configCache: { config: Config; expiresAt: number } | null = null;
+const configStores = new WeakMap<KVNamespace, ConfigStore>();
+
+export function getConfigStore(kv: KVNamespace): ConfigStore | null {
+  return configStores.get(kv) ?? null;
+}
+
+export function initConfigStore(env: Env): ConfigStore {
+  return ensureStore(env);
+}
+
+export function resetConfigStore(kv?: KVNamespace): void {
+  if (kv) {
+    configStores.get(kv)?.invalidateCache();
+    configStores.delete(kv);
+  }
+}
+
+function ensureStore(env: Env): ConfigStore {
+  let store = configStores.get(env.KV);
+  if (!store) {
+    store = d1ConfigStore(env.DB, env.KV);
+    configStores.set(env.KV, store);
+  }
+  return store;
+}
 
 export async function loadRoutes(kv: KVNamespace): Promise<Route[]> {
+  const store = configStores.get(kv);
+  if (store) return store.loadRoutes();
+
   try {
     const stored = await kv.get<Route[]>(ROUTES_KEY, "json");
     if (stored) return validateRoutes(migrateRoutes(stored));
@@ -17,11 +46,16 @@ export async function loadRoutes(kv: KVNamespace): Promise<Route[]> {
 }
 
 export async function saveRoutes(kv: KVNamespace, routes: Route[]): Promise<void> {
+  const store = configStores.get(kv);
+  if (store) {
+    await store.saveRoutes(routes);
+    configCache = null;
+    return;
+  }
   await kv.put(ROUTES_KEY, JSON.stringify(routes));
   configCache = null;
 }
 
-/** Drop the in-memory route/config cache (used by the admin API and tests). */
 export function invalidateConfigCache(): void {
   configCache = null;
 }
@@ -31,6 +65,7 @@ export async function loadConfig(env: Env): Promise<Config> {
     return configCache.config;
   }
 
+  ensureStore(env);
   const routes = await loadRoutes(env.KV);
 
   const config: Config = {

@@ -24,6 +24,7 @@ export interface Env {
   KV: KVNamespace;
   DB: D1Database;
   QUEUE?: Queue;
+  PAYLOAD?: R2Bucket;
 }
 
 export interface Config {

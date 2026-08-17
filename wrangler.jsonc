@@ -25,6 +25,12 @@
 			"id": "a471e264837d4f51b077e078022f0cf0"
 		},
 	],
+	"r2_buckets": [
+		{
+			"binding": "PAYLOAD",
+			"bucket_name": "webhooker-payloads",
+		}
+	],
 	"d1_databases": [
 		{
 			"binding": "DB",

@@ -34,4 +34,4 @@ No — the worker requires the KV and D1 bindings declared in `wrangler.jsonc` a
 
 ## Where is data stored?
 
-Configuration lives in Cloudflare KV (`config:routes`, `config:groups`); send/audit logs and platform↔GitHub links live in D1. See [Storage Layout](./storage#kv-storage-layout).
+Configuration lives in D1 (`d1_routes`/`d1_groups`, with KV as a cache); webhook dedup, delivery state and message-update tracking also live in D1 with KV fallback; send/audit logs and platform↔GitHub links live in D1. R2 optionally parks oversized payloads. See [Storage Layout](./storage#storage-decisions).

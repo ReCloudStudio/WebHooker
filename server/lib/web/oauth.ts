@@ -28,6 +28,7 @@ import { clientIp } from "./auth";
 import { recordAudit } from "../lib/audit";
 import { sendMessage } from "../drivers/telegram/rest";
 import { cfEnv } from "../cf";
+import { initConfigStore } from "../config";
 import type { Env, Group } from "../types";
 
 interface PendingState {
@@ -130,6 +131,7 @@ function installPage(opts: {
 /** GET /auth/github — start the OAuth flow. */
 export async function handleOAuthStart(event: H3Event): Promise<void> {
   const env = cfEnv(event);
+  initConfigStore(env);
   const query = getQuery(event);
   const redirectTo = safeRedirectPath(String(query["redirect"] ?? ""));
   const state = generateRandomHex(16);
@@ -144,6 +146,7 @@ export async function handleOAuthStart(event: H3Event): Promise<void> {
 /** GET /auth/github/install — post-install choice page. */
 export async function handleInstallPage(event: H3Event): Promise<string | void> {
   const env = cfEnv(event);
+  initConfigStore(env);
   const query = getQuery(event);
   const rawId = String(query["installation_id"] ?? "");
   const installationId = Number(rawId);
@@ -171,6 +174,7 @@ export async function handleInstallPage(event: H3Event): Promise<string | void> 
 /** POST /auth/github/install/bind — provision the chosen binding. */
 export async function handleInstallBind(event: H3Event): Promise<void> {
   const env = cfEnv(event);
+  initConfigStore(env);
   const session = await getAdminSession(env.KV, getHeader(event, "cookie"));
   if (!session) {
     await sendRedirect(event, "/admin?error=forbidden");
@@ -278,6 +282,7 @@ export async function handleInstallBind(event: H3Event): Promise<void> {
 /** GET /auth/github/callback — OAuth callback. */
 export async function handleOAuthCallback(event: H3Event): Promise<unknown> {
   const env = cfEnv(event);
+  initConfigStore(env);
   const query = getQuery(event);
   const code = String(query["code"] ?? "");
   const state = String(query["state"] ?? "");

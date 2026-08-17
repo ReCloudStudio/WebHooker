@@ -3,13 +3,13 @@ import { getHeader, readRawBody, setResponseStatus } from "h3";
 import type { Env } from "./types";
 import { detectProvider } from "./providers";
 import { dispatchEvent } from "./core/dispatch";
-import { loadConfig } from "./config";
+import { loadConfig, initConfigStore } from "./config";
 import { loadGroups, ensureInstallationGroup } from "./web/groups";
 import { getTenantSecret } from "./web/tenants";
 import { recordAudit } from "./lib/audit";
 import { cfEnv, cfWaitUntil, headersFrom } from "./cf";
 import { log } from "./lib/log";
-import { deliveryKey, kvIdempotencyStore } from "./lib/idempotency";
+import { deliveryKey, idempotencyStore } from "./lib/idempotency";
 import { newCorrelationId } from "./lib/correlation";
 import { enqueueWebhook, type DeliveryMessage } from "./queue/delivery";
 
@@ -37,6 +37,7 @@ export async function processWebhook(
 ): Promise<WebhookResult> {
   const requestId = newCorrelationId();
   let effectiveEnv = env;
+  initConfigStore(env);
   const groups = await loadGroups(env.KV);
   if (tenantId) {
     if (!groups.some((g) => g.id === tenantId)) {
@@ -124,7 +125,7 @@ export async function processWebhook(
     // Dedup via the idempotency store: a provider/tenant-scoped key means
     // different accounts may reuse a delivery id without colliding, while
     // retries of the same delivery never dispatch twice.
-    const store = kvIdempotencyStore(env.KV);
+    const store = idempotencyStore(env.DB, env.KV);
     const key = deliveryKey(provider.id, tenantId, event.deliveryId);
     if (!(await store.claim(key, 120))) {
       return { status: 200, body: { ok: true, duplicate: true, requestId } };

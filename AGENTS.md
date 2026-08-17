@@ -12,7 +12,7 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - UI: Vue 3 + Tailwind CSS v3 (`@nuxtjs/tailwindcss`); admin console is a client-side SPA (`routeRules: "/admin/**": { ssr: false }`), home/legal pages render server-side
 - Styling: all theme colors are RGB-triplet CSS variables in `app/assets/css/main.css` mapped into `tailwind.config.ts` (so `bg-accent/10` opacity modifiers work); the design tokens switch with `prefers-color-scheme` (unless `<html data-theme="light">`); repeated control patterns are `@apply` component classes in the CSS `@layer components`
 - Discord interactions: HTTPS Interactions Endpoint (`POST /discord/interactions`, Ed25519-signed) — no Discord Gateway / Durable Object; bot stays offline, messages always sent via REST
-- Storage: Cloudflare KV (tokens, OAuth state, route config `config:routes`, group config `config:groups`, admin sessions, delivery dedup, message-update tracking `msg:*`, i18n overrides `i18n:*`) + D1 (`send_logs`, `discord_links`, `telegram_links`)
+- Storage: D1 is the source of truth for config (routes/groups via `d1_routes`/`d1_groups`, see `server/lib/storage/config-store.ts`), send/audit logs, dedup (`dedup_keys`), delivery state (`delivery_state`) and message tracking (`message_tracking` via `server/lib/storage/d1.ts` `canUseD1` gate). KV keeps only cache + short-lived/ephemeral state (tokens, OAuth state, admin sessions, `msg:*`-adjacent locks, per-group secrets `tenant:*`, invites, i18n overrides) with explicit TTLs. R2 parks oversized queue payloads (`webhooks/YYYY/MM/DD/*.json`, `server/lib/storage/payload.ts`) instead of KV. A `storage-prune` scheduled task cleans up expired dedup/delivery/message-tracking rows
 - Signature verification: Web Crypto API (HMAC-SHA256 for GitHub/Gitea, Ed25519 for Discord, timing-safe secret-token compare for Telegram)
 - Webhook providers: pluggable forge adapters under `server/lib/providers/` (github, gitea) — each verifies its own signature format and normalizes its payload to a GitHub-shaped `WebhookEvent`; a `custom` provider accepts arbitrary signed JSON posts (`X-WebHooker-Signature`) as `custom` events; GitLab etc. can be added later
 - Per-group webhook ingress: optional `POST /webhook/{groupId}` with a per-group secret in KV (`tenant:{groupId}`) — Gitea/classic-GitHub/custom webhooks are verified against the group's secret instead of the operator's global ones; only that group's routes fire. The legacy `POST /webhook` (global secrets, all routes) stays untouched
@@ -24,7 +24,8 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Audit log: every admin operation (logins, group/route/member/invite changes) recorded in D1 `audit_logs`; pruned by the scheduled trigger after `AUDIT_RETENTION_DAYS` (default 90)
 - Group webhook log channel: optional `Group.logTarget` (Discord channel/thread or Telegram chat/topic) receives one summary message per webhook the group's routes dispatched (event, repo, delivery id, per route×target ✅/❌ outcome, green/red color); best-effort, not recorded in `send_logs`
 - Per-group forge branding: optional `Group.forgeSources` (a list of `{ host, type: "github" | "gitea", name? }` the group defines itself) labels each message's footer with the first entry whose type matches the event's provider and whose host matches the repository URL's hostname (GitHub matches `github.com`, so two Gitea instances can be `git1.example.com`/`git2.example.com`); the label is the entry's optional `name` (fallback: host); links are derived from the repo URL and footer icons use raster PNGs Discord renders (GitHub's `fluidicon.png`, Gitea's `/assets/img/favicon.png` — `.ico` favicons are silently ignored); Discord shows the footer icon + name, Telegram a linked name
-- Delivery queue: when the `QUEUE` binding is present, webhook ingress enqueues one message per event (not per target) to a Cloudflare Queue (`webhooker-delivery`); a Nitro `cloudflare:queue` plugin consumes batches, dispatches, and retries retryable failures (5xx/network/429-exhaustion) with exponential backoff (5s/30s/2m/10m) up to the queue `max_retries`, after which the DLQ (`webhooker-delivery-dlq`) marks the delivery dead. Oversized payloads (>~100 KB) are parked in KV (`queue:payload:*`) and resolved by the consumer; delivery state is tracked in KV (`delivery-state:*`). Without the `QUEUE` binding, dispatch stays inline (existing behavior)
+- Delivery queue: when the `QUEUE` binding is present, webhook ingress enqueues one message per event (not per target) to a Cloudflare Queue (`webhooker-delivery`); a Nitro `cloudflare:queue` plugin consumes batches, dispatches, and retries retryable failures (5xx/network/429-exhaustion) with exponential backoff (5s/30s/2m/10m) up to the queue `max_retries`, after which the DLQ (`webhooker-delivery-dlq`) marks the delivery dead. Oversized payloads (>~100 KB) are parked in R2 (`webhooks/YYYY/MM/DD/*.json`, falling back to KV `queue:payload:*` without the R2 binding) and resolved by the consumer; delivery state is tracked as the D1 `delivery_state` table (KV `delivery-state:*` fallback). Without the `QUEUE` binding, dispatch stays inline (existing behavior)
+- Storage quotas: the design avoids KV write pressure (Workers Free KV allows ~1,000 writes/day) by keeping high-frequency ephemeral writes in D1 instead — webhook dedup (`dedup_keys`, atomic `ON CONFLICT` UPSERT), delivery state and message tracking all use D1 rows via `canUseD1` (prepare+batch probe) with automatic KV fallback when D1 is unavailable or unmigrated. D1 Free allows 100,000 rows written/day, so the per-event KV write cost drops to ~0; config stays cached in memory + KV with D1 authoritative
 - Local dev: wrangler + Miniflare
 
 ## Architecture
@@ -43,22 +44,22 @@ app/                     # Vue 3 UI (Nuxt app dir)
 server/                  # Nitro server
 ├── routes/              # H3 handlers: /health, /webhook[/:groupId], /discord/interactions, /telegram/webhook,
 │                        # /auth/github*, /admin/{login,logout,invite,api/**}, /api/{comment,merge,close,react,richheader}
-├── tasks/               # scheduled (cron */5): discord-sync, telegram-sync, audit-prune
+├── tasks/               # scheduled (cron */5): discord-sync, telegram-sync, audit-prune, storage-prune
 ├── plugins/             # Nitro plugins: queue-consumer (hooks cloudflare:queue → handleQueueBatch)
 ├── error-handler.ts     # JSON error handler
 └── lib/
     ├── types.ts         # Env, Config, Route, Filter, Group, WebhookEvent, NeutralMessage
-    ├── config.ts        # loadRoutes/saveRoutes (KV config:routes, cache w/ 60s TTL), loadConfig from env
+    ├── config.ts        # loadRoutes/saveRoutes (delegates to D1 ConfigStore when available, else KV config:routes), loadConfig from env
     ├── config/          # config schema + migration + validation
     │   └── schema.ts    # CONFIG_SCHEMA_VERSION, valibot route/group/filter schemas, migrateRoutes/Groups, validateRoutes/Groups (non-destructive), explainRoute
     ├── cf.ts            # cfEnv(event) — env bindings from event.context.cloudflare
     ├── http.ts          # shared HTTP helpers
-    ├── webhook.ts       # processWebhook/handleWebhook: tenant lookup, provider detect/verify/parse, dedup, enqueue (or inline dispatch)
+    ├── webhook.ts       # processWebhook/handleWebhook: tenant lookup, provider detect/verify/parse, dedup (D1/KV), enqueue (or inline dispatch)
     ├── queue/           # Cloudflare Queue delivery pipeline
-    │   ├── delivery.ts  # DeliveryMessage, enqueueWebhook, retry backoff, delivery-state KV, payload-overflow parking
+    │   ├── delivery.ts  # DeliveryMessage, enqueueWebhook, retry backoff, delivery-state (D1 w/ KV fallback), payload-overflow parking (R2 → KV)
     │   └── consumer.ts  # handleQueueBatch: resolve payload → dispatch → classify → ack/retry/DLQ
     ├── core/
-    │   └── dispatch.ts  # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (recordSend + group filter + per-group webhook log)
+    │   └── dispatch.ts  # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (batched recordSend + group filter + per-group webhook log)
     ├── events/
     │   ├── match.ts     # matchRoute, eventOwners; unified pattern syntax (*/? globs + //-wrapped regex)
     │   └── filter-ast.ts # FilterNode evaluator (all/any/not), containsKeyword, explainFilter/explainFilterNode; pattern helpers (regex/glob compile)
@@ -112,12 +113,17 @@ server/                  # Nitro server
     │   └── richheader.ts # GET /api/richheader: Open Graph page for Telegram avatar link-preview card
     ├── observability/  # delivery metrics aggregation
     │   └── metrics.ts  # DeliveryMetrics + getDeliveryMetrics (SQL GROUP BY over send_logs: totals, per platform/event/status, duration, attempts, recent failures)
+    ├── storage/        # storage primitives: canUseD1 probe, D1 config store (L1 memory → L2 KV cache → L3 D1), R2 payload store
+    │   ├── d1.ts       # canUseD1(db) — prepare+batch probe for D1 availability (falls back to KV)
+    │   ├── config-store.ts # ConfigStore (loadRoutes/saveRoutes/loadGroups/saveGroups/invalidateCache) backed by d1_groups/d1_routes, seeds from KV + syncs cache
+    │   └── payload.ts  # PayloadStore backed by R2 (webhooks/YYYY/MM/DD/*.json), no-binding stub throws
     └── lib/             # shared infra
         ├── i18n.ts      # loadTranslations (KV i18n:{lang} overrides), t() with param interpolation
-        ├── idempotency.ts # IdempotencyStore interface + kvIdempotencyStore (delivery dedup via claim/has) + deliveryKey
+        ├── idempotency.ts # IdempotencyStore interface + kvIdempotencyStore/d1IdempotencyStore (delivery dedup via claim/has, D1 atomic UPSERT w/ KV fallback) + deliveryKey
         ├── correlation.ts # newCorrelationId() — per-request/delivery correlation id for logs + responses
-        ├── message-tracker.ts # MessageTracker interface + kvMessageTracker (KV msg:{eventId}:{targetId} for workflow_run/check_run edits)
+        ├── message-tracker.ts # MessageTracker interface + kvMessageTracker/d1MessageTracker (msg:{eventId}:{targetId} for workflow_run/check_run edits)
         ├── send-log.ts  # SendRecord, recordSend/getSendLog/getSendLogById/getSendLogByDelivery/getFailedSendLog (D1 send_logs)
+        ├── send-log-batch.ts # recordSendBatch (D1 batch INSERT for send_logs)
         ├── audit.ts     # recordAudit/getAuditLog/pruneAuditLogs (D1 audit_logs, best-effort writes)
         ├── log.ts       # JSON console logger (info/warn/error/fatal)
         └── locales/     # en.ts, zh.ts translation dictionaries
@@ -147,14 +153,15 @@ tests/__snapshots__/     # formatter snapshot golden files (toMatchSnapshot)
 - Format 28 GitHub/Gitea event types plus `custom` webhooks as platform-neutral messages (Discord embeds + Telegram HTML)
 - Show the forge source (named per `Group.forgeSources` host entries) in the message footer when the group defines a host matching the event's repository
 - Route messages to Discord channels/threads and Telegram chats/topics via REST
-- Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, KV `msg:*` tracking)
+- Edit already-sent messages in place for `workflow_run` / `check_run` progress (stable `updateKey`, `message_tracking` via D1 with KV `msg:*` fallback)
 - Record every dispatch attempt to D1 `send_logs` (route id, event, target, ok/error, duration, error code)
 - Aggregate delivery metrics (`server/lib/observability/metrics.ts`) from `send_logs` — totals, ok/failed counts + failure rate, per-platform/per-event/per-status breakdowns, average duration and attempts, recent failures; `getDeliveryMetrics(db, groupId?)` scopes every query by `group_id` when a group is passed
 - Expose admin observability endpoints — `GET /admin/api/metrics?groupId=` (delivery metrics, optional group scope; recent failures group-scoped for non-super) and `GET /admin/api/delivery/:deliveryId` (all send-log attempts for one delivery, group-scoped) — through the `/admin/api/[...slug]` catch-all route (`server/routes/admin/api/[...slug].ts`) that wires every admin API handler to its method+path
-- Serve a per-group webhook ingress (`POST /webhook/{groupId}`, per-group secret in KV `tenant:{groupId}`) for Gitea/classic-GitHub/custom senders; only that group's routes fire; dedup keys are provider- and tenant-scoped (`delivery:{provider}:{groupId}:{id}` via `kvIdempotencyStore`)
+- Serve a per-group webhook ingress (`POST /webhook/{groupId}`, per-group secret in KV `tenant:{groupId}`) for Gitea/classic-GitHub/custom senders; only that group's routes fire; dedup keys are provider- and tenant-scoped (`delivery:{provider}:{groupId}:{id}` via `idempotencyStore`, D1 `dedup_keys` with KV fallback)
 - Issue a per-request correlation id (`requestId`) in webhook responses and dispatch logs
 - When the `QUEUE` binding is present, enqueue each verified webhook as a single Queue message (`webhooker-delivery`) instead of dispatching inline; the consumer resolves the payload, re-scopes routes to the tenant group, and dispatches; retryable failures (5xx/network/429-exhaustion) are retried with exponential backoff (5s/30s/2m/10m) up to the queue `max_retries`, then the DLQ marks the delivery dead
-- Track delivery state in KV (`delivery-state:*`: pending/processing/delivered/retrying/failed/dead) so redelivered messages are skipped idempotently; oversized payloads are parked in KV (`queue:payload:*`) and deleted after dispatch
+- Track delivery state in the D1 `delivery_state` table (`delivery-state:*` KV fallback: pending/processing/delivered/retrying/failed/dead) so redelivered messages are skipped idempotently; oversized payloads are parked in R2 (`webhooks/YYYY/MM/DD/*.json`, KV `queue:payload:*` fallback) and deleted after dispatch
+- Prune expired D1 rows via the scheduled `storage-prune` task (dedup keys past expiry, delivery state older than 7 days, message tracking older than 30 days; audits via `audit-prune`)
 - Send a per-event summary (event, repo, delivery id, per route×target ✅/❌ outcome) to the group's `logTarget` when configured
 - Serve `/gh` slash commands + message context-menu commands + PR merge/close buttons + comment modals
 - Serve Telegram `/gh` commands (login/logout/comment/merge/close) via reply-message parsing
@@ -227,10 +234,11 @@ Rule: no functional change ships without its documentation; docs and code must n
 
 - **Local dev**: `.dev.vars` (wrangler reads this for env bindings)
 - **Production**: `wrangler secret put <NAME>` for each secret
-- **Routes**: KV key `config:routes` (JSON array, empty until configured)
-- **KV namespace**: Required binding for token/state/config/session storage
-- **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `audit_logs` + `discord_links` + `telegram_links` tables
+- **Routes**: config in D1 `d1_routes`/`d1_groups` (authoritative), seeded from legacy KV `config:routes`/`config:groups` on first load; cache-only KV keys
+- **KV namespace**: Required binding for token/state/session/cache storage (dedup/delivery-state/message-tracking fall back to KV when D1 is unavailable)
+- **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `audit_logs` + `discord_links` + `telegram_links` + `d1_groups` + `d1_routes` + `dedup_keys` + `delivery_state` + `message_tracking` tables
 - **Queue**: optional `QUEUE` producer binding plus consumers `webhooker-delivery` and its DLQ `webhooker-delivery-dlq` (declared in `wrangler.jsonc`); when absent, webhook dispatch stays inline
+- **R2**: optional `PAYLOAD` binding (bucket `webhooker-payloads`) for oversized queue payloads; without it, oversized payloads fall back to KV `queue:payload:*`
 - **Access control**: `ADMIN_USER_IDS` (super admins), `ALLOW_SELF_SIGNUP` (optional personal group on first login), `AUDIT_RETENTION_DAYS` (default 90) — all plain env vars, not secrets
 - **Discord**: `DISCORD_PUBLIC_KEY` (Interactions Endpoint signature verification, from Discord Developer Portal) and `DISCORD_APPLICATION_ID` (optional, auto-resolved via `GET /oauth2/applications/@me` when omitted) are required for interactions
 - **Telegram**: `TELEGRAM_TOKEN` (Bot API token from BotFather) required for Telegram routes; `TELEGRAM_WEBHOOK_SECRET` (optional secret token for `POST /telegram/webhook` verification); avatars are sent as a link-preview card via the built-in `GET /api/richheader` (overridable with `TELEGRAM_RICH_HEADER_HOST`)
@@ -249,7 +257,8 @@ bunx wrangler d1 create webhooker
 bunx wrangler queues create webhooker-delivery
 bunx wrangler queues create webhooker-delivery-dlq
 # Queues are declared in wrangler.jsonc (QUEUE binding); no env var needed
-bun run db:migrate:prod   # wrangler d1 migrations apply webhooker --remote (migrations/0001..0005)
+bun run db:migrate:prod   # wrangler d1 migrations apply webhooker --remote (migrations/0001..0008)
+# R2 bucket for oversized payloads (P0): bunx wrangler r2 bucket create webhooker-payloads
 bunx wrangler deploy
 ```
 

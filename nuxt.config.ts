@@ -9,7 +9,7 @@ export default defineNuxtConfig({
       tasks: true,
     },
     scheduledTasks: {
-      "*/5 * * * *": ["discord-sync", "telegram-sync", "audit-prune"],
+      "*/5 * * * *": ["discord-sync", "telegram-sync", "audit-prune", "storage-prune"],
     },
   },
   app: {

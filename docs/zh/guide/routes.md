@@ -1,6 +1,6 @@
 # 路由与目标
 
-路由决定哪些事件被转发到哪个频道（Discord 或 Telegram）。它们以 JSON 数组形式存储在 Cloudflare KV 的 `config:routes` 键下，可通过 [Web 控制台](./configuration#web-控制台)、[Admin API](../api/admin) 或 `config.example.yaml` 管理。
+路由决定哪些事件被转发到哪个频道（Discord 或 Telegram）。它们存储在 D1（`d1_routes`，首次加载时从旧版 KV `config:routes` 键同步），可通过 [Web 控制台](./configuration#web-控制台)、[Admin API](../api/admin) 或 `config.example.yaml` 管理。
 
 **没有默认路由**——每条路由都必须定义自己的目标。未配置任何路由时不会转发任何事件。每个实例最多可保存 **200 条路由**。
 

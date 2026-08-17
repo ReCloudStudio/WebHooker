@@ -1,6 +1,6 @@
 # Groups & Access Control
 
-Routes belong to groups. Groups scope admin access and can restrict which events flow into them. They are stored in Cloudflare KV under the key `config:groups` as a JSON array, managed via the [Web UI](./configuration#web-ui) or the [Admin API](../api/admin). At most **100 groups** can be saved per instance.
+Routes belong to groups. Groups scope admin access and can restrict which events flow into them. They are stored in D1 (`d1_groups`, seeded from the legacy KV `config:groups` key on first load), managed via the [Web UI](./configuration#web-ui) or the [Admin API](../api/admin). At most **100 groups** can be saved per instance.
 
 ## Group Schema
 

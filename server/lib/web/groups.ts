@@ -2,6 +2,7 @@ import type { Env, Group, GroupMember, GroupRole } from "../types";
 import { isAdminUser } from "./session";
 import { log } from "../lib/log";
 import { migrateGroups, validateGroups } from "../config/schema";
+import { getConfigStore } from "../config";
 
 const GROUPS_KEY = "config:groups";
 const GROUPS_CACHE_TTL = 300_000;
@@ -40,6 +41,9 @@ export function normalizeGroupMembers(group: Group): GroupMember[] {
 }
 
 export async function loadGroups(kv: KVNamespace): Promise<Group[]> {
+  const store = getConfigStore(kv);
+  if (store) return store.loadGroups();
+
   if (groupsCache && Date.now() < groupsCache.expiresAt) {
     return groupsCache.groups;
   }
@@ -55,6 +59,12 @@ export async function loadGroups(kv: KVNamespace): Promise<Group[]> {
 }
 
 export async function saveGroups(kv: KVNamespace, groups: Group[]): Promise<void> {
+  const store = getConfigStore(kv);
+  if (store) {
+    await store.saveGroups(groups);
+    groupsCache = null;
+    return;
+  }
   await kv.put(GROUPS_KEY, JSON.stringify(groups));
   groupsCache = null;
 }

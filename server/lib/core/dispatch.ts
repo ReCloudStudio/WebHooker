@@ -4,8 +4,9 @@ import { emojiPrefix, forgeInfo } from "../formatters/helpers";
 import { matchRoute, eventOwners } from "../events/match";
 import { log } from "../lib/log";
 import { loadTranslations, t as translate, type Translations } from "../lib/i18n";
-import { recordSend } from "../lib/send-log";
-import { kvMessageTracker } from "../lib/message-tracker";
+import type { SendRecord } from "../lib/send-log";
+import { recordSendBatch } from "../lib/send-log-batch";
+import { messageTracker } from "../lib/message-tracker";
 import {
   loadGroups,
   groupAcceptsOwners,
@@ -36,7 +37,7 @@ export async function dispatchEvent(
 ): Promise<DispatchSummary> {
   const loadedGroups = groups ?? (await loadGroups(env.KV));
   const groupById = new Map(loadedGroups.map((g) => [g.id, g]));
-  const tracker = kvMessageTracker(env.KV);
+  const tracker = messageTracker(env.DB, env.KV);
 
   // Message language is configured per group (Group.lang), not per route.
   const langs = [...new Set(loadedGroups.map((g) => g.lang ?? "en"))];
@@ -63,6 +64,7 @@ export async function dispatchEvent(
   const anyRegularMatched = matched.length > 0;
 
   const attempts: DispatchAttempt[] = [];
+  const sendLogs: SendRecord[] = [];
   const tasks: Promise<void>[] = [];
   for (const route of config.routes) {
     if (!accepted(route)) continue;
@@ -79,6 +81,7 @@ export async function dispatchEvent(
   }
   await Promise.allSettled(tasks);
 
+  await recordSendBatch(env.DB, sendLogs);
   await sendGroupLogs(attempts);
 
   const failures: DispatchFailure[] = attempts
@@ -235,7 +238,7 @@ export async function dispatchEvent(
                     target: targetStr,
                     ok: true,
                   });
-                  await recordSend(env.DB, {
+                  sendLogs.push({
                     ...base,
                     ok: true,
                     status: result.status,
@@ -271,7 +274,7 @@ export async function dispatchEvent(
                   target: targetStr,
                   ok: true,
                 });
-                await recordSend(env.DB, {
+                sendLogs.push({
                   ...base,
                   ok: true,
                   status: result.status,
@@ -291,7 +294,7 @@ export async function dispatchEvent(
                   target: targetStr,
                   ok: true,
                 });
-                await recordSend(env.DB, {
+                sendLogs.push({
                   ...base,
                   ok: true,
                   status: result.status,
@@ -328,7 +331,7 @@ export async function dispatchEvent(
             errorCode: result.errorCode,
             status: result.status,
           });
-          await recordSend(env.DB, {
+          sendLogs.push({
             ...base,
             ok: false,
             error,
@@ -347,7 +350,7 @@ export async function dispatchEvent(
           target: targetStr,
           ok: true,
         });
-        await recordSend(env.DB, {
+        sendLogs.push({
           ...base,
           ok: true,
           status: result.status,
@@ -368,7 +371,7 @@ export async function dispatchEvent(
           ok: false,
           error,
         });
-        await recordSend(env.DB, {
+        sendLogs.push({
           ...base,
           ok: false,
           error,
