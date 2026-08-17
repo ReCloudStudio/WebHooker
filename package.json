@@ -16,7 +16,7 @@
     "lint:md": "markdownlint '**/*.md' --ignore node_modules --ignore dist",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "bun test",
+    "test": "bun test --parallel=1",
     "db:migrate": "wrangler d1 migrations apply webhooker --local",
     "db:migrate:prod": "wrangler d1 migrations apply webhooker --remote",
     "docs:dev": "vitepress dev docs",
