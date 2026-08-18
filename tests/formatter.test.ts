@@ -523,6 +523,46 @@ describe("limits and localization", () => {
     expect(msg.fields!.every((f) => f.value.length <= 1024)).toBe(true);
     expect(msg.description!.length).toBe(4096);
   });
+
+  it("strips HTML tags from issue and PR bodies", () => {
+    const issue = formatEvent(
+      route,
+      event("issues", {
+        action: "opened",
+        issue: {
+          number: 3,
+          title: "Bug",
+          html_url: "https://github.com/acme/widget/issues/3",
+          body: "Use <b>bold</b> and <code>code</code>",
+        },
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(issue.description).toContain("Use bold and code");
+    expect(issue.description).not.toContain("<b>");
+    expect(issue.description).not.toContain("<code>");
+
+    const pr = formatEvent(
+      route,
+      event("pull_request", {
+        action: "opened",
+        pull_request: {
+          number: 7,
+          title: "Add feature",
+          state: "open",
+          html_url: "https://github.com/acme/widget/pull/7",
+          body: 'Fixes <a href="https://x.example">the bug</a>',
+          head: { ref: "feat" },
+          base: { ref: "main" },
+        },
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(pr.description).toContain("Fixes the bug");
+    expect(pr.description).not.toContain("<a ");
+  });
 });
 
 describe("forge source branding", () => {

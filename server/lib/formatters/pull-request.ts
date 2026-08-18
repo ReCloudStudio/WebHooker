@@ -4,6 +4,7 @@ import {
   branchLink,
   cap,
   emojiPrefix,
+  htmlToText,
   MAX_FIELD_VALUE,
   type T,
   buildMessage,
@@ -58,7 +59,7 @@ export function formatPullRequest(
   descriptionParts.push(t("events.pr.action_pr", { emoji: em(stateEmoji), action: al }));
 
   if (pr.body) {
-    const truncated = pr.body.slice(0, 300);
+    const truncated = htmlToText(pr.body).slice(0, 300);
     descriptionParts.push(`\n${truncated}${pr.body.length > 300 ? "..." : ""}`);
   }
 

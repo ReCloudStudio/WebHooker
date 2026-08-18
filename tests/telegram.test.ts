@@ -88,6 +88,20 @@ describe("telegram renderNeutralMessage", () => {
     );
   });
 
+  it("keeps query strings and parens intact in link URLs", () => {
+    const out = renderNeutralMessage({
+      title: "acme/widget: t",
+      description:
+        "[View](https://github.com/acme/widget/compare/a?w=1&diff=split) and " +
+        "[wiki](https://en.wikipedia.org/wiki/Foo_(bar))",
+    });
+    expect(out).toContain(
+      '<a href="https://github.com/acme/widget/compare/a?w=1&amp;diff=split">View</a>',
+    );
+    expect(out).toContain('<a href="https://en.wikipedia.org/wiki/Foo_(bar)">wiki</a>');
+    expect(out).not.toContain("&amp;amp;");
+  });
+
   it("formats ISO timestamps into a readable UTC string", () => {
     const out = renderNeutralMessage({
       title: "acme/widget: t",

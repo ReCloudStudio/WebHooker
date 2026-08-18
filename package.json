@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "h3": "^1.15.3",
+    "markdown-it": "^15.0.0",
     "nuxt": "^4.1.0",
     "octokit": "^4.1.0",
     "valibot": "^1.4.2",

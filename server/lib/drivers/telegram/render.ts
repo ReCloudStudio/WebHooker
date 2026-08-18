@@ -1,3 +1,4 @@
+import MarkdownIt from "markdown-it";
 import type { NeutralMessage } from "../../types";
 import { splitMessageTitle } from "../../formatters/helpers";
 
@@ -12,17 +13,15 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+const md = new MarkdownIt({ html: false, linkify: false, breaks: false, typographer: false });
+md.disable(["image", "autolink"]);
+md.renderer.rules.strong_open = (): string => "<b>";
+md.renderer.rules.strong_close = (): string => "</b>";
+md.renderer.rules.em_open = (): string => "<i>";
+md.renderer.rules.em_close = (): string => "</i>";
+
 function mdToHtml(s: string): string {
-  let out = esc(s);
-  out = out.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    (_m, label, url) => `<a href="${esc(url)}">${label}</a>`,
-  );
-  out = out.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
-  out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
-  out = out.replace(/(^|[^*])\*([^*]+)\*/g, "$1<i>$2</i>");
-  out = out.replace(/~~([^~]+)~~/g, "<s>$1</s>");
-  return out;
+  return md.renderInline(s);
 }
 
 function formatTimestamp(ts?: string): string {

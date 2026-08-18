@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { cap, emojiPrefix, MAX_FIELD_VALUE, type T, buildMessage } from "./helpers";
+import { cap, emojiPrefix, htmlToText, MAX_FIELD_VALUE, type T, buildMessage } from "./helpers";
 
 export function formatIssues(
   payload: Record<string, unknown>,
@@ -38,7 +38,7 @@ export function formatIssues(
   descriptionParts.push(t("events.issues.action_issue", { emoji: em(stateEmoji), action: al }));
 
   if (issue.body) {
-    const truncated = issue.body.slice(0, 300);
+    const truncated = htmlToText(issue.body).slice(0, 300);
     descriptionParts.push(`\n${truncated}${issue.body.length > 300 ? "..." : ""}`);
   }
 
