@@ -6,6 +6,7 @@ import { log } from "../lib/log";
 import { loadTranslations, t as translate, type Translations } from "../lib/i18n";
 import type { SendRecord } from "../lib/send-log";
 import { recordSendBatch } from "../lib/send-log-batch";
+import { explainRoute } from "../config/schema";
 import { messageTracker } from "../lib/message-tracker";
 import {
   loadGroups,
@@ -176,6 +177,15 @@ export async function dispatchEvent(
       message.mentionRoleIds = route.discordRoleIds;
     }
 
+    const detail: Record<string, unknown> = {
+      title: message.title,
+      url: message.url,
+      description: message.description?.slice(0, 500),
+      match: explainRoute(route),
+      provider: event.provider,
+      installationId: event.installationId,
+    };
+
     for (const target of targets) {
       const targetStr =
         target.platform === "telegram"
@@ -196,6 +206,7 @@ export async function dispatchEvent(
         deliveryId: string | undefined;
         actor: string | undefined;
         action: string | undefined;
+        detail: Record<string, unknown>;
       } = {
         ts: Date.now(),
         routeId: route.id,
@@ -206,6 +217,7 @@ export async function dispatchEvent(
         deliveryId: event.deliveryId,
         actor: (event.payload.sender as { login?: string } | undefined)?.login,
         action: event.payload.action as string | undefined,
+        detail,
       };
 
       const started = Date.now();

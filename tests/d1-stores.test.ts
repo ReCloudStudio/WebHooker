@@ -50,7 +50,7 @@ function createMockD1(): {
         dedupKeys.set(key, { claimedAt, expiresAt });
         return { success: true, meta: { changes: 1 } };
       }
-      if (existing.expiresAt < expiresAt) {
+      if (existing.expiresAt < claimedAt) {
         dedupKeys.set(key, { claimedAt, expiresAt });
         return { success: true, meta: { changes: 1 } };
       }

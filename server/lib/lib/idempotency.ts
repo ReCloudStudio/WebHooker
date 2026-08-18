@@ -43,7 +43,7 @@ export function d1IdempotencyStore(db: D1Database): IdempotencyStore {
           `INSERT INTO dedup_keys (key, claimed_at, expires_at) VALUES (?, ?, ?)
            ON CONFLICT(key) DO UPDATE SET
              claimed_at = excluded.claimed_at, expires_at = excluded.expires_at
-           WHERE dedup_keys.expires_at < excluded.expires_at`,
+           WHERE dedup_keys.expires_at < excluded.claimed_at`,
         )
         .bind(key, now, now + ttlSeconds * 1000)
         .run();
