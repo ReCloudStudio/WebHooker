@@ -194,6 +194,70 @@ Just like the other filters, `exclude` inverts the keyword match:
 
 Skips events whose payload mentions `wip` or `draft`.
 
+### `field` — Any payload field (JSONPath)
+
+Matches an arbitrary field of the webhook payload using a dot-separated path, e.g. `pull_request.user.login`, `repository.private`, or `check_run.conclusion`. Array fields are expanded automatically — the filter matches if **any** element matches.
+
+```json
+{ "type": "field", "path": "pull_request.user.login", "match": "dependabot[bot]" }
+```
+
+```json
+{ "type": "field", "path": "labels.name", "match": "bug" }
+```
+
+### Operators
+
+Field filters (and every filter type except `keyword`) accept an `op` to change how the value is compared. The default `eq` keeps the classic glob/regex/exact behaviour.
+
+| Operator       | Meaning                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| `eq` (default) | Equal — globs, regexes and plain text, case-insensitive              |
+| `ne`           | Not equal (inverse of `eq`)                                          |
+| `contains`     | Value contains the pattern (substring)                               |
+| `startsWith`   | Value starts with the pattern                                        |
+| `endsWith`     | Value ends with the pattern                                          |
+| `regex`        | Explicit regular expression match                                    |
+| `gt` / `gte`   | Numeric greater-than / greater-or-equal                              |
+| `lt` / `lte`   | Numeric less-than / less-or-equal                                    |
+| `in`           | Value equals any of the listed patterns                              |
+| `exists`       | The field is present (non-null); `match` is ignored                  |
+
+```json
+{ "type": "field", "path": "pull_request.commits", "op": "gt", "match": "1" }
+```
+
+```json
+{ "type": "field", "path": "label.name", "op": "startsWith", "match": "area/" }
+```
+
+### Grouping (all / any / not)
+
+A route can use a nested `ast` to combine filters with explicit grouping instead of a flat AND list. The `ast` node is one of `{ "all": [...] }`, `{ "any": [...] }`, or `{ "not": {...} }`:
+
+```json
+{
+  "id": "grouped",
+  "name": "Grouped",
+  "ast": {
+    "all": [
+      { "type": "event", "match": "pull_request" },
+      { "any": [
+        { "type": "field", "path": "pull_request.user.login", "match": "alice" },
+        { "type": "field", "path": "pull_request.user.login", "match": "bob" }
+      ]}
+    ]
+  },
+  "targets": [{ "channelId": "..." }]
+}
+```
+
+When `ast` is present it takes precedence over `filters`. The admin console's route editor builds `ast` visually (all/any/not groups), shows a live explanation of the tree, and can test it against a pasted JSON payload via the **Test match** panel.
+
+### Named filter fragments
+
+The route editor can save the current filter tree as a **named fragment** and insert it into other routes. Fragments are editor-side templates stored in D1 (`d1_fragments`); inserting a fragment inlines its node into the route's `ast`, so the matching engine itself never resolves fragment references.
+
 ## Worked Example 1: PR alerts that skip bots and drafts
 
 Forward pull request activity, but ignore bot authors and draft PRs, to a `#prs` channel:

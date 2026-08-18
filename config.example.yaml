@@ -116,3 +116,42 @@ routes:
   #   targets:
   #     - platform: discord
   #       channelId: "CHANNEL_ID_HERE"
+
+  # Field filters match any payload field via a JSONPath (dot-separated) `path`,
+  # with an optional `op` operator (eq/ne/contains/startsWith/endsWith/regex/
+  # gt/gte/lt/lte/in/exists). Arrays are expanded: any matching element wins.
+  # - id: big-pr
+  #   name: "Large Pull Requests"
+  #   enabled: true
+  #   groupId: default
+  #   filters:
+  #     - type: event
+  #       match: pull_request
+  #     - type: field
+  #       path: "pull_request.commits"
+  #       op: gte
+  #       match: "10"
+  #   targets:
+  #     - platform: discord
+  #       channelId: "CHANNEL_ID_HERE"
+
+  # Nested `ast` groups (all / any / not) replace the flat filters list and take
+  # precedence over `filters` when both are present.
+  # - id: grouped-owners
+  #   name: "PRs from either owner"
+  #   enabled: true
+  #   groupId: default
+  #   ast:
+  #     all:
+  #       - type: event
+  #         match: pull_request
+  #       - any:
+  #           - type: field
+  #             path: "pull_request.user.login"
+  #             match: alice
+  #           - type: field
+  #             path: "pull_request.user.login"
+  #             match: bob
+  #   targets:
+  #     - platform: discord
+  #       channelId: "CHANNEL_ID_HERE"

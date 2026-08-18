@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DeliveryMetrics, Group, Route, SendRecord } from "~/types";
+import { collectEvents } from "~/composables/useFilterNode";
 
 const props = defineProps<{
   groups: Group[];
@@ -107,9 +108,7 @@ function platformLabel(p?: string): string {
 }
 
 function routeEvents(r: Route): string[] {
-  return r.filters
-    .filter((f) => f.type === "event")
-    .flatMap((f) => (Array.isArray(f.match) ? f.match : [f.match]));
+  return collectEvents(r.ast ?? { all: r.filters });
 }
 </script>
 

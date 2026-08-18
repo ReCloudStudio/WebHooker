@@ -7,8 +7,10 @@ import {
   setResponseHeader,
   setResponseStatus,
 } from "h3";
-import type { Route, Group, GroupMember, GroupRole, ForgeSource } from "../types";
+import type { Route, Group, GroupMember, GroupRole, ForgeSource, FilterNode } from "../types";
 import { loadRoutes, saveRoutes } from "../config";
+import { loadFragments, saveFragments, type NamedFragment } from "../fragments";
+import { evaluateFilterNode, explainFilterNode } from "../events/filter-ast";
 import { getAdminSession, destroyAdminSession, clearAdminCookie } from "./session";
 import { saveGroups, loadGroups, identityMatches, normalizeGroupMembers } from "./groups";
 import {
@@ -35,7 +37,8 @@ import { getTenantSecret, setTenantSecret, deleteTenantSecret } from "./tenants"
 import { cfEnv } from "../cf";
 import { log } from "../lib/log";
 
-const VALID_FILTER_TYPES = new Set(["event", "repo", "actor", "action", "branch", "keyword"]);
+const VALID_FILTER_TYPES = new Set(["event", "repo", "actor", "action", "branch", "keyword", "field"]);
+const VALID_OPS = new Set(["eq", "ne", "contains", "startsWith", "endsWith", "regex", "gt", "gte", "lt", "lte", "in", "exists"]);
 const ID_RE = /^[a-z0-9][a-z0-9-]*$/;
 const HOST_RE =
   /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
@@ -63,6 +66,49 @@ function deepEqual(a: unknown, b: unknown): boolean {
     return ak.every((k) => Object.prototype.hasOwnProperty.call(bo, k) && deepEqual(ao[k], bo[k]));
   }
   return false;
+}
+
+function validateFilterNode(node: unknown, label: string): string | null {
+  if (!node || typeof node !== "object" || Array.isArray(node)) {
+    return `${label} must be an object`;
+  }
+  const n = node as Record<string, unknown>;
+  if (Array.isArray(n.all)) {
+    if (n.all.length === 0) return `${label}.all must not be empty`;
+    for (let i = 0; i < n.all.length; i++) {
+      const err = validateFilterNode(n.all[i], `${label}.all[${i}]`);
+      if (err) return err;
+    }
+    return null;
+  }
+  if (Array.isArray(n.any)) {
+    if (n.any.length === 0) return `${label}.any must not be empty`;
+    for (let i = 0; i < n.any.length; i++) {
+      const err = validateFilterNode(n.any[i], `${label}.any[${i}]`);
+      if (err) return err;
+    }
+    return null;
+  }
+  if (n.not !== undefined) return validateFilterNode(n.not, `${label}.not`);
+  if (!VALID_FILTER_TYPES.has(n.type as string)) {
+    return `${label} has unknown type`;
+  }
+  if (n.type === "field" && (typeof n.path !== "string" || n.path.trim().length === 0)) {
+    return `${label}.path is required for field filters`;
+  }
+  if (n.path !== undefined && typeof n.path !== "string") {
+    return `${label}.path must be a string`;
+  }
+  if (n.op !== undefined && !VALID_OPS.has(n.op as string)) {
+    return `${label}.op is invalid`;
+  }
+  if ((n.op as string) !== "exists" && !isValidMatch(n.match)) {
+    return `${label} needs a match value`;
+  }
+  if (n.exclude !== undefined && typeof n.exclude !== "boolean") {
+    return `${label}.exclude must be a boolean`;
+  }
+  return null;
 }
 
 /**
@@ -122,22 +168,16 @@ function validateRoutes(
     if (!Array.isArray(r.filters)) {
       return { ok: false, error: `route "${r.id}".filters must be an array` };
     }
-    if (r.fallback !== true && r.filters.length === 0) {
+    if (r.fallback !== true && r.filters.length === 0 && r.ast === undefined) {
       return { ok: false, error: `route "${r.id}" needs at least one filter` };
     }
     for (let j = 0; j < r.filters.length; j++) {
-      const f = r.filters[j] as Record<string, unknown>;
-      if (!f || typeof f !== "object")
-        return { ok: false, error: `route "${r.id}" filter[${j}] invalid` };
-      if (!VALID_FILTER_TYPES.has(f.type as string)) {
-        return { ok: false, error: `route "${r.id}" filter[${j}] has unknown type` };
-      }
-      if (!isValidMatch(f.match)) {
-        return { ok: false, error: `route "${r.id}" filter[${j}] needs a match value` };
-      }
-      if (f.exclude !== undefined && typeof f.exclude !== "boolean") {
-        return { ok: false, error: `route "${r.id}" filter[${j}].exclude must be boolean` };
-      }
+      const err = validateFilterNode(r.filters[j], `route "${r.id}" filter[${j}]`);
+      if (err) return { ok: false, error: err };
+    }
+    if (r.ast !== undefined) {
+      const err = validateFilterNode(r.ast, `route "${r.id}".ast`);
+      if (err) return { ok: false, error: err };
     }
     const rawTarget = r.target as Record<string, unknown> | undefined;
     const rawTargets = r.targets as unknown;
@@ -1051,4 +1091,115 @@ export async function adminApiDelivery(
     return respondError(event, 403, "Forbidden");
   }
   return { deliveryId, attempts: rows };
+}
+
+function validateFragments(
+  fragments: unknown,
+  groupId: string,
+): { ok: true; fragments: NamedFragment[] } | { ok: false; error: string } {
+  if (!Array.isArray(fragments)) return { ok: false, error: "fragments must be an array" };
+  if (fragments.length > 200) return { ok: false, error: "too many fragments" };
+  const seen = new Set<string>();
+  const out: NamedFragment[] = [];
+  for (let i = 0; i < fragments.length; i++) {
+    const f = fragments[i] as Record<string, unknown>;
+    if (!f || typeof f !== "object") return { ok: false, error: `fragment[${i}] is not an object` };
+    if (typeof f.id !== "string" || !ID_RE.test(f.id)) {
+      return { ok: false, error: `fragment[${i}].id is invalid` };
+    }
+    if (seen.has(f.id)) return { ok: false, error: `duplicate fragment id "${f.id}"` };
+    seen.add(f.id);
+    if (typeof f.name !== "string" || f.name.trim().length === 0) {
+      return { ok: false, error: `fragment "${f.id}" needs a name` };
+    }
+    const err = validateFilterNode(f.node, `fragment "${f.id}".node`);
+    if (err) return { ok: false, error: err };
+    out.push({ id: f.id, groupId, name: f.name, node: f.node as FilterNode });
+  }
+  return { ok: true, fragments: out };
+}
+
+/** GET /admin/api/groups/:groupId/fragments */
+export async function adminGroupFragmentsGet(
+  event: H3Event,
+  groupId: string,
+): Promise<Record<string, unknown>> {
+  await requireAnyAccess(event);
+  const env = cfEnv(event);
+  const access = requireGroup(event, groupId);
+  if (!access.ok) return accessError(event, access);
+  const all = await loadFragments(env.DB);
+  return { group: access.group, fragments: all.filter((f) => f.groupId === groupId) };
+}
+
+/** PUT /admin/api/groups/:groupId/fragments */
+export async function adminGroupFragmentsPut(
+  event: H3Event,
+  groupId: string,
+): Promise<Record<string, unknown>> {
+  await requireAnyAccess(event);
+  const env = cfEnv(event);
+  const access = requireGroupRole(event, groupId, "admin");
+  if (!access.ok) return accessError(event, access);
+
+  const body = await readJsonBody(event);
+  if (!body) return respondError(event, 400, "Invalid JSON body");
+
+  const submitted = body["fragments"];
+  const result = validateFragments(submitted, groupId);
+  if (!result.ok) return respondError(event, 400, result.error);
+
+  const existing = await loadFragments(env.DB);
+  const others = existing.filter((f) => f.groupId !== groupId);
+  const nextAll = [...others, ...result.fragments];
+
+  try {
+    await saveFragments(env.DB, nextAll);
+  } catch (err) {
+    log.error({ err }, "Failed to save fragments");
+    return respondError(event, 500, "Failed to save fragments");
+  }
+  const auth = currentAuth(event);
+  await recordAudit(env.DB, {
+    ts: Date.now(),
+    actorId: auth.session.userId,
+    actorLogin: auth.session.login,
+    action: "group.fragments.update",
+    targetType: "group",
+    targetId: groupId,
+    groupId,
+    detail: { count: result.fragments.length },
+    ip: clientIp(event),
+  });
+  return { ok: true, count: result.fragments.length };
+}
+
+/** POST /admin/api/test-match */
+export async function adminApiTestMatch(
+  event: H3Event,
+): Promise<Record<string, unknown>> {
+  await requireAnyAccess(event);
+  const body = await readJsonBody(event);
+  if (!body) return respondError(event, 400, "Invalid JSON body");
+
+  const rawNode =
+    body["node"] ?? (Array.isArray(body["filters"]) ? { all: body["filters"] } : undefined);
+  if (rawNode === undefined) return respondError(event, 400, "Missing filter node");
+  const err = validateFilterNode(rawNode, "node");
+  if (err) return respondError(event, 400, err);
+
+  const payload = body["payload"];
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return respondError(event, 400, "Missing payload object");
+  }
+  const eventName =
+    typeof body["event"] === "string" && body["event"].trim() ? body["event"].trim() : "custom";
+  const webhookEvent = { event: eventName, payload: payload as Record<string, unknown> };
+  let matched = false;
+  try {
+    matched = evaluateFilterNode(rawNode as FilterNode, webhookEvent);
+  } catch (e) {
+    return respondError(event, 400, `Failed to evaluate: ${String(e)}`);
+  }
+  return { matched, explanation: explainFilterNode(rawNode as FilterNode) };
 }

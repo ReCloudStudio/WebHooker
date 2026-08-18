@@ -19,6 +19,8 @@
 | `PUT /admin/api/groups`                         | 替换分组（超级管理员全部；owner 仅自己的）                                                                        |
 | `GET /admin/api/groups/:id/routes`              | 列出某分组的路由                                                                                                  |
 | `PUT /admin/api/groups/:id/routes`              | 替换某分组的路由（owner/admin）                                                                                   |
+| `GET /admin/api/groups/:id/fragments`           | 列出某分组的命名过滤器片段                                                                                        |
+| `PUT /admin/api/groups/:id/fragments`           | 替换某分组的命名过滤器片段（owner/admin）                                                                         |
 | `PUT /admin/api/groups/:id/rename`              | 重命名分组（owner）；路由、webhook secret 与邀请自动跟随                                                          |
 | `GET /admin/api/groups/:id/invites`             | 列出待处理的邀请（owner）                                                                                         |
 | `POST /admin/api/groups/:id/invites`            | 创建邀请链接（owner）                                                                                             |
@@ -31,11 +33,14 @@
 | `GET /admin/api/audit`                          | 审计日志（按可访问的分组过滤）                                                                                    |
 | `GET /admin/api/metrics`                        | 投递统计（总计、失败率、按平台/事件/状态、最近失败）；可选 `?groupId=` 按分组过滤；非超管按可访问分组过滤最近失败 |
 | `GET /admin/api/delivery/:deliveryId`           | 单次投递的全部发送日志（按分组过滤）                                                                              |
+| `POST /admin/api/test-match`                    | 无状态过滤器试匹配——将过滤器节点对粘贴的 JSON 载荷求值（不存储任何事件）                                          |
 
 ## 校验
 
-- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、组内唯一 id、name、enabled、groupId、过滤器——**仅 `fallback` 路由允许空过滤器**——可选的 `discordRoleIds`（身份组 id 字符串列表）、平台感知的 targets：Discord 需 `target.channelId`，Telegram 需 `target.chatId`）并持久化到 D1 `d1_routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }` / `403 { error }`。未变更的路由跳过完整校验。
+- `PUT /admin/api/routes` — 请求体为 `{ "routes": Route[] }`；校验每条路由（id 格式、组内唯一 id、name、enabled、groupId、过滤器——**仅 `fallback` 路由允许空过滤器**——可选的 `discordRoleIds`（身份组 id 字符串列表）、平台感知的 targets：Discord 需 `target.channelId`，Telegram 需 `target.chatId`）并持久化到 D1 `d1_routes`。返回 `200 { ok, count }` 或 `400 { error }` / `401 { error }` / `403 { error }`。未变更的路由跳过完整校验。路由过滤器支持 `field` 类型（指向 `payload` 的 JSONPath `path`，数组展开后任一元素匹配）与 12 个 `op` 操作符（`eq` 默认 / `ne` / `contains` / `startsWith` / `endsWith` / `regex` / `gt` / `gte` / `lt` / `lte` / `in` / `exists`）；嵌套 `ast`（`all` / `any` / `not`）存在时优先于 `filters`。
 - `PUT /admin/api/groups` — 校验分组 id、成员角色（至少一个 `owner`）、`providers`（`github` / `gitea`）与 `installationId`。
+- `POST /admin/api/test-match` — 请求体 `{ "node": FilterNode | "filters": Filter[], "event"?: string, "payload": object }`；在内存中求值并返回 `{ matched, explanation }`，不持久化任何内容。
+- `GET/PUT /admin/api/groups/:id/fragments` — 命名过滤器片段（`{ id, groupId, name, node }`）存储于 D1 `d1_fragments`；编辑器在插入时将片段的 `node` 内联进路由的 `ast`（匹配器从不解析片段引用）。`PUT` 全量替换该分组的片段并返回 `200 { ok, count }`。
 - 上限：每个实例最多 200 条路由与 100 个分组。
 
 模式：见[路由与目标](../guide/routes)、[分组与访问控制](../guide/groups)。

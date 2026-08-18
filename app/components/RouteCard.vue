@@ -35,18 +35,10 @@
       </div>
 
       <div class="route-card-filters">
-        <span
-          v-for="(f, i) in route.filters"
-          :key="i"
-          class="route-chip"
-          :class="{ exclude: f.exclude }"
-        >
-          <span class="route-chip-type"
-            >{{ f.exclude ? t("routeEditor.not") + " " : "" }}{{ t("filter." + f.type) }}</span
-          >
-          <span class="route-chip-val">{{ fmtMatch(f.match) }}</span>
+        <span v-if="summary" class="route-chip">
+          <span class="route-chip-val">{{ summary }}</span>
         </span>
-        <span v-if="!route.filters.length" class="route-chip route-chip-empty">
+        <span v-else class="route-chip route-chip-empty">
           <span class="route-chip-type">{{ t("route.noFilters") }}</span>
         </span>
       </div>
@@ -151,8 +143,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Route } from "~/types";
-import { fmtMatch } from "~/types";
+import type { FilterNode, Route } from "~/types";
+import { describeNode } from "~/composables/useFilterNode";
 
 const { t } = useI18n();
 
@@ -162,6 +154,11 @@ const props = defineProps<{
   atLast?: boolean;
   readonly?: boolean;
 }>();
+
+const summary = computed(() => {
+  const node: FilterNode = props.route.ast ?? { all: props.route.filters };
+  return describeNode(node, t);
+});
 const emit = defineEmits<{
   (e: "toggle", route: Route): void;
   (e: "edit", route: Route): void;

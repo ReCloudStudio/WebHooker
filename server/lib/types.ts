@@ -151,10 +151,43 @@ export interface Group {
   logTarget?: RouteTarget;
 }
 
+export type FilterType =
+  | "event"
+  | "repo"
+  | "actor"
+  | "action"
+  | "branch"
+  | "keyword"
+  | "field";
+
+export type FilterOp =
+  | "eq"
+  | "ne"
+  | "contains"
+  | "startsWith"
+  | "endsWith"
+  | "regex"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "in"
+  | "exists";
+
 export interface Filter {
-  type: "event" | "repo" | "actor" | "action" | "branch" | "keyword";
-  match: string | string[];
+  type: FilterType;
+  match?: string | string[];
   exclude?: boolean;
+  /**
+   * JSONPath (dot notation, arrays expanded so any element matches) into
+   * `payload` used by `type: "field"` filters. E.g. `pull_request.user.login`.
+   */
+  path?: string;
+  /**
+   * Comparison operator. Defaults to `eq`, which keeps the legacy glob/regex/
+   * case-insensitive-exact semantics. `exists` ignores `match`.
+   */
+  op?: FilterOp;
 }
 
 /**

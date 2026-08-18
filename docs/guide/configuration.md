@@ -73,6 +73,7 @@ See the [Filter Tutorial](./filters) for a hands-on guide with worked examples.
 | `actor`   | Sender login         | `username`, `[bot]`, `*[bot]`      |
 | `action`  | Event action         | `opened`, `closed`, `published`    |
 | `branch`  | Branch name          | `main`, `feature-?`, `/^release-/` |
+| `field`   | Any payload field (JSONPath) | `path: "pull_request.user.login"` |
 | `keyword` | Text in payload body | `deploy`, `/fix\s+\d+/`            |
 
 ### Filter Behavior
@@ -80,7 +81,10 @@ See the [Filter Tutorial](./filters) for a hands-on guide with worked examples.
 - All filters in a route must match for the route to trigger (AND logic)
 - Set `"exclude": true` on any filter to invert it (NOT logic)
 - Every filter type supports the same pattern forms: plain text, `*`/`?` **globs** (`*` = any run, `?` = one character), and `/regular expression/` — all case-insensitive
-- Field filters (`event`/`repo`/`actor`/`action`/`branch`) glob-match the whole value; `keyword` globs and regexes search anywhere in the payload; plain `keyword` text is a substring search
+- Field filters (`event`/`repo`/`actor`/`action`/`branch`/`field`) glob-match the whole value; `keyword` globs and regexes search anywhere in the payload; plain `keyword` text is a substring search
+- Every filter except `keyword` accepts an `op` operator — `eq` (default, classic behaviour), `ne`, `contains`, `startsWith`, `endsWith`, `regex`, `gt`, `gte`, `lt`, `lte`, `in`, `exists` — see the [Filter Tutorial](./filters#operators)
+- `field` filters use a dot-separated JSONPath `path` into the payload; arrays are expanded so any matching element satisfies the filter
+- Routes may nest filters in an `ast` node (`all` / `any` / `not`) instead of a flat `filters` list; `ast` takes precedence when present
 - Patterns longer than 200 characters are not compiled as glob/regex; an invalid `//`-wrapped regex matches nothing
 - `branch` filter works for push, pull_request, pull_request_review, pull_request_review_comment, create/delete, workflow_run, workflow_job, check_suite, deployment, and code_scanning_alert events
 
@@ -91,4 +95,5 @@ Filters accept either a single string or an array of strings:
 ```json
 { "type": "event", "match": "push" }
 { "type": "event", "match": ["push", "pull_request"] }
+{ "type": "field", "path": "pull_request.commits", "op": "gt", "match": "1" }
 ```

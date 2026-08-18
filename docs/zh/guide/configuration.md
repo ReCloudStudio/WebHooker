@@ -72,6 +72,7 @@ WebHooker 在 `/admin` 提供内置配置控制台，可在浏览器中管理路
 | `actor`   | 发送者登录名     | `username`, `[bot]`, `*[bot]`      |
 | `action`  | 事件操作         | `opened`, `closed`, `published`    |
 | `branch`  | 分支名称         | `main`, `feature-?`, `/^release-/` |
+| `field`   | 任意载荷字段（JSONPath） | `path: "pull_request.user.login"` |
 | `keyword` | 载荷正文中的文本 | `deploy`, `/fix\s+\d+/`            |
 
 ### 过滤器行为
@@ -79,7 +80,10 @@ WebHooker 在 `/admin` 提供内置配置控制台，可在浏览器中管理路
 - 路由中的所有过滤器必须都匹配才触发路由（AND 逻辑）
 - 在任何过滤器上设置 `"exclude": true` 可反转匹配逻辑（NOT 逻辑）
 - 所有过滤器类型支持相同的模式形式：纯文本、`*`/`?` **通配符**（`*` 任意长度、`?` 单字符）以及 `/正则表达式/`——均不区分大小写
-- 字段过滤器（`event`/`repo`/`actor`/`action`/`branch`）的通配符匹配整个值；`keyword` 的通配符和正则搜索载荷任意位置；`keyword` 的纯文本为子串搜索
+- 字段过滤器（`event`/`repo`/`actor`/`action`/`branch`/`field`）的通配符匹配整个值；`keyword` 的通配符和正则搜索载荷任意位置；`keyword` 的纯文本为子串搜索
+- 除 `keyword` 外的每个过滤器都可加 `op` 操作符——`eq`（默认，经典行为）、`ne`、`contains`、`startsWith`、`endsWith`、`regex`、`gt`、`gte`、`lt`、`lte`、`in`、`exists`——见[过滤器教程](./filters#操作符)
+- `field` 过滤器使用点号分隔的 JSONPath `path` 定位载荷字段；数组会自动展开，任一元素匹配即满足过滤器
+- 路由可将过滤器嵌套在 `ast` 节点（`all` / `any` / `not`）中，取代扁平的 `filters` 列表；存在 `ast` 时它优先
 - 超过 200 个字符的模式不编译为通配符/正则；`//` 包裹的非法正则匹配不到任何内容
 - `branch` 过滤器适用于 push、pull_request、pull_request_review、pull_request_review_comment、create/delete、workflow_run、workflow_job、check_suite、deployment 和 code_scanning_alert 事件
 
@@ -90,4 +94,5 @@ WebHooker 在 `/admin` 提供内置配置控制台，可在浏览器中管理路
 ```json
 { "type": "event", "match": "push" }
 { "type": "event", "match": ["push", "pull_request"] }
+{ "type": "field", "path": "pull_request.commits", "op": "gt", "match": "1" }
 ```

@@ -9,7 +9,8 @@ GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare W
 - **分组级 webhook 入口** — 每个分组可拥有独立的 `POST /webhook/{groupId}` URL + secret（Gitea、classic GitHub webhook，以及用 `X-WebHooker-Signature` 签名的任意自定义 JSON，可选的 timestamp+nonce 重放防护）
 - **GitHub App 租户隔离** — 将分组绑定到 GitHub App 安装 ID，只有该组织/用户的事件才能进入该分组
 - HMAC-SHA256 签名验证（Web Crypto API）
-- 按事件类型、仓库、操作人、操作、分支、关键词过滤（支持 `*`/`?` 通配符与 `/正则/`）
+- 按事件类型、仓库、操作人、操作、分支、关键词，或任意载荷字段（`field` + JSONPath `path`，如 `pull_request.user.login`）过滤；支持 `*`/`?` 通配符与 `/正则/`，另有 12 个比较操作符（`eq`/`ne`/`contains`/`startsWith`/`endsWith`/`regex`/`gt`/`gte`/`lt`/`lte`/`in`/`exists`）
+- 在路由编辑器的可视化构建器中把过滤器组合成布尔 AST（`all` / `any` / `not` 节点）；可复用命名过滤器片段，并可对粘贴的 JSON 载荷做无存储的试匹配
 - 富消息：颜色编码、作者头像、字段、时间戳——渲染为 Discord embed 与 Telegram HTML
 - 路由到 Discord 频道/子区与 Telegram 群组/话题（一条路由可多目标）
 - `workflow_run` / `check_run` 进度**原地编辑**同一条消息（运行推进时更新），两个平台均支持
@@ -39,7 +40,7 @@ GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 - **Cloudflare Worker** — HTTP 入口、签名验证、路由分发
 - **Interactions Endpoint** — HTTPS 回调（无 Discord Gateway 连接、无 Durable Object）；bot 保持离线，命令通过 API 注册
 - **KV** — 缓存 + 临时状态：Token 存储（`token:{userId}`）、OAuth state（`state:{hex}`）、管理员会话（`session:{id}`）、分组级 webhook secret（`tenant:{groupId}`）、邀请、配置缓存、投递去重/投递状态/消息更新追踪的回退（`delivery:*`、`delivery-state:*`、`msg:*` 仅在 D1 不可用时使用）与消息更新锁（`msg:lock:*`）
-- **D1** — 路由/分组（`d1_routes`/`d1_groups`）、发送日志（`send_logs`）、审计日志（`audit_logs`）、去重（`dedup_keys`）、投递状态（`delivery_state`）、消息更新追踪（`message_tracking`）、Discord↔GitHub 绑定（`discord_links`）、Telegram↔GitHub 绑定（`telegram_links`）
+- **D1** — 路由/分组（`d1_routes`/`d1_groups`）、命名过滤器片段（`d1_fragments`）、发送日志（`send_logs`）、审计日志（`audit_logs`）、去重（`dedup_keys`）、投递状态（`delivery_state`）、消息更新追踪（`message_tracking`）、Discord↔GitHub 绑定（`discord_links`）、Telegram↔GitHub 绑定（`telegram_links`）
 - **Queue** — 绑定 `QUEUE` 时异步投递：`webhooker-delivery`（指数退避重试）+ 死信队列 `webhooker-delivery-dlq`；超大负载暂存于 R2（`PAYLOAD` 绑定，`webhooks/YYYY/MM/DD/*.json`，回退 KV `queue:payload:*`）
 
 ## 快速开始
@@ -98,7 +99,7 @@ bunx wrangler dev    # 启动本地开发服务器
 ]
 ```
 
-`target.platform` 选择推送目标：`discord`（默认）或 `telegram`。Discord 目标需 `target.channelId`（可选 `threadId` 指向子区）；Telegram 目标需 `target.chatId`（可选 `topicId` 指向话题）。路由隶属于**分组**（D1 `d1_groups`，首次加载时从旧版 KV `config:groups` 同步），分组用于限定管理权限，并可限制哪些组织/用户的事件流入。完整模式见[路由与目标](https://webhooker.docs.worldexecute.me/zh/guide/routes)与[分组与访问控制](https://webhooker.docs.worldexecute.me/zh/guide/groups)指南。
+`target.platform` 选择推送目标：`discord`（默认）或 `telegram`。Discord 目标需 `target.channelId`（可选 `threadId` 指向子区）；Telegram 目标需 `target.chatId`（可选 `topicId` 指向话题）。路由还可设置 `stop: true`（跳过后续路由）。路由隶属于**分组**（D1 `d1_groups`，首次加载时从旧版 KV `config:groups` 同步），分组用于限定管理权限，并可限制哪些组织/用户的事件流入。完整模式见[路由与目标](https://webhooker.docs.worldexecute.me/zh/guide/routes)与[分组与访问控制](https://webhooker.docs.worldexecute.me/zh/guide/groups)指南。
 
 ### Web 控制台（`/admin`）
 
@@ -112,7 +113,7 @@ bunx wrangler dev    # 启动本地开发服务器
 
 ### 过滤器类型
 
-所有过滤器均支持纯文本、`*`/`?` 通配符与 `/正则/`（不区分大小写）；设置 `exclude: true` 可取反。过滤器还可通过路由上可选的 `ast`（`all` / `any` / `not` 节点）组合为 AST，以表达默认 AND 列表之外的布尔组合。模式语法与完整过滤器参考见[过滤器教程](https://webhooker.docs.worldexecute.me/zh/guide/filters)。
+所有过滤器均支持纯文本、`*`/`?` 通配符与 `/正则/`（不区分大小写）；设置 `exclude: true` 可取反。`field` 过滤器通过 JSONPath（`path`）读取任意载荷字段（数组会展开，任一元素匹配即可），并可用 `op` 指定比较操作符（默认 `eq`）；`op: "exists"` 只判断字段是否存在、无需 `match`。过滤器还可通过路由上可选的 `ast`（`all` / `any` / `not` 节点）组合为 AST，以表达默认 AND 列表之外的布尔组合——当 `ast` 存在时优先于 `filters`。路由编辑器提供可视化 AST 构建器、chip 多值输入、无状态试匹配器与命名过滤器片段（存于 D1 `d1_fragments`）。模式语法与完整过滤器参考见[过滤器教程](https://webhooker.docs.worldexecute.me/zh/guide/filters)。
 
 ## API
 

@@ -37,6 +37,7 @@ Each entry of `targets` is a push destination, so one route can forward to sever
 | `fallback`       | boolean  | No       | When `true`, fires only if no non-fallback route matched the event; its own filters are ignored |
 | `stop`           | boolean  | No       | When `true` and this route matches, no further routes are evaluated for this event              |
 | `discordRoleIds` | string[] | No       | Discord role ids to ping when this route fires; applied to Discord targets only                 |
+| `ast`            | object   | No       | Boolean filter tree (`{all:[...]}` / `{any:[...]}` / `{not:{...}}`); takes precedence over `filters` when present |
 
 ## Discord Role Mentions
 
@@ -58,7 +59,7 @@ You can add role ids in the admin console under _Discord role mentions_.
 
 ## Filters
 
-Every route carries a `filters` array (all must match — AND logic). See the [Filter Types](./configuration#filter-types) reference and the [Filter Tutorial](./filters).
+Every route carries a `filters` array (all must match — AND logic). When the route has an `ast` field (a nested `all`/`any`/`not` tree), it is evaluated instead of `filters`, so it can express arbitrary boolean combinations. See the [Filter Types](./configuration#filter-types) reference and the [Filter Tutorial](./filters).
 
 ## Custom Route Example
 

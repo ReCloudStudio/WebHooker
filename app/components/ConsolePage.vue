@@ -298,6 +298,7 @@
       :open="editorOpen"
       :route="editing"
       :saving="saving"
+      :group-id="selectedGroup?.id ?? null"
       @close="editorOpen = false"
       @save="onSave"
     />

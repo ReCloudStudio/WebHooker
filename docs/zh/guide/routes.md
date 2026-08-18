@@ -37,6 +37,7 @@
 | `fallback`       | boolean  | 否   | 为 `true` 时仅在没有其他非 fallback 路由匹配时才触发；其自身过滤器被忽略 |
 | `stop`           | boolean  | 否   | 为 `true` 且该路由匹配时，不再评估后续路由                               |
 | `discordRoleIds` | string[] | 否   | 路由触发时要提醒的 Discord 身份组 id；仅对 Discord 目标生效              |
+| `ast`            | object   | 否   | 布尔过滤器树（`{all:[...]}` / `{any:[...]}` / `{not:{...}}`）；存在时优先于 `filters` |
 
 ## Discord 身份组提醒
 
@@ -58,7 +59,7 @@
 
 ## 过滤器
 
-每条路由携带 `filters` 数组（全部匹配才触发——AND 逻辑）。见[过滤器类型](./configuration#过滤器类型)参考与[过滤器教程](./filters)。
+每条路由携带 `filters` 数组（全部匹配才触发——AND 逻辑）。当路由带 `ast` 字段（嵌套的 `all`/`any`/`not` 树）时，用它替代 `filters` 求值，从而表达任意的布尔组合。见[过滤器类型](./configuration#过滤器类型)参考与[过滤器教程](./filters)。
 
 ## 自定义路由示例
 

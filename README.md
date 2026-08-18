@@ -9,7 +9,8 @@ GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook event
 - **Per-group webhook ingress** — every group can get its own `POST /webhook/{groupId}` URL + secret (Gitea, classic GitHub webhooks, and arbitrary custom JSON posts signed with `X-WebHooker-Signature`, with optional timestamp+nonce replay protection)
 - **GitHub App tenant isolation** — bind a group to a GitHub App installation id so only that org/user's events enter it
 - HMAC-SHA256 signature verification (Web Crypto API)
-- Filter by event type, repo, actor, action, branch, keyword (supports `*`/`?` globs and `/regex/`)
+- Filter by event type, repo, actor, action, branch, keyword, or any payload field (`field` with a JSONPath `path`, e.g. `pull_request.user.login`); supports `*`/`?` globs and `/regex/` patterns plus 12 comparison operators (`eq`/`ne`/`contains`/`startsWith`/`endsWith`/`regex`/`gt`/`gte`/`lt`/`lte`/`in`/`exists`)
+- Combine filters into a boolean AST (`all` / `any` / `not` nodes) via the route editor's visual builder; reuse named filter fragments and dry-run any filter against a pasted JSON payload without storing it
 - Rich messages with color coding, author avatars, fields, and timestamps — rendered as Discord embeds and Telegram HTML
 - Route to Discord channels/threads and Telegram chats/topics (multi-target routes)
 - `workflow_run` / `check_run` progress is edited **in place** (single message updated as the run advances) on both platforms
@@ -39,7 +40,7 @@ GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
 - **Cloudflare Worker** — HTTP ingress, signature verification, routing, platform dispatch
 - **Interactions Endpoint** — HTTPS callback (no Discord Gateway connection, no Durable Object); the bot stays offline and commands are registered via the API
 - **KV** — cache + ephemeral state: token storage (`token:{userId}`), OAuth state (`state:{hex}`), admin sessions (`session:{id}`), per-group webhook secrets (`tenant:{groupId}`), invites, config cache, delivery dedup/state/message-tracking **fallback** (`delivery:*`, `delivery-state:*`, `msg:*` used only when D1 is unavailable) and message-update locks (`msg:lock:*`)
-- **D1** — source of truth for routes/groups (`d1_routes`/`d1_groups`), send logs (`send_logs`), audit logs (`audit_logs`), dedup (`dedup_keys`), delivery state (`delivery_state`), message-update tracking (`message_tracking`), Discord↔GitHub links (`discord_links`), Telegram↔GitHub links (`telegram_links`)
+- **D1** — source of truth for routes/groups (`d1_routes`/`d1_groups`), named filter fragments (`d1_fragments`), send logs (`send_logs`), audit logs (`audit_logs`), dedup (`dedup_keys`), delivery state (`delivery_state`), message-update tracking (`message_tracking`), Discord↔GitHub links (`discord_links`), Telegram↔GitHub links (`telegram_links`)
 - **Queue** — async delivery when `QUEUE` is bound: `webhooker-delivery` (exponential retry) + DLQ `webhooker-delivery-dlq`; oversized payloads parked in R2 (`PAYLOAD` binding, `webhooks/YYYY/MM/DD/*.json`, falling back to KV `queue:payload:*`)
 
 ## Quick Start
@@ -98,7 +99,7 @@ Routes are stored in D1 (`d1_routes`, seeded from legacy KV `config:routes` on f
 ]
 ```
 
-`target.platform` selects the push target: `discord` (default) or `telegram`. Discord targets require `target.channelId` (optional `threadId` for a thread); Telegram targets require `target.chatId` (optional `topicId` for a topic). Routes belong to **groups** (D1 `d1_groups`, seeded from legacy KV `config:groups`) that scope admin access and can restrict which org/user events flow in. See the [Routes & Targets](https://webhooker.docs.worldexecute.me/guide/routes) and [Groups & Access Control](https://webhooker.docs.worldexecute.me/guide/groups) guides for the full schema.
+`target.platform` selects the push target: `discord` (default) or `telegram`. Discord targets require `target.channelId` (optional `threadId` for a thread); Telegram targets require `target.chatId` (optional `topicId` for a topic). A route may also set `stop: true` (skip later routes). Routes belong to **groups** (D1 `d1_groups`, seeded from legacy KV `config:groups`) that scope admin access and can restrict which org/user events flow in. See the [Routes & Targets](https://webhooker.docs.worldexecute.me/guide/routes) and [Groups & Access Control](https://webhooker.docs.worldexecute.me/guide/groups) guides for the full schema.
 
 ### Web UI (`/admin`)
 
@@ -112,7 +113,7 @@ Sign out at `/admin/logout`. Every group has `members` with a role (`owner` / `a
 
 ### Filter Types
 
-Every filter supports plain text, `*`/`?` globs, and `/regex/` patterns (case-insensitive); set `exclude: true` to invert. Filters can also be grouped into an AST via an optional `ast` on a route (`all` / `any` / `not` nodes) to express boolean combinations beyond the default AND-list. See the [Filter Tutorial](https://webhooker.docs.worldexecute.me/guide/filters) for the pattern syntax and the full filter reference.
+Every filter supports plain text, `*`/`?` globs, and `/regex/` patterns (case-insensitive); set `exclude: true` to invert. A `field` filter reads any payload value by JSONPath (arrays expand so any element matches) and accepts an `op` operator (default `eq`); `op: "exists"` checks presence without a `match`. Filters can also be grouped into an AST via an optional `ast` on a route (`all` / `any` / `not` nodes) to express boolean combinations beyond the default AND-list — when present, `ast` takes precedence over `filters`. The route editor provides a visual AST builder, chip multi-value input, a stateless match tester, and named filter fragments (stored in D1 `d1_fragments`). See the [Filter Tutorial](https://webhooker.docs.worldexecute.me/guide/filters) for the pattern syntax and the full filter reference.
 
 ## API
 

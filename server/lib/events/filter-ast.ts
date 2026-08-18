@@ -1,4 +1,4 @@
-import type { WebhookEvent, Filter, FilterNode } from "../types";
+import type { WebhookEvent, Filter, FilterNode, FilterOp } from "../types";
 
 const regexCache = new Map<string, RegExp>();
 const keywordBodyCache = new WeakMap<WebhookEvent, string>();
@@ -102,37 +102,122 @@ function extractBranch(event: WebhookEvent): string | undefined {
   }
 }
 
+function toPatterns(filter: Filter): string[] {
+  if (filter.match === undefined || filter.match === null) return [];
+  return Array.isArray(filter.match) ? filter.match : [filter.match];
+}
+
+function stringify(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value === undefined || value === null) return "";
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return JSON.stringify(value);
+}
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number") return value;
+  if (typeof value === "boolean") return value ? 1 : 0;
+  if (typeof value === "string") {
+    const n = Number(value.trim());
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function resolvePath(value: unknown, path: string): unknown[] {
+  const parts = path.split(".").filter(Boolean);
+  if (parts.length === 0) return [value];
+  const out: unknown[] = [];
+  walkPath(value, parts, 0, out);
+  return out;
+}
+
+function walkPath(node: unknown, parts: string[], index: number, out: unknown[]): void {
+  if (index >= parts.length) {
+    out.push(node);
+    return;
+  }
+  if (Array.isArray(node)) {
+    for (const item of node) walkPath(item, parts, index, out);
+    return;
+  }
+  if (node === null || node === undefined || typeof node !== "object") return;
+  const next = (node as Record<string, unknown>)[parts[index]!];
+  walkPath(next, parts, index + 1, out);
+}
+
+function valueList(filter: Filter, event: WebhookEvent): unknown[] {
+  const p = event.payload;
+  switch (filter.type) {
+    case "event":
+      return [event.event];
+    case "repo":
+      return [(p.repository as { full_name?: string } | undefined)?.full_name];
+    case "actor":
+      return [(p.sender as { login?: string } | undefined)?.login];
+    case "action":
+      return [typeof p.action === "string" ? p.action : undefined];
+    case "branch":
+      return [extractBranch(event)];
+    case "field":
+      return resolvePath(p, filter.path ?? "");
+    default:
+      return [];
+  }
+}
+
+function valueMatches(value: unknown, op: FilterOp, patterns: string[]): boolean {
+  const text = stringify(value);
+  switch (op) {
+    case "exists":
+      return value !== undefined && value !== null;
+    case "ne":
+      return !patterns.some((p) => matchField(p, text));
+    case "contains":
+      return patterns.some((p) => text.toLowerCase().includes(p.toLowerCase()));
+    case "startsWith":
+      return patterns.some((p) => text.toLowerCase().startsWith(p.toLowerCase()));
+    case "endsWith":
+      return patterns.some((p) => text.toLowerCase().endsWith(p.toLowerCase()));
+    case "regex":
+      return patterns.some((p) => {
+        const re = compileRegex(p);
+        return re ? re.test(text) : false;
+      });
+    case "gt":
+    case "gte":
+    case "lt":
+    case "lte": {
+      const n = toNumber(value);
+      if (n === null) return false;
+      return patterns.some((p) => {
+        const pn = toNumber(p);
+        if (pn === null) return false;
+        if (op === "gt") return n > pn;
+        if (op === "gte") return n >= pn;
+        if (op === "lt") return n < pn;
+        return n <= pn;
+      });
+    }
+    case "eq":
+    case "in":
+    default:
+      return patterns.some((p) => matchField(p, text));
+  }
+}
+
 function matchFilter(filter: Filter, event: WebhookEvent, keywordBody?: string): boolean {
   if (filter.type === "keyword") {
     const body = keywordBody ?? getKeywordBody(event);
-    const patterns = Array.isArray(filter.match) ? filter.match : [filter.match];
+    const patterns = toPatterns(filter);
     const matches = patterns.some((p) => matchKeyword(p, body));
     return filter.exclude ? !matches : matches;
   }
 
-  const value = valueFor(filter, event);
-  if (!value) return false;
-  const patterns = Array.isArray(filter.match) ? filter.match : [filter.match];
-  const matches = patterns.some((p) => matchField(p, value));
+  const op = filter.op ?? "eq";
+  const patterns = toPatterns(filter);
+  const matches = valueList(filter, event).some((v) => valueMatches(v, op, patterns));
   return filter.exclude ? !matches : matches;
-}
-
-function valueFor(filter: Filter, event: WebhookEvent): string | undefined {
-  const p = event.payload;
-  switch (filter.type) {
-    case "event":
-      return event.event;
-    case "repo":
-      return (p.repository as { full_name?: string } | undefined)?.full_name;
-    case "actor":
-      return (p.sender as { login?: string } | undefined)?.login;
-    case "action":
-      return typeof p.action === "string" ? p.action : undefined;
-    case "branch":
-      return extractBranch(event);
-    default:
-      return undefined;
-  }
 }
 
 export function containsKeyword(node: FilterNode): boolean {
@@ -154,10 +239,20 @@ export function evaluateFilterNode(
 }
 
 export function explainFilter(filter: Filter): string {
-  const value = Array.isArray(filter.match)
-    ? filter.match.map((m) => JSON.stringify(m)).join(" or ")
-    : JSON.stringify(filter.match);
-  const base = `${filter.type} ${filter.type === "keyword" ? "matches" : "is"} ${value}`;
+  const patterns = toPatterns(filter);
+  const value = patterns.map((m) => JSON.stringify(m)).join(" or ");
+  const label = filter.type === "field" ? filter.path ?? "field" : filter.type;
+  const op = filter.op ?? "eq";
+  let base: string;
+  if (filter.type === "keyword") {
+    base = `${label} matches ${value}`;
+  } else if (op === "exists") {
+    base = `${label} exists`;
+  } else if (op === "eq") {
+    base = `${label} is ${value}`;
+  } else {
+    base = `${label} ${op} ${value}`;
+  }
   return filter.exclude ? `not (${base})` : base;
 }
 

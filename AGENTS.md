@@ -26,6 +26,7 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Per-group forge branding: optional `Group.forgeSources` (a list of `{ host, type: "github" | "gitea", name? }` the group defines itself) labels each message's footer with the first entry whose type matches the event's provider and whose host matches the repository URL's hostname (GitHub matches `github.com`, so two Gitea instances can be `git1.example.com`/`git2.example.com`); the label is the entry's optional `name` (fallback: host); links are derived from the repo URL and footer icons use raster PNGs Discord renders (GitHub's `fluidicon.png`, Gitea's `/assets/img/favicon.png` — `.ico` favicons are silently ignored); Discord shows the footer icon + name, Telegram a linked name
 - Delivery queue: when the `QUEUE` binding is present, webhook ingress enqueues one message per event (not per target) to a Cloudflare Queue (`webhooker-delivery`); a Nitro `cloudflare:queue` plugin consumes batches, dispatches, and retries retryable failures (5xx/network/429-exhaustion) with exponential backoff (5s/30s/2m/10m) up to the queue `max_retries`, after which the DLQ (`webhooker-delivery-dlq`) marks the delivery dead. Oversized payloads (>~100 KB) are parked in R2 (`webhooks/YYYY/MM/DD/*.json`, falling back to KV `queue:payload:*` without the R2 binding) and resolved by the consumer; delivery state is tracked as the D1 `delivery_state` table (KV `delivery-state:*` fallback). Without the `QUEUE` binding, dispatch stays inline (existing behavior)
 - Storage quotas: the design avoids KV write pressure (Workers Free KV allows ~1,000 writes/day) by keeping high-frequency ephemeral writes in D1 instead — webhook dedup (`dedup_keys`, atomic `ON CONFLICT` UPSERT), delivery state and message tracking all use D1 rows via `canUseD1` (prepare+batch probe) with automatic KV fallback when D1 is unavailable or unmigrated. D1 Free allows 100,000 rows written/day, so the per-event KV write cost drops to ~0; config stays cached in memory + KV with D1 authoritative
+- Filter DSL: a route's flat `filters` can be replaced by a nested `ast` (`all`/`any`/`not` nodes, `server/lib/events/filter-ast.ts`) that takes precedence when present; the `field` filter type reads any payload value by JSONPath (`path`, arrays expand so any element matches) and 12 comparison operators (`op`: `eq`/`ne`/`contains`/`startsWith`/`endsWith`/`regex`/`gt`/`gte`/`lt`/`lte`/`in`/`exists`) extend the legacy glob/regex/case-insensitive-exact semantics; named filter fragments (D1 `d1_fragments` via `server/lib/fragments.ts`, per-group) are editor-side templates inlined into the route's `ast` on insert — the matcher never resolves fragment references; the route editor (`RouteEditor.vue`) exposes a recursive AST builder (`FilterNodeEditor.vue`), chip multi-value input (`TagInput.vue`), live explanation and a stateless `POST /admin/api/test-match` dry-run
 - Local dev: wrangler + Miniflare
 
 ## Architecture
@@ -36,9 +37,10 @@ app/                     # Vue 3 UI (Nuxt app dir)
 ├── assets/css/main.css  # Tailwind entry: theme tokens (RGB-triplet vars) + @layer components (@apply) + Vue transition glue
 ├── pages/               # index (landing), terms, privacy, admin/[...slug] (console SPA)
 ├── components/          # ConsolePage (sidebar shell + topbar), AdminHome (overview dashboard),
-│                        # RouteCard/Editor, GroupEditor, MembersPanel, WebhookPanel,
+│                        # RouteCard/Editor (RouteEditor has FilterNodeEditor AST builder + TagInput chips),
+│                        # GroupEditor, MembersPanel, WebhookPanel,
 │                        # SendLogs, AuditLog, MetricsPanel, AppToasts, LegalLayout
-├── composables/         # useI18n, useToasts, useGroups, useGroupRoutes, useLogs, useAudit, useInvites, useWebhook
+├── composables/         # useI18n, useToasts, useGroups, useGroupRoutes, useFilterNode (AST helpers), useFragments, useLogs, useAudit, useInvites, useWebhook
 ├── types.ts             # shared client types (Route, Group, Filter, ...)
 └── utils/legal.ts       # terms/privacy HTML bodies (zh/en)
 server/                  # Nitro server
@@ -50,6 +52,7 @@ server/                  # Nitro server
 └── lib/
     ├── types.ts         # Env, Config, Route, Filter, Group, WebhookEvent, NeutralMessage
     ├── config.ts        # loadRoutes/saveRoutes (delegates to D1 ConfigStore when available, else KV config:routes), loadConfig from env
+    ├── fragments.ts     # named filter fragments (loadFragments/saveFragments — D1 d1_fragments, no KV)
     ├── config/          # config schema + migration + validation
     │   └── schema.ts    # CONFIG_SCHEMA_VERSION, valibot route/group/filter schemas, migrateRoutes/Groups, validateRoutes/Groups (non-destructive), explainRoute
     ├── cf.ts            # cfEnv(event) — env bindings from event.context.cloudflare
@@ -62,7 +65,7 @@ server/                  # Nitro server
     │   └── dispatch.ts  # Platform-neutral dispatch: match routes → formatEvent → driver.send/edit (batched recordSend + group filter + per-group webhook log)
     ├── events/
     │   ├── match.ts     # matchRoute, eventOwners; unified pattern syntax (*/? globs + //-wrapped regex)
-    │   └── filter-ast.ts # FilterNode evaluator (all/any/not), containsKeyword, explainFilter/explainFilterNode; pattern helpers (regex/glob compile)
+    │   └── filter-ast.ts # FilterNode evaluator (all/any/not + field JSONPath + 12 ops), containsKeyword, explainFilter/explainFilterNode; pattern helpers (regex/glob compile)
     ├── providers/       # Forge webhook providers (verify + parse/normalize to GitHub-shaped events)
     │   ├── types.ts     # Provider interface (matches/verify/parse)
     │   ├── hmac.ts      # HMAC-SHA256 + timing-safe compare helpers
@@ -141,8 +144,10 @@ tests/__snapshots__/     # formatter snapshot golden files (toMatchSnapshot)
 - Normalize Gitea webhook payloads to a GitHub-shaped `WebhookEvent` (push `compare_url` → `compare`, `pull_request_comment` → `pull_request_review_comment`, ...)
 - Verify Discord interactions (Web Crypto Ed25519, X-Signature-Ed25519 over timestamp + body)
 - Verify Telegram webhook calls (X-Telegram-Bot-Api-Secret-Token when configured)
-- Filter events by: event type, repo name, actor, action, branch, keyword — every filter type supports `*`/`?` glob matching and `//`-wrapped regular expressions (case-insensitive)
+- Filter events by: event type, repo name, actor, action, branch, keyword, or any payload field (`field` with a JSONPath `path` — arrays expand so any element matches) — every filter type supports `*`/`?` glob matching and `//`-wrapped regular expressions (case-insensitive) plus 12 comparison operators (`op`: `eq`/`ne`/`contains`/`startsWith`/`endsWith`/`regex`/`gt`/`gte`/`lt`/`lte`/`in`/`exists`)
 - Combine filters into an AST (`Route.ast`: `all`/`any`/`not` nodes) that overrides the flat `filters` AND-list; `explainRoute`/`explainFilterNode` render a human-readable description of the tree
+- Store named filter fragments (D1 `d1_fragments`, per group, `GET`/`PUT /admin/api/groups/:groupId/fragments`) as editor-side templates; inserting a fragment inlines its node into the route's `ast` — dispatch never resolves fragment references
+- Offer a stateless filter dry-run (`POST /admin/api/test-match`, body `{ node | filters, event?, payload }`) that evaluates in memory and returns `{ matched, explanation }` — no event payload is stored
 - Validate route/group config against valibot schemas on load (non-destructive: invalid entries log a warning but still load); `CONFIG_SCHEMA_VERSION` marks the schema version and `migrateRoutes`/`migrateGroups` migrate legacy shapes (e.g. `target` → `targets`)
 - Filter routes by group owner restriction (`Group.owners`), group source-platform restriction (`Group.providers`: github/gitea), GitHub App installation restriction (`Group.installationId`), and skip fallback routes whenever a regular route matched; stop evaluating further routes when a matched route has `stop: true`
 - Auto-provision GitHub App installs: the App's Setup URL flow (`/auth/github/install` choice page + `POST /auth/github/install/bind`, owner-role verified for existing groups) and the `installation.created` webhook fallback both create `inst-{installationId}` groups or bind existing groups
@@ -236,7 +241,7 @@ Rule: no functional change ships without its documentation; docs and code must n
 - **Production**: `wrangler secret put <NAME>` for each secret
 - **Routes**: config in D1 `d1_routes`/`d1_groups` (authoritative), seeded from legacy KV `config:routes`/`config:groups` on first load; cache-only KV keys
 - **KV namespace**: Required binding for token/state/session/cache storage (dedup/delivery-state/message-tracking fall back to KV when D1 is unavailable)
-- **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `audit_logs` + `discord_links` + `telegram_links` + `d1_groups` + `d1_routes` + `dedup_keys` + `delivery_state` + `message_tracking` tables
+- **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `audit_logs` + `discord_links` + `telegram_links` + `d1_groups` + `d1_routes` + `d1_fragments` + `dedup_keys` + `delivery_state` + `message_tracking` tables
 - **Queue**: optional `QUEUE` producer binding plus consumers `webhooker-delivery` and its DLQ `webhooker-delivery-dlq` (declared in `wrangler.jsonc`); when absent, webhook dispatch stays inline
 - **R2**: optional `PAYLOAD` binding (bucket `webhooker-payloads`) for oversized queue payloads; without it, oversized payloads fall back to KV `queue:payload:*`
 - **Access control**: `ADMIN_USER_IDS` (super admins), `ALLOW_SELF_SIGNUP` (optional personal group on first login), `AUDIT_RETENTION_DAYS` (default 90) — all plain env vars, not secrets
@@ -257,7 +262,7 @@ bunx wrangler d1 create webhooker
 bunx wrangler queues create webhooker-delivery
 bunx wrangler queues create webhooker-delivery-dlq
 # Queues are declared in wrangler.jsonc (QUEUE binding); no env var needed
-bun run db:migrate:prod   # wrangler d1 migrations apply webhooker --remote (migrations/0001..0008)
+bun run db:migrate:prod   # wrangler d1 migrations apply webhooker --remote (migrations/0001..0010)
 # R2 bucket for oversized payloads (P0): bunx wrangler r2 bucket create webhooker-payloads
 bunx wrangler deploy
 ```

@@ -1,14 +1,31 @@
 import * as v from "valibot";
-import type { Group, Route } from "../types";
+import type { FilterNode, Group, Route } from "../types";
 import { log } from "../lib/log";
 import { explainFilterNode } from "../events/filter-ast";
 
 export const CONFIG_SCHEMA_VERSION = 1;
 
 export const filterSchema = v.object({
-  type: v.picklist(["event", "repo", "actor", "action", "branch", "keyword"]),
-  match: v.union([v.string(), v.array(v.string())]),
+  type: v.picklist(["event", "repo", "actor", "action", "branch", "keyword", "field"]),
+  match: v.optional(v.union([v.string(), v.array(v.string())])),
   exclude: v.optional(v.boolean()),
+  path: v.optional(v.string()),
+  op: v.optional(
+    v.picklist([
+      "eq",
+      "ne",
+      "contains",
+      "startsWith",
+      "endsWith",
+      "regex",
+      "gt",
+      "gte",
+      "lt",
+      "lte",
+      "in",
+      "exists",
+    ]),
+  ),
 });
 
 export const routeTargetSchema = v.object({
@@ -19,7 +36,7 @@ export const routeTargetSchema = v.object({
   topicId: v.optional(v.string()),
 });
 
-export const filterNodeSchema = v.lazy(() =>
+export const filterNodeSchema: v.GenericSchema<FilterNode> = v.lazy(() =>
   v.union([
     filterSchema,
     v.object({ all: v.array(filterNodeSchema) }),

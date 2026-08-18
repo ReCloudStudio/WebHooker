@@ -1,0 +1,55 @@
+import type { FilterNode } from "./types";
+import { log } from "./lib/log";
+
+export interface NamedFragment {
+  id: string;
+  groupId?: string;
+  name: string;
+  node: FilterNode;
+}
+
+interface D1FragmentRow {
+  id: string;
+  group_id: string;
+  name: string;
+  node: string;
+}
+
+export async function loadFragments(db: D1Database): Promise<NamedFragment[]> {
+  try {
+    const stmt = db.prepare(
+      "SELECT id, group_id, name, node FROM d1_fragments ORDER BY id",
+    );
+    if (typeof stmt.all !== "function") return [];
+    const { results } = await stmt.all<D1FragmentRow>();
+    if (!results || results.length === 0) return [];
+    return results.map((r) => ({
+      id: r.id,
+      groupId: r.group_id || undefined,
+      name: r.name,
+      node: JSON.parse(r.node) as FilterNode,
+    }));
+  } catch (err) {
+    log.warn({ err }, "Failed to load fragments from D1");
+    return [];
+  }
+}
+
+export async function saveFragments(
+  db: D1Database,
+  fragments: NamedFragment[],
+): Promise<void> {
+  const now = Date.now();
+  const statements: D1PreparedStatement[] = [
+    db.prepare("DELETE FROM d1_fragments"),
+    ...fragments.map((f) =>
+      db
+        .prepare(
+          `INSERT INTO d1_fragments (id, group_id, name, node, version, created_at, updated_at)
+           VALUES (?, ?, ?, ?, 1, ?, ?)`,
+        )
+        .bind(f.id, f.groupId ?? "", f.name, JSON.stringify(f.node), now, now),
+    ),
+  ];
+  await db.batch(statements);
+}

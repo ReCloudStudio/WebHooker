@@ -1,7 +1,53 @@
+export type FilterType =
+  | "event"
+  | "repo"
+  | "actor"
+  | "action"
+  | "branch"
+  | "keyword"
+  | "field";
+
+export type FilterOp =
+  | "eq"
+  | "ne"
+  | "contains"
+  | "startsWith"
+  | "endsWith"
+  | "regex"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "in"
+  | "exists";
+
 export interface Filter {
-  type: "event" | "repo" | "actor" | "action" | "branch" | "keyword";
-  match: string | string[];
+  type: FilterType;
+  match?: string | string[];
   exclude?: boolean;
+  path?: string;
+  op?: FilterOp;
+}
+
+export interface FilterAll {
+  all: FilterNode[];
+}
+
+export interface FilterAny {
+  any: FilterNode[];
+}
+
+export interface FilterNot {
+  not: FilterNode;
+}
+
+export type FilterNode = Filter | FilterAll | FilterAny | FilterNot;
+
+export interface NamedFragment {
+  id: string;
+  groupId?: string;
+  name: string;
+  node: FilterNode;
 }
 
 export interface RouteTarget {
@@ -22,6 +68,7 @@ export interface Route {
   fallback?: boolean;
   stop?: boolean;
   discordRoleIds?: string[];
+  ast?: FilterNode;
 }
 
 export type GroupRole = "owner" | "admin" | "viewer";
@@ -161,9 +208,24 @@ export const ROUTE_TEMPLATES: RouteTemplate[] = [
   },
 ];
 
-export const FILTER_TYPES = ["event", "repo", "actor", "action", "branch", "keyword"] as const;
+export const FILTER_TYPES = ["event", "repo", "actor", "action", "branch", "keyword", "field"] as const;
 
-export function fmtMatch(match: string | string[]): string {
+export const FILTER_OPS: FilterOp[] = [
+  "eq",
+  "ne",
+  "contains",
+  "startsWith",
+  "endsWith",
+  "regex",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "in",
+  "exists",
+];
+
+export function fmtMatch(match: string | string[] | undefined): string {
   if (Array.isArray(match)) return match.join(", ");
   return String(match ?? "");
 }

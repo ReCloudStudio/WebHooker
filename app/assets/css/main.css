@@ -655,6 +655,110 @@
     justify-self: end;
   }
 
+  .node-editor {
+    @apply mb-1;
+  }
+
+  .node-nested {
+    @apply ml-4 border-l border-border pl-3;
+  }
+
+  .leaf-row {
+    @apply mb-1.5 flex flex-wrap items-center gap-2 rounded-sm border border-border bg-surface-2 p-2.5;
+  }
+
+  .node-select {
+    @apply w-[120px] shrink-0 rounded border border-border-strong bg-surface px-2 py-1.5 font-ui text-[12.5px] font-medium text-text;
+  }
+
+  .node-path {
+    @apply w-[160px] shrink-0;
+  }
+
+  .node-values {
+    @apply min-w-[180px] flex-1;
+  }
+
+  .node-exclude {
+    @apply flex shrink-0 cursor-pointer items-center gap-1.5 text-[12px] font-medium text-muted;
+  }
+
+  .node-group {
+    @apply mb-1.5 rounded-sm border border-border bg-surface-2 p-2.5;
+  }
+
+  .node-group-head {
+    @apply mb-2 flex flex-wrap items-center gap-2;
+  }
+
+  .node-combo {
+    @apply w-[130px] rounded border border-border-strong bg-surface px-2 py-1.5 font-ui text-[12.5px] font-semibold text-text;
+  }
+
+  .node-combo-label {
+    @apply inline-flex items-center rounded border border-border-strong bg-surface px-2 py-1.5 font-ui text-[12.5px] font-semibold text-text;
+  }
+
+  .node-actions {
+    @apply ml-auto flex flex-wrap items-center gap-1.5;
+  }
+
+  .node-add {
+    @apply px-2 py-1 text-[12px];
+  }
+
+  .node-children {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .node-empty {
+    @apply py-1 text-[12px] italic text-muted;
+  }
+
+  .test-payload {
+    @apply font-mono text-[12px];
+  }
+
+  .test-result {
+    @apply mt-1 flex flex-col gap-1.5 rounded-sm border border-border bg-surface-2 p-2.5;
+  }
+
+  .test-result.ok {
+    @apply border-ok;
+  }
+
+  .test-badge {
+    @apply inline-flex w-fit items-center rounded-full bg-bad px-2 py-0.5 text-[11px] font-semibold text-white;
+  }
+
+  .test-result.ok .test-badge {
+    @apply bg-ok;
+  }
+
+  .test-explanation {
+    @apply font-mono text-[12px] text-muted;
+  }
+
+  .fragments-list {
+    @apply mb-2 flex flex-col gap-1.5;
+  }
+
+  .fragment-row {
+    @apply flex items-center gap-2 rounded-sm border border-border bg-surface-2 p-2;
+  }
+
+  .fragment-name {
+    @apply min-w-0 flex-1 truncate text-[13px] font-medium text-text;
+  }
+
+  .fragment-action {
+    @apply shrink-0 px-2 py-1 text-[12px];
+  }
+
+  .fragment-save {
+    @apply flex items-center gap-2;
+  }
+
   /* ---- Toasts ---- */
   .toasts {
     @apply pointer-events-none fixed bottom-7 left-1/2 z-[60] flex -translate-x-1/2 flex-col items-center gap-2;

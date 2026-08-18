@@ -194,6 +194,70 @@
 
 跳过载荷中提及 `wip` 或 `draft` 的事件。
 
+### `field` — 任意载荷字段（JSONPath）
+
+使用点号分隔的路径匹配载荷的任意字段，例如 `pull_request.user.login`、`repository.private` 或 `check_run.conclusion`。数组字段会自动展开——只要**任意一个**元素匹配，过滤器即匹配。
+
+```json
+{ "type": "field", "path": "pull_request.user.login", "match": "dependabot[bot]" }
+```
+
+```json
+{ "type": "field", "path": "labels.name", "match": "bug" }
+```
+
+### 操作符
+
+字段过滤器（以及除 `keyword` 之外的所有过滤器类型）可通过 `op` 改变值的比较方式。默认的 `eq` 保持经典的 glob/正则/精确匹配行为。
+
+| 操作符         | 含义                                       |
+| -------------- | ------------------------------------------ |
+| `eq`（默认）   | 相等——通配符、正则与纯文本，不区分大小写   |
+| `ne`           | 不相等（`eq` 的反义）                      |
+| `contains`     | 值包含模式（子串）                         |
+| `startsWith`   | 值以模式开头                               |
+| `endsWith`     | 值以模式结尾                               |
+| `regex`        | 显式正则表达式匹配                         |
+| `gt` / `gte`   | 数值大于 / 大于等于                        |
+| `lt` / `lte`   | 数值小于 / 小于等于                        |
+| `in`           | 值等于任一列出的模式                       |
+| `exists`       | 字段存在（非 null）；忽略 `match`          |
+
+```json
+{ "type": "field", "path": "pull_request.commits", "op": "gt", "match": "1" }
+```
+
+```json
+{ "type": "field", "path": "label.name", "op": "startsWith", "match": "area/" }
+```
+
+### 分组（all / any / not）
+
+路由可以使用嵌套的 `ast` 以显式分组组合过滤器，而不是扁平的 AND 列表。`ast` 节点是 `{ "all": [...] }`、`{ "any": [...] }` 或 `{ "not": {...} }` 之一：
+
+```json
+{
+  "id": "grouped",
+  "name": "Grouped",
+  "ast": {
+    "all": [
+      { "type": "event", "match": "pull_request" },
+      { "any": [
+        { "type": "field", "path": "pull_request.user.login", "match": "alice" },
+        { "type": "field", "path": "pull_request.user.login", "match": "bob" }
+      ]}
+    ]
+  },
+  "targets": [{ "channelId": "..." }]
+}
+```
+
+当 `ast` 存在时，它优先于 `filters`。管理后台的路由编辑器会以可视化方式构建 `ast`（all/any/not 分组）、实时展示树状解释，并可通过「测试匹配」面板粘贴 JSON 载荷进行试匹配。
+
+### 命名过滤器片段
+
+路由编辑器可将当前过滤器树保存为**命名片段**并插入其他路由。片段是编辑器侧的模板，存储在 D1（`d1_fragments`）中；插入片段会将其节点内联进路由的 `ast`，因此匹配引擎本身从不解析片段引用。
+
 ## 示例 1：PR 通知，跳过机器人和草稿
 
 转发拉取请求动态，但忽略机器人作者和草稿 PR，发往 `#prs` 频道：
