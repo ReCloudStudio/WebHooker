@@ -739,6 +739,10 @@
     @apply font-mono text-[12px] text-muted;
   }
 
+  .fragments-presets {
+    @apply mb-2 flex flex-col gap-1.5;
+  }
+
   .fragments-list {
     @apply mb-2 flex flex-col gap-1.5;
   }
@@ -757,6 +761,10 @@
 
   .fragment-save {
     @apply flex items-center gap-2;
+  }
+
+  .log-block {
+    @apply max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-sm border border-border bg-surface-2 p-2.5 font-mono text-[12px] leading-relaxed text-text;
   }
 
   /* ---- Toasts ---- */

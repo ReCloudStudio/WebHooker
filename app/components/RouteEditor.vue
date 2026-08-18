@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
 import type { Filter, FilterNode, NamedFragment, Route, RouteTarget, RouteTemplate } from "~/types";
-import { ROUTE_TEMPLATES } from "~/types";
+import { FRAGMENT_PRESETS, ROUTE_TEMPLATES } from "~/types";
 import type { NodeForm } from "~/composables/useFilterNode";
 import { blankLeafForm, blankNode, nodeToForm, nodeFormToRouteFilters, formToNode } from "~/composables/useFilterNode";
 
@@ -197,8 +197,8 @@ async function runTest(): Promise<void> {
   }
 }
 
-function insertFragment(frag: NamedFragment): void {
-  const child = nodeToForm(frag.node);
+function insertNode(node: FilterNode): void {
+  const child = nodeToForm(node);
   if (root.value.kind === "all" || root.value.kind === "any") {
     root.value.children.push(child);
   } else {
@@ -209,6 +209,10 @@ function insertFragment(frag: NamedFragment): void {
       child: null,
     };
   }
+}
+
+function insertFragment(frag: NamedFragment): void {
+  insertNode(frag.node);
 }
 
 async function saveAsFragment(): Promise<void> {
@@ -407,6 +411,19 @@ watch(
 
           <section v-if="groupId" class="editor-section">
             <h3 class="editor-section-title">{{ t("routeEditor.fragments") }}</h3>
+            <div class="fragments-presets">
+              <span class="hint">{{ t("routeEditor.fragmentsPresets") }}</span>
+              <div v-for="preset in FRAGMENT_PRESETS" :key="preset.id" class="fragment-row">
+                <span class="fragment-name">{{ t(preset.nameKey) }}</span>
+                <button
+                  type="button"
+                  class="btn btn-ghost fragment-action"
+                  @click="insertNode(preset.node)"
+                >
+                  {{ t("routeEditor.fragmentsInsert") }}
+                </button>
+              </div>
+            </div>
             <div class="fragments-list">
               <div v-if="!fragments.length" class="hint">{{ t("routeEditor.fragmentsEmpty") }}</div>
               <div v-for="frag in fragments" :key="frag.id" class="fragment-row">

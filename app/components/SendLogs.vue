@@ -69,7 +69,8 @@
           <template v-for="row in detailRows" :key="row.label">
             <dt>{{ row.label }}</dt>
             <dd>
-              <code v-if="row.code">{{ row.value }}</code>
+              <pre v-if="row.block" class="log-block">{{ row.value }}</pre>
+              <code v-else-if="row.code">{{ row.value }}</code>
               <span v-else>{{ row.value }}</span>
             </dd>
           </template>
@@ -107,8 +108,8 @@ const detailError = ref("");
 
 const detailRows = computed(() => {
   const l = detail.value;
-  if (!l) return [] as Array<{ label: string; value: string; code?: boolean }>;
-  const rows: Array<{ label: string; value: string; code?: boolean }> = [
+  if (!l) return [] as Array<{ label: string; value: string; code?: boolean; block?: boolean }>;
+  const rows: Array<{ label: string; value: string; code?: boolean; block?: boolean }> = [
     { label: t("logs.id"), value: String(l.id ?? "-"), code: true },
     { label: t("logs.time"), value: fmtTime(l.ts) },
     { label: t("logs.route"), value: l.routeId, code: true },
@@ -125,13 +126,13 @@ const detailRows = computed(() => {
     { label: t("logs.duration"), value: l.durationMs != null ? `${l.durationMs} ms` : "-" },
     { label: t("logs.attempts"), value: l.attempts != null ? String(l.attempts) : "-" },
     { label: t("logs.ok"), value: l.ok ? t("logs.yes") : t("logs.no") },
-    { label: t("logs.error"), value: l.error || "-" },
+    { label: t("logs.error"), value: l.error || "-", block: true },
   ];
   if (l.detail && Object.keys(l.detail).length > 0) {
     rows.push({
       label: t("logs.detail"),
       value: JSON.stringify(l.detail, null, 2),
-      code: true,
+      block: true,
     });
   }
   return rows;

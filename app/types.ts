@@ -208,6 +208,65 @@ export const ROUTE_TEMPLATES: RouteTemplate[] = [
   },
 ];
 
+export interface FragmentPreset {
+  id: string;
+  nameKey: string;
+  node: FilterNode;
+}
+
+export const FRAGMENT_PRESETS: FragmentPreset[] = [
+  {
+    id: "preset-pr-bot",
+    nameKey: "fragmentPreset.prBot",
+    node: {
+      all: [
+        { type: "event", match: "pull_request" },
+        { type: "field", path: "pull_request.user.type", match: "Bot" },
+      ],
+    },
+  },
+  {
+    id: "preset-dependabot",
+    nameKey: "fragmentPreset.dependabot",
+    node: {
+      all: [
+        { type: "event", match: "pull_request" },
+        { type: "field", path: "pull_request.user.login", match: "dependabot[bot]" },
+      ],
+    },
+  },
+  {
+    id: "preset-release-published",
+    nameKey: "fragmentPreset.releasePublished",
+    node: {
+      all: [
+        { type: "event", match: "release" },
+        { type: "action", match: "published" },
+      ],
+    },
+  },
+  {
+    id: "preset-push-main",
+    nameKey: "fragmentPreset.pushMain",
+    node: {
+      all: [
+        { type: "event", match: "push" },
+        { type: "branch", match: "main" },
+      ],
+    },
+  },
+  {
+    id: "preset-issue-bug",
+    nameKey: "fragmentPreset.issueBug",
+    node: {
+      all: [
+        { type: "event", match: "issues" },
+        { type: "field", path: "issue.labels.name", match: "bug" },
+      ],
+    },
+  },
+];
+
 export const FILTER_TYPES = ["event", "repo", "actor", "action", "branch", "keyword", "field"] as const;
 
 export const FILTER_OPS: FilterOp[] = [
