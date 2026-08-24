@@ -38,7 +38,9 @@ function remove(index: number) {
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-1 rounded-md border border-border bg-surface/60 px-2 py-1.5 focus-within:border-accent">
+  <div
+    class="flex flex-wrap items-center gap-1 rounded-md border border-border bg-surface/60 px-2 py-1.5 focus-within:border-accent"
+  >
     <span
       v-for="(v, i) in modelValue"
       :key="`${v}-${i}`"

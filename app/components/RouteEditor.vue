@@ -3,7 +3,13 @@ import { computed, reactive, ref, watch } from "vue";
 import type { Filter, FilterNode, NamedFragment, Route, RouteTarget, RouteTemplate } from "~/types";
 import { FRAGMENT_PRESETS, ROUTE_TEMPLATES } from "~/types";
 import type { NodeForm } from "~/composables/useFilterNode";
-import { blankLeafForm, blankNode, nodeToForm, nodeFormToRouteFilters, formToNode } from "~/composables/useFilterNode";
+import {
+  blankLeafForm,
+  blankNode,
+  nodeToForm,
+  nodeFormToRouteFilters,
+  formToNode,
+} from "~/composables/useFilterNode";
 
 interface TargetForm {
   platform: "discord" | "telegram";
@@ -392,11 +398,7 @@ watch(
           <section class="editor-section">
             <h3 class="editor-section-title">{{ t("routeEditor.testMatch") }}</h3>
             <div class="field">
-              <input
-                v-model="testEvent"
-                class="input"
-                :placeholder="t('routeEditor.testEvent')"
-              />
+              <input v-model="testEvent" class="input" :placeholder="t('routeEditor.testEvent')" />
             </div>
             <div class="field">
               <textarea
@@ -413,7 +415,11 @@ watch(
             </div>
             <div v-if="testResult" class="test-result" :class="{ ok: testResult.matched }">
               <span class="test-badge">
-                {{ testResult.matched ? t("routeEditor.testMatched") : t("routeEditor.testNotMatched") }}
+                {{
+                  testResult.matched
+                    ? t("routeEditor.testMatched")
+                    : t("routeEditor.testNotMatched")
+                }}
               </span>
               <span class="test-explanation">{{ testResult.explanation }}</span>
             </div>

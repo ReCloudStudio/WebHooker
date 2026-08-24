@@ -210,18 +210,18 @@ Matches an arbitrary field of the webhook payload using a dot-separated path, e.
 
 Field filters (and every filter type except `keyword`) accept an `op` to change how the value is compared. The default `eq` keeps the classic glob/regex/exact behaviour.
 
-| Operator       | Meaning                                                              |
-| -------------- | -------------------------------------------------------------------- |
-| `eq` (default) | Equal — globs, regexes and plain text, case-insensitive              |
-| `ne`           | Not equal (inverse of `eq`)                                          |
-| `contains`     | Value contains the pattern (substring)                               |
-| `startsWith`   | Value starts with the pattern                                        |
-| `endsWith`     | Value ends with the pattern                                          |
-| `regex`        | Explicit regular expression match                                    |
-| `gt` / `gte`   | Numeric greater-than / greater-or-equal                              |
-| `lt` / `lte`   | Numeric less-than / less-or-equal                                    |
-| `in`           | Value equals any of the listed patterns                              |
-| `exists`       | The field is present (non-null); `match` is ignored                  |
+| Operator       | Meaning                                                 |
+| -------------- | ------------------------------------------------------- |
+| `eq` (default) | Equal — globs, regexes and plain text, case-insensitive |
+| `ne`           | Not equal (inverse of `eq`)                             |
+| `contains`     | Value contains the pattern (substring)                  |
+| `startsWith`   | Value starts with the pattern                           |
+| `endsWith`     | Value ends with the pattern                             |
+| `regex`        | Explicit regular expression match                       |
+| `gt` / `gte`   | Numeric greater-than / greater-or-equal                 |
+| `lt` / `lte`   | Numeric less-than / less-or-equal                       |
+| `in`           | Value equals any of the listed patterns                 |
+| `exists`       | The field is present (non-null); `match` is ignored     |
 
 ```json
 { "type": "field", "path": "pull_request.commits", "op": "gt", "match": "1" }
@@ -242,10 +242,12 @@ A route can use a nested `ast` to combine filters with explicit grouping instead
   "ast": {
     "all": [
       { "type": "event", "match": "pull_request" },
-      { "any": [
-        { "type": "field", "path": "pull_request.user.login", "match": "alice" },
-        { "type": "field", "path": "pull_request.user.login", "match": "bob" }
-      ]}
+      {
+        "any": [
+          { "type": "field", "path": "pull_request.user.login", "match": "alice" },
+          { "type": "field", "path": "pull_request.user.login", "match": "bob" }
+        ]
+      }
     ]
   },
   "targets": [{ "channelId": "..." }]

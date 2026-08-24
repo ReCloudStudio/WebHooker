@@ -241,7 +241,7 @@ export function evaluateFilterNode(
 export function explainFilter(filter: Filter): string {
   const patterns = toPatterns(filter);
   const value = patterns.map((m) => JSON.stringify(m)).join(" or ");
-  const label = filter.type === "field" ? filter.path ?? "field" : filter.type;
+  const label = filter.type === "field" ? (filter.path ?? "field") : filter.type;
   const op = filter.op ?? "eq";
   let base: string;
   if (filter.type === "keyword") {

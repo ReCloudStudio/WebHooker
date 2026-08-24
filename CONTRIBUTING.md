@@ -17,19 +17,19 @@ bun run dev                 # Start Nuxt dev server (HMR + Nitro)
 
 ## Scripts
 
-| Command                | Description                              |
-| ---------------------- | ---------------------------------------- |
-| `bun run dev`          | Start Nuxt dev server                    |
-| `bun run build`        | Production build (cloudflare preset)     |
-| `bunx wrangler dev`    | Preview a built worker (Miniflare)       |
-| `bun run typecheck`    | TypeScript type checking                 |
-| `bun run lint`         | ESLint (TypeScript)                      |
-| `bun run lint:md`      | Markdownlint                             |
-| `bun test`             | Run the unit-test suite                  |
-| `bun run format`       | Format all files with Prettier           |
-| `bun run format:check` | Check Prettier formatting                |
-| `bun run docs:dev`     | Start the VitePress docs dev server      |
-| `bun run db:migrate`   | Apply D1 migrations locally              |
+| Command                | Description                          |
+| ---------------------- | ------------------------------------ |
+| `bun run dev`          | Start Nuxt dev server                |
+| `bun run build`        | Production build (cloudflare preset) |
+| `bunx wrangler dev`    | Preview a built worker (Miniflare)   |
+| `bun run typecheck`    | TypeScript type checking             |
+| `bun run lint`         | ESLint (TypeScript)                  |
+| `bun run lint:md`      | Markdownlint                         |
+| `bun test`             | Run the unit-test suite              |
+| `bun run format`       | Format all files with Prettier       |
+| `bun run format:check` | Check Prettier formatting            |
+| `bun run docs:dev`     | Start the VitePress docs dev server  |
+| `bun run db:migrate`   | Apply D1 migrations locally          |
 
 ## Code Style
 

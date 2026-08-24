@@ -65,15 +65,15 @@ WebHooker 在 `/admin` 提供内置配置控制台，可在浏览器中管理路
 
 实操指南见[过滤器教程](./filters)，包含完整示例。
 
-| 类型      | 匹配对象         | 示例                               |
-| --------- | ---------------- | ---------------------------------- |
-| `event`   | GitHub 事件名称  | `push`, `pull_*`, `pull_request`   |
-| `repo`    | 仓库全名         | `org/repo`, `org/*`                |
-| `actor`   | 发送者登录名     | `username`, `[bot]`, `*[bot]`      |
-| `action`  | 事件操作         | `opened`, `closed`, `published`    |
-| `branch`  | 分支名称         | `main`, `feature-?`, `/^release-/` |
-| `field`   | 任意载荷字段（JSONPath） | `path: "pull_request.user.login"` |
-| `keyword` | 载荷正文中的文本 | `deploy`, `/fix\s+\d+/`            |
+| 类型      | 匹配对象                 | 示例                               |
+| --------- | ------------------------ | ---------------------------------- |
+| `event`   | GitHub 事件名称          | `push`, `pull_*`, `pull_request`   |
+| `repo`    | 仓库全名                 | `org/repo`, `org/*`                |
+| `actor`   | 发送者登录名             | `username`, `[bot]`, `*[bot]`      |
+| `action`  | 事件操作                 | `opened`, `closed`, `published`    |
+| `branch`  | 分支名称                 | `main`, `feature-?`, `/^release-/` |
+| `field`   | 任意载荷字段（JSONPath） | `path: "pull_request.user.login"`  |
+| `keyword` | 载荷正文中的文本         | `deploy`, `/fix\s+\d+/`            |
 
 ### 过滤器行为
 

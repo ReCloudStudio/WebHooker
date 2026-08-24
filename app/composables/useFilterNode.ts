@@ -146,8 +146,7 @@ export function describeLeaf(f: Filter, t: (key: string) => string): string {
   const op = f.op ?? "eq";
   const match = f.match;
   const values = match === undefined ? [] : Array.isArray(match) ? match : [match];
-  const value =
-    values.map((v) => JSON.stringify(v)).join(` ${t("filterNode.or")} `) || "\u2205";
+  const value = values.map((v) => JSON.stringify(v)).join(` ${t("filterNode.or")} `) || "\u2205";
   let base: string;
   if (f.type === "keyword") {
     base = `${label} ${t("filterNode.matches")} ${value}`;
@@ -169,9 +168,7 @@ export function describeNode(node: FilterNode, t: (key: string) => string): stri
       .join(` ${t("filterNode.and")} `);
   }
   if ("any" in node) {
-    const parts = node.any
-      .map((c) => describeNode(c, t))
-      .filter((s) => s.length);
+    const parts = node.any.map((c) => describeNode(c, t)).filter((s) => s.length);
     return parts.length ? `(${parts.join(` ${t("filterNode.or")} `)})` : "";
   }
   if ("not" in node) {

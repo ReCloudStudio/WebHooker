@@ -37,8 +37,29 @@ import { getTenantSecret, setTenantSecret, deleteTenantSecret } from "./tenants"
 import { cfEnv } from "../cf";
 import { log } from "../lib/log";
 
-const VALID_FILTER_TYPES = new Set(["event", "repo", "actor", "action", "branch", "keyword", "field"]);
-const VALID_OPS = new Set(["eq", "ne", "contains", "startsWith", "endsWith", "regex", "gt", "gte", "lt", "lte", "in", "exists"]);
+const VALID_FILTER_TYPES = new Set([
+  "event",
+  "repo",
+  "actor",
+  "action",
+  "branch",
+  "keyword",
+  "field",
+]);
+const VALID_OPS = new Set([
+  "eq",
+  "ne",
+  "contains",
+  "startsWith",
+  "endsWith",
+  "regex",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "in",
+  "exists",
+]);
 const ID_RE = /^[a-z0-9][a-z0-9-]*$/;
 const HOST_RE =
   /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
@@ -1175,9 +1196,7 @@ export async function adminGroupFragmentsPut(
 }
 
 /** POST /admin/api/test-match */
-export async function adminApiTestMatch(
-  event: H3Event,
-): Promise<Record<string, unknown>> {
+export async function adminApiTestMatch(event: H3Event): Promise<Record<string, unknown>> {
   await requireAnyAccess(event);
   const body = await readJsonBody(event);
   if (!body) return respondError(event, 400, "Invalid JSON body");

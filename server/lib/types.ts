@@ -151,14 +151,7 @@ export interface Group {
   logTarget?: RouteTarget;
 }
 
-export type FilterType =
-  | "event"
-  | "repo"
-  | "actor"
-  | "action"
-  | "branch"
-  | "keyword"
-  | "field";
+export type FilterType = "event" | "repo" | "actor" | "action" | "branch" | "keyword" | "field";
 
 export type FilterOp =
   | "eq"

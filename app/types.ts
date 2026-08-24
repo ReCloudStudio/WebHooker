@@ -1,11 +1,4 @@
-export type FilterType =
-  | "event"
-  | "repo"
-  | "actor"
-  | "action"
-  | "branch"
-  | "keyword"
-  | "field";
+export type FilterType = "event" | "repo" | "actor" | "action" | "branch" | "keyword" | "field";
 
 export type FilterOp =
   | "eq"
@@ -267,7 +260,15 @@ export const FRAGMENT_PRESETS: FragmentPreset[] = [
   },
 ];
 
-export const FILTER_TYPES = ["event", "repo", "actor", "action", "branch", "keyword", "field"] as const;
+export const FILTER_TYPES = [
+  "event",
+  "repo",
+  "actor",
+  "action",
+  "branch",
+  "keyword",
+  "field",
+] as const;
 
 export const FILTER_OPS: FilterOp[] = [
   "eq",

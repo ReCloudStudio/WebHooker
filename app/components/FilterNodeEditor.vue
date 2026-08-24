@@ -5,10 +5,10 @@ import { FILTER_TYPES, FILTER_OPS } from "~/types";
 
 defineOptions({ name: "FilterNodeEditor" });
 
-const props = withDefaults(
-  defineProps<{ node: NodeForm; depth?: number; deletable?: boolean }>(),
-  { depth: 0, deletable: false },
-);
+const props = withDefaults(defineProps<{ node: NodeForm; depth?: number; deletable?: boolean }>(), {
+  depth: 0,
+  deletable: false,
+});
 
 const emit = defineEmits<{ (e: "remove"): void }>();
 

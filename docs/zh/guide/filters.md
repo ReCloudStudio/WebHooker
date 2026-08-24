@@ -210,18 +210,18 @@
 
 字段过滤器（以及除 `keyword` 之外的所有过滤器类型）可通过 `op` 改变值的比较方式。默认的 `eq` 保持经典的 glob/正则/精确匹配行为。
 
-| 操作符         | 含义                                       |
-| -------------- | ------------------------------------------ |
-| `eq`（默认）   | 相等——通配符、正则与纯文本，不区分大小写   |
-| `ne`           | 不相等（`eq` 的反义）                      |
-| `contains`     | 值包含模式（子串）                         |
-| `startsWith`   | 值以模式开头                               |
-| `endsWith`     | 值以模式结尾                               |
-| `regex`        | 显式正则表达式匹配                         |
-| `gt` / `gte`   | 数值大于 / 大于等于                        |
-| `lt` / `lte`   | 数值小于 / 小于等于                        |
-| `in`           | 值等于任一列出的模式                       |
-| `exists`       | 字段存在（非 null）；忽略 `match`          |
+| 操作符       | 含义                                     |
+| ------------ | ---------------------------------------- |
+| `eq`（默认） | 相等——通配符、正则与纯文本，不区分大小写 |
+| `ne`         | 不相等（`eq` 的反义）                    |
+| `contains`   | 值包含模式（子串）                       |
+| `startsWith` | 值以模式开头                             |
+| `endsWith`   | 值以模式结尾                             |
+| `regex`      | 显式正则表达式匹配                       |
+| `gt` / `gte` | 数值大于 / 大于等于                      |
+| `lt` / `lte` | 数值小于 / 小于等于                      |
+| `in`         | 值等于任一列出的模式                     |
+| `exists`     | 字段存在（非 null）；忽略 `match`        |
 
 ```json
 { "type": "field", "path": "pull_request.commits", "op": "gt", "match": "1" }
@@ -242,10 +242,12 @@
   "ast": {
     "all": [
       { "type": "event", "match": "pull_request" },
-      { "any": [
-        { "type": "field", "path": "pull_request.user.login", "match": "alice" },
-        { "type": "field", "path": "pull_request.user.login", "match": "bob" }
-      ]}
+      {
+        "any": [
+          { "type": "field", "path": "pull_request.user.login", "match": "alice" },
+          { "type": "field", "path": "pull_request.user.login", "match": "bob" }
+        ]
+      }
     ]
   },
   "targets": [{ "channelId": "..." }]

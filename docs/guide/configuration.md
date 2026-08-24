@@ -66,15 +66,15 @@ All management endpoints (`/admin/api/*`) are documented in the [Admin API](../a
 
 See the [Filter Tutorial](./filters) for a hands-on guide with worked examples.
 
-| Type      | Matches              | Example                            |
-| --------- | -------------------- | ---------------------------------- |
-| `event`   | GitHub event name    | `push`, `pull_*`, `pull_request`   |
-| `repo`    | Repository full name | `org/repo`, `org/*`                |
-| `actor`   | Sender login         | `username`, `[bot]`, `*[bot]`      |
-| `action`  | Event action         | `opened`, `closed`, `published`    |
-| `branch`  | Branch name          | `main`, `feature-?`, `/^release-/` |
-| `field`   | Any payload field (JSONPath) | `path: "pull_request.user.login"` |
-| `keyword` | Text in payload body | `deploy`, `/fix\s+\d+/`            |
+| Type      | Matches                      | Example                            |
+| --------- | ---------------------------- | ---------------------------------- |
+| `event`   | GitHub event name            | `push`, `pull_*`, `pull_request`   |
+| `repo`    | Repository full name         | `org/repo`, `org/*`                |
+| `actor`   | Sender login                 | `username`, `[bot]`, `*[bot]`      |
+| `action`  | Event action                 | `opened`, `closed`, `published`    |
+| `branch`  | Branch name                  | `main`, `feature-?`, `/^release-/` |
+| `field`   | Any payload field (JSONPath) | `path: "pull_request.user.login"`  |
+| `keyword` | Text in payload body         | `deploy`, `/fix\s+\d+/`            |
 
 ### Filter Behavior
 

@@ -19,8 +19,8 @@ The console itself is served at `/admin`; its tabs are deep-linkable via the URL
 | `PUT /admin/api/groups`                         | Replace groups (super: all; owner: own only)                                                                                                                             |
 | `GET /admin/api/groups/:id/routes`              | List a group's routes                                                                                                                                                    |
 | `PUT /admin/api/groups/:id/routes`              | Replace a group's routes (owner/admin)                                                                                                                                   |
-| `GET /admin/api/groups/:id/fragments`           | List a group's named filter fragments                                                                                                                                   |
-| `PUT /admin/api/groups/:id/fragments`           | Replace a group's named filter fragments (owner/admin)                                                                                                                  |
+| `GET /admin/api/groups/:id/fragments`           | List a group's named filter fragments                                                                                                                                    |
+| `PUT /admin/api/groups/:id/fragments`           | Replace a group's named filter fragments (owner/admin)                                                                                                                   |
 | `PUT /admin/api/groups/:id/rename`              | Rename a group (owner); routes, webhook secret and invites follow                                                                                                        |
 | `GET /admin/api/groups/:id/invites`             | List pending invites (owner)                                                                                                                                             |
 | `POST /admin/api/groups/:id/invites`            | Create an invite link (owner)                                                                                                                                            |
@@ -33,7 +33,7 @@ The console itself is served at `/admin`; its tabs are deep-linkable via the URL
 | `GET /admin/api/audit`                          | Audit log (scoped to accessible groups)                                                                                                                                  |
 | `GET /admin/api/metrics`                        | Delivery stats (totals, failure rate, per platform/event/status, recent failures); optional `?groupId=` scope; recent failures scoped to accessible groups for non-super |
 | `GET /admin/api/delivery/:deliveryId`           | All send-log attempts for one delivery (group-scoped)                                                                                                                    |
-| `POST /admin/api/test-match`                    | Stateless filter dry-run — evaluate a filter node against a pasted JSON payload (no event is stored)                                                                    |
+| `POST /admin/api/test-match`                    | Stateless filter dry-run — evaluate a filter node against a pasted JSON payload (no event is stored)                                                                     |
 
 ## Validation
 

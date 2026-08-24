@@ -17,9 +17,7 @@ interface D1FragmentRow {
 
 export async function loadFragments(db: D1Database): Promise<NamedFragment[]> {
   try {
-    const stmt = db.prepare(
-      "SELECT id, group_id, name, node FROM d1_fragments ORDER BY id",
-    );
+    const stmt = db.prepare("SELECT id, group_id, name, node FROM d1_fragments ORDER BY id");
     if (typeof stmt.all !== "function") return [];
     const { results } = await stmt.all<D1FragmentRow>();
     if (!results || results.length === 0) return [];
@@ -35,10 +33,7 @@ export async function loadFragments(db: D1Database): Promise<NamedFragment[]> {
   }
 }
 
-export async function saveFragments(
-  db: D1Database,
-  fragments: NamedFragment[],
-): Promise<void> {
+export async function saveFragments(db: D1Database, fragments: NamedFragment[]): Promise<void> {
   const now = Date.now();
   const statements: D1PreparedStatement[] = [
     db.prepare("DELETE FROM d1_fragments"),
