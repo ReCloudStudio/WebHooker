@@ -103,6 +103,18 @@ function collect(): Route | null {
     const res = nodeFormToRouteFilters(root.value);
     filters = res.filters;
     ast = res.ast;
+  } else {
+    const res = nodeFormToRouteFilters(root.value);
+    const has = res.filters.length > 0 || res.ast !== undefined;
+    if (has) {
+      const err = validateNode(root.value);
+      if (err) {
+        filterError.value = err;
+        return null;
+      }
+      filters = res.filters;
+      ast = res.ast;
+    }
   }
 
   const targets: RouteTarget[] = [];
@@ -372,8 +384,7 @@ watch(
               <label>{{ t("routeEditor.filters") }}</label>
             </div>
             <div class="field">
-              <FilterNodeEditor v-if="!form.fallback" :node="root" />
-              <p v-else class="hint">{{ t("routeEditor.fallbackHint") }}</p>
+              <FilterNodeEditor :node="root" />
             </div>
             <div v-if="filterError" class="err">{{ filterError }}</div>
           </section>
