@@ -119,3 +119,34 @@ export async function removeTelegramLink(db: D1Database, telegramUserId: string)
     .bind(telegramUserId)
     .run();
 }
+
+export async function saveFeishuLink(
+  db: D1Database,
+  feishuUserId: string,
+  githubUserId: string,
+): Promise<void> {
+  await db
+    .prepare(
+      "INSERT OR REPLACE INTO feishu_links (feishu_user_id, github_user_id) VALUES (?, ?)",
+    )
+    .bind(feishuUserId, githubUserId)
+    .run();
+}
+
+export async function getFeishuLink(
+  db: D1Database,
+  feishuUserId: string,
+): Promise<string | null> {
+  const { results } = await db
+    .prepare("SELECT github_user_id FROM feishu_links WHERE feishu_user_id = ?")
+    .bind(feishuUserId)
+    .all<{ github_user_id: string }>();
+  return results[0]?.github_user_id ?? null;
+}
+
+export async function removeFeishuLink(db: D1Database, feishuUserId: string): Promise<void> {
+  await db
+    .prepare("DELETE FROM feishu_links WHERE feishu_user_id = ?")
+    .bind(feishuUserId)
+    .run();
+}

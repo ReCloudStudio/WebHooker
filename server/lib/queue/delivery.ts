@@ -58,9 +58,9 @@ export function classifyDelivery(summary: DispatchSummary): {
 }
 
 export function retryDelay(attempt: number): number {
-  if (attempt < 1) return RETRY_DELAYS_SECONDS[0];
+  if (attempt < 1) return RETRY_DELAYS_SECONDS[0] ?? 5;
   const idx = Math.min(attempt - 1, RETRY_DELAYS_SECONDS.length - 1);
-  return RETRY_DELAYS_SECONDS[idx];
+  return RETRY_DELAYS_SECONDS[idx] ?? 600;
 }
 
 function scopeKey(provider: string, groupId: string | undefined, deliveryId: string): string {

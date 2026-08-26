@@ -12,7 +12,7 @@ import {
 } from "~/composables/useFilterNode";
 
 interface TargetForm {
-  platform: "discord" | "telegram";
+  platform: "discord" | "telegram" | "feishu";
   channelId: string;
   threadId: string;
   chatId: string;
@@ -129,6 +129,10 @@ function collect(): Route | null {
       const chatId = tg.chatId.trim();
       if (!chatId) continue;
       targets.push({ platform: "telegram", chatId, topicId: tg.topicId.trim() || undefined });
+    } else if (tg.platform === "feishu") {
+      const chatId = tg.chatId.trim();
+      if (!chatId) continue;
+      targets.push({ platform: "feishu", chatId });
     } else {
       const channelId = tg.channelId.trim();
       if (!channelId) continue;
@@ -170,7 +174,7 @@ function save(): void {
     return;
   }
   form.targets.forEach((tg, i) => {
-    if (tg.platform === "telegram" && !tg.chatId.trim()) {
+    if ((tg.platform === "telegram" || tg.platform === "feishu") && !tg.chatId.trim()) {
       targetError.value = t("routeEditor.errChat", { n: i + 1 });
     } else if (tg.platform === "discord" && !tg.channelId.trim()) {
       targetError.value = t("routeEditor.errChannel", { n: i + 1 });
@@ -283,7 +287,7 @@ watch(
         ? r.targets.map((tg) => ({
             ...blankTarget(),
             ...tg,
-            platform: tg.platform === "telegram" ? "telegram" : "discord",
+            platform: tg.platform === "telegram" ? "telegram" : tg.platform === "feishu" ? "feishu" : "discord",
           }))
         : [blankTarget()];
     if (r?.ast) {
@@ -481,6 +485,7 @@ watch(
               <select v-model="tg.platform" class="tg-select">
                 <option value="discord">Discord</option>
                 <option value="telegram">Telegram</option>
+                <option value="feishu">{{ t("routeEditor.platformFeishu") }}</option>
               </select>
               <template v-if="tg.platform === 'discord'">
                 <input
@@ -494,7 +499,7 @@ watch(
                   :placeholder="t('routeEditor.threadPlaceholder')"
                 />
               </template>
-              <template v-else>
+              <template v-else-if="tg.platform === 'telegram'">
                 <input
                   v-model="tg.chatId"
                   class="input tg-in1"
@@ -504,6 +509,13 @@ watch(
                   v-model="tg.topicId"
                   class="input tg-in2"
                   :placeholder="t('routeEditor.topicPlaceholder')"
+                />
+              </template>
+              <template v-else>
+                <input
+                  v-model="tg.chatId"
+                  class="input tg-in1"
+                  :placeholder="t('routeEditor.feishuChatPlaceholder')"
                 />
               </template>
               <button

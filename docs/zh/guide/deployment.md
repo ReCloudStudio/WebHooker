@@ -30,6 +30,8 @@ bunx wrangler secret put GITHUB_CLIENT_SECRET
 bunx wrangler secret put DISCORD_TOKEN
 bunx wrangler secret put DISCORD_PUBLIC_KEY   # Discord 应用的公钥（开发者门户获取），交互功能必需
 bunx wrangler secret put TELEGRAM_TOKEN       # Telegram Bot Token（BotFather 获取）—— Telegram 路由必需
+bunx wrangler secret put FEISHU_APP_ID        # 飞书应用 ID —— 飞书路由必需
+bunx wrangler secret put FEISHU_APP_SECRET    # 飞书应用密钥 —— 飞书路由必需
 bunx wrangler secret put ADMIN_USER_IDS       # 逗号分隔的 GitHub ID/登录名，允许进入 Web UI
 ```
 
@@ -195,6 +197,48 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
 在 Telegram 中，`/gh` 命令（`/gh login`、`/gh logout`、`/gh comment <内容>`、`/gh merge`、`/gh close`）通过在通知消息上**回复**来使用——见[机器人命令](/zh/guide/commands)。
 
 头像使用内置 `GET /api/richheader` 渲染为链接预览卡片（可用 `TELEGRAM_RICH_HEADER_HOST` 覆盖）。
+
+## 飞书机器人配置
+
+1. 进入[飞书开放平台](https://open.feishu.cn/app) → **创建应用** → 选择**企业自建应用** → 填写应用名称。
+2. 在**凭证与基础信息**中复制 **App ID** 与 **App Secret**，分别填入 `FEISHU_APP_ID` 和 `FEISHU_APP_SECRET`。
+3. 在**权限管理**中添加以下任一消息发送权限，用于发送（与读取）消息：
+   - `im:message`（读取和发送单聊与群聊消息）
+   - `im:message:send_as_bot`（以应用机器人身份发送消息）
+   - `im:message:send`（旧版发送消息权限）
+4. 在**机器人**功能中启用机器人。将机器人添加到目标群聊（或创建新群），并在群设置中复制 **Chat ID**。
+5. 在 WebHooker `/admin` 中创建或编辑路由，添加目标：`platform: "feishu"`，`chatId` 填写飞书 **Chat ID**，子话题可填 `topicId`。
+
+WebHooker 使用应用级凭证（`FEISHU_APP_ID` / `FEISHU_APP_SECRET`）请求 `tenant_access_token`（有效期约 2 小时），缓存到期前复用，并以**卡片消息**（`interactive`）形式发送。`workflow_run` / `check_run` 的进度更新同样会调用飞书消息编辑接口，原地更新消息。
+
+### 入站：指令与按钮
+
+与 Discord、Telegram 一样，WebHooker 可接收飞书事件，让用户直接在聊天里操作 PR/Issue：
+
+- `/gh login` —— 绑定 GitHub 账号（打开 OAuth 页面）。
+- `/gh logout` —— 解绑 GitHub 账号。
+- `/gh comment <PR/Issue 链接> <内容>` —— 以绑定的 GitHub 身份发表评论。
+- `/gh merge <PR 链接>` / `/gh close <PR 链接>` —— 以绑定身份合并 / 关闭 PR。
+- 卡片上的 **合并** / **关闭** 按钮触发相同操作。
+
+开启入站：
+
+1. 在应用的**事件订阅**中，把**请求地址**设为 `https://<你的-worker>/feishu/webhook`（飞书会发送 `url_verification` 校验，WebHooker 自动应答）。
+2. 订阅以下事件：
+   - `im.message.receive_v1` —— 接收 `/gh` 指令（依赖 `im:message` 权限）。
+   - `card.action.trigger` —— 接收卡片按钮点击。
+3. **凭证与基础信息**中的 **App Secret**（即 `FEISHU_APP_SECRET`）同时用于对入站回调做 `X-Lark-Signature` 签名，WebHooker 会校验它。
+
+### 所需权限
+
+| 权限 | 用途 |
+| ---- | ---- |
+| `im:message` | 读取和发送单聊与群聊消息。 |
+| `im:message:send_as_bot` | 以应用机器人身份发送消息（`im:message` 的替代）。 |
+| `im:message:send` | 旧版发送消息权限（`im:message` 的替代）。 |
+
+> [!NOTE]
+> 不支持“自定义机器人”的群级 Webhook URL。WebHooker 统一使用**应用机器人**，以保持与 Discord、Telegram 一致的凭证管理、消息编辑、多群路由与入站指令能力。
 
 ## 自定义域名（可选）
 

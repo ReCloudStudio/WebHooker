@@ -104,7 +104,10 @@ function fmtTime(ts: number): string {
 }
 
 function platformLabel(p?: string): string {
-  return p === "telegram" ? "TG" : p === "discord" ? "DC" : "—";
+  if (p === "telegram") return "TG";
+  if (p === "feishu") return "FS";
+  if (p === "discord") return "DC";
+  return "—";
 }
 
 function routeEvents(r: Route): string[] {

@@ -2,7 +2,7 @@
 
 ## Project Purpose
 
-Nuxt 4 (Nitro) app deployed as a Cloudflare Worker that receives GitHub webhooks and dispatches processed events to Discord channels/threads and Telegram chats/topics, and receives Discord interactions (slash commands, buttons, modals) via the Interactions Endpoint plus Telegram bot `/gh` commands via the Telegram webhook.
+Nuxt 4 (Nitro) app deployed as a Cloudflare Worker that receives GitHub webhooks and dispatches processed events to Discord channels/threads, Telegram chats/topics and Feishu group chats, and receives Discord interactions (slash commands, buttons, modals) via the Interactions Endpoint plus Telegram bot `/gh` commands and Feishu bot `/gh` commands + card buttons via their respective webhooks.
 
 Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord (REST) / Telegram (Bot API)
 
@@ -88,7 +88,7 @@ server/                  # Nitro server
     │                    # milestone, discussion, repository, security, generic, ping, custom
     ├── drivers/         # Platform drivers (pluggable push targets)
     │   ├── types.ts     # PlatformDriver interface + SendResult (send + edit)
-    │   ├── index.ts     # getDriver() registry (discord default + telegram)
+    │   ├── index.ts     # getDriver() registry (discord default + telegram + feishu)
     │   ├── discord/
     │   │   ├── index.ts       # DiscordDriver: send/edit → renderNeutralMessage + rest.sendMessage/editMessage
     │   │   ├── render.ts      # renderNeutralMessage: NeutralMessage → Discord FormattedMessage
@@ -101,6 +101,11 @@ server/                  # Nitro server
     │       ├── rest.ts       # Telegram Bot API sendMessage/sendPhoto/editMessage* (chat_id + message_thread_id), retry
     │       ├── updates.ts    # POST /telegram/webhook: secret-token verify + handleTelegramUpdate
     │       └── commands.ts   # Telegram /gh login|logout|comment|merge|close + reply-message parsing + syncTelegramWebhook
+│   └── feishu/
+│       ├── index.ts      # FeishuDriver: send/edit → renderNeutralMessage + rest.sendMessage/updateMessage
+│       ├── render.ts     # renderNeutralMessage: NeutralMessage → Feishu interactive card
+│       ├── rest.ts       # getTenantAccessToken (KV cache) + sendMessage/updateMessage/sendText/updateCard, retry
+│       └── updates.ts    # X-Lark-Signature verify + url_verification + /gh commands + card.action.trigger buttons
     ├── github/
     │   ├── oauth.ts     # OAuth URL, callback token exchange, getUserOctokit, comment/getComment/editComment/deleteComment/merge/close actions
     │   └── store.ts     # KV token CRUD + D1 discord-link/telegram-link mapping (was token-store.ts)
@@ -170,6 +175,7 @@ tests/__snapshots__/     # formatter snapshot golden files (toMatchSnapshot)
 - Send a per-event summary (event, repo, delivery id, per route×target ✅/❌ outcome) to the group's `logTarget` when configured
 - Serve `/gh` slash commands + message context-menu commands + PR merge/close buttons + comment modals
 - Serve Telegram `/gh` commands (login/logout/comment/merge/close) via reply-message parsing
+- Serve Feishu `/gh` commands (login/logout/comment/merge/close) and card Merge/Close buttons via the `/feishu/webhook` endpoint (X-Lark-Signature verify + `url_verification` challenge)
 - Sync application commands from the scheduled trigger (global ~1h propagation + per-guild instant)
 - Sync the Telegram webhook URL from the scheduled trigger (setWebhook)
 

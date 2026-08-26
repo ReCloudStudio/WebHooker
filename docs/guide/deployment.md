@@ -30,6 +30,8 @@ bunx wrangler secret put GITHUB_CLIENT_SECRET
 bunx wrangler secret put DISCORD_TOKEN
 bunx wrangler secret put DISCORD_PUBLIC_KEY   # Discord app public key (Developer Portal) — required for interactions
 bunx wrangler secret put TELEGRAM_TOKEN       # Telegram bot token (BotFather) — required for Telegram routes
+bunx wrangler secret put FEISHU_APP_ID        # Feishu app ID — required for Feishu routes
+bunx wrangler secret put FEISHU_APP_SECRET    # Feishu app secret — required for Feishu routes
 bunx wrangler secret put ADMIN_USER_IDS       # comma-separated GitHub IDs/logins allowed into the Web UI
 ```
 
@@ -195,6 +197,48 @@ Users run `/gh login` to link their GitHub account and can then comment on issue
 In Telegram, `/gh` commands (`/gh login`, `/gh logout`, `/gh comment <text>`, `/gh merge`, `/gh close`) work by replying to a notification message — see the [Bot Commands](/guide/commands) page.
 
 Avatars are rendered as a link-preview card using the built-in `GET /api/richheader` (overridable with `TELEGRAM_RICH_HEADER_HOST`).
+
+## Feishu Bot Setup
+
+1. Go to [Feishu Open Platform](https://open.feishu.cn/app) → **Create App** → choose **Custom App** → give it a name.
+2. In **Credentials & Basic Info**, copy **App ID** and **App Secret** to `FEISHU_APP_ID` and `FEISHU_APP_SECRET`.
+3. In **Permissions & Scopes**, add at least one of the following message scopes so the app can send (and read) messages:
+   - `im:message` (read and send direct messages and group chat messages)
+   - `im:message:send_as_bot` (send messages as an app)
+   - `im:message:send` (historical version)
+4. In **Bot** tab, turn on the bot capability. Add the bot to the target group chat (or create a new group) and copy the **Chat ID** from the group settings.
+5. In WebHooker `/admin`, create or edit a route and add a target with `platform: "feishu"`, `chatId` set to the Feishu **Chat ID**, and optional `topicId` for a topic inside the chat.
+
+WebHooker uses the app-level credentials (`FEISHU_APP_ID` / `FEISHU_APP_SECRET`) to request a `tenant_access_token`, caches it until expiry, and sends messages as an interactive card (`interactive` message type). The same token is used to edit messages in place for `workflow_run` / `check_run` progress updates.
+
+### Inbound: commands & buttons
+
+WebHooker can receive Feishu events and let users act on PRs/Issues from chat, the same way as Discord and Telegram:
+
+- `/gh login` — link your GitHub account (opens an OAuth page).
+- `/gh logout` — unlink your GitHub account.
+- `/gh comment <PR/Issue 链接> <内容>` — comment as your linked GitHub user.
+- `/gh merge <PR 链接>` / `/gh close <PR 链接>` — merge / close the PR as your linked user.
+- The **Merge** / **Close** buttons on a card trigger the same actions.
+
+To enable inbound:
+
+1. In the app **Events & Callbacks** → **Event Subscriptions**, set the **Request URL** to `https://<your-worker>/feishu/webhook` (Feishu will send a `url_verification` challenge, which WebHooker answers automatically).
+2. Subscribe to the events:
+   - `im.message.receive_v1` — receive `/gh` commands (requires the `im:message` scope).
+   - `card.action.trigger` — receive button clicks on cards.
+3. In **Credentials & Basic Info**, set the **App Secret** (already used for `FEISHU_APP_SECRET`) — it also signs the inbound callback via the `X-Lark-Signature` header, and WebHooker verifies it.
+
+### Required permissions
+
+| Permission | Purpose |
+| ---------- | ------- |
+| `im:message` | Read and send direct messages and group chat messages. |
+| `im:message:send_as_bot` | Send messages as an app bot (alternative to `im:message`). |
+| `im:message:send` | Send messages V2 (historical version, alternative). |
+
+> [!NOTE]
+> Custom bots (group-level webhook URL) are not supported. WebHooker uses an **app bot** so message editing, token caching, multi-group routing, and inbound commands work the same way as Discord and Telegram.
 
 ## Custom Domain (Optional)
 

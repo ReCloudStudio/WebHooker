@@ -234,10 +234,10 @@ function validateTarget(
   target: Record<string, unknown>,
 ): { ok: true; target: Route["targets"][number] } | { ok: false; error: string } {
   const platform = target.platform === undefined ? "discord" : target.platform;
-  if (platform !== "discord" && platform !== "telegram") {
-    return { ok: false, error: `${label}.platform must be "discord" or "telegram"` };
+  if (platform !== "discord" && platform !== "telegram" && platform !== "feishu") {
+    return { ok: false, error: `${label}.platform must be "discord", "telegram" or "feishu"` };
   }
-  if (platform === "telegram") {
+  if (platform === "telegram" || platform === "feishu") {
     if (typeof target.chatId !== "string" || target.chatId.trim().length === 0)
       return { ok: false, error: `${label}.chatId is required` };
     if (target.topicId !== undefined && typeof target.topicId !== "string") {
@@ -254,9 +254,9 @@ function validateTarget(
     ok: true,
     target: {
       platform,
-      channelId: platform === "telegram" ? undefined : (target.channelId as string),
-      threadId: platform === "telegram" ? undefined : ((target.threadId as string) ?? undefined),
-      chatId: platform === "telegram" ? (target.chatId as string) : undefined,
+      channelId: platform === "discord" ? (target.channelId as string) : undefined,
+      threadId: platform === "discord" ? ((target.threadId as string) ?? undefined) : undefined,
+      chatId: platform === "telegram" || platform === "feishu" ? (target.chatId as string) : undefined,
       topicId: platform === "telegram" ? ((target.topicId as string) ?? undefined) : undefined,
     },
   };

@@ -24,6 +24,8 @@ WebHooker requires several secrets to function. For local development, store the
 | `GITHUB_CLIENT_SECRET`  | OAuth client secret from App settings                                    |
 | `DISCORD_TOKEN`         | Discord bot token                                                        |
 | `TELEGRAM_TOKEN`        | Telegram bot token (from BotFather) — required for Telegram routes       |
+| `FEISHU_APP_ID`         | Feishu app ID (from the app Credentials page) — required for Feishu routes |
+| `FEISHU_APP_SECRET`     | Feishu app secret — required for Feishu routes                           |
 
 > [!NOTE]
 > `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` (PKCS#8 PEM) are used by the GitHub App

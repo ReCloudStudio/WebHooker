@@ -11,7 +11,7 @@ Every dispatch attempt is recorded in the D1 `send_logs` table and browsable in 
 | `event`      | Event type (e.g. `push`, `pull_request`, `custom`)               |
 | `repo`       | Repository full name (when present)                              |
 | `target`     | Target id the message was sent to                                |
-| `platform`   | `discord` or `telegram`                                          |
+| `platform`   | `discord`, `telegram` or `feishu`                                |
 | `ok`         | Whether the send succeeded                                       |
 | `status`     | HTTP status from the platform API (when applicable)              |
 | `error`      | Error message (when failed)                                      |

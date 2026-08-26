@@ -16,13 +16,25 @@
             v-for="(tg, i) in route.targets"
             :key="i"
             class="route-badge"
-            :class="tg.platform === 'telegram' ? 'route-badge-tg' : 'route-badge-dc'"
+            :class="
+              tg.platform === 'telegram'
+                ? 'route-badge-tg'
+                : tg.platform === 'feishu'
+                  ? 'route-badge-fs'
+                  : 'route-badge-dc'
+            "
           >
             <span
               class="route-badge-dot"
-              :class="tg.platform === 'telegram' ? 'bg-info' : 'bg-accent'"
+              :class="
+                tg.platform === 'telegram'
+                  ? 'bg-info'
+                  : tg.platform === 'feishu'
+                    ? 'bg-warn'
+                    : 'bg-accent'
+              "
             ></span>
-            {{ tg.platform === "telegram" ? "Telegram" : "Discord" }}
+            {{ tg.platform === "telegram" ? "Telegram" : tg.platform === "feishu" ? t("route.feishu") : "Discord" }}
           </span>
           <span v-if="route.fallback" class="route-badge route-badge-fallback">{{
             t("route.fallback")
@@ -47,12 +59,12 @@
         <div v-for="(tg, i) in route.targets" :key="i" class="route-target">
           <div class="route-target-row">
             <span class="route-target-label">
-              <template v-if="tg.platform === 'telegram'">{{ t("route.chat") }}</template>
+              <template v-if="tg.platform === 'telegram' || tg.platform === 'feishu'">{{ t("route.chat") }}</template>
               <template v-else-if="tg.threadId">{{ t("route.thread") }}</template>
               <template v-else>{{ t("route.channel") }}</template>
             </span>
             <code class="route-target-id">
-              <template v-if="tg.platform === 'telegram'">{{ tg.chatId }}</template>
+              <template v-if="tg.platform === 'telegram' || tg.platform === 'feishu'">{{ tg.chatId }}</template>
               <template v-else-if="tg.threadId">{{ tg.threadId }}</template>
               <template v-else>{{ tg.channelId }}</template>
             </code>

@@ -44,7 +44,7 @@ export interface NamedFragment {
 }
 
 export interface RouteTarget {
-  platform?: "discord" | "telegram";
+  platform?: "discord" | "telegram" | "feishu";
   channelId?: string;
   threadId?: string;
   chatId?: string;

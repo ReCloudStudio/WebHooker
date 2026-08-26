@@ -48,7 +48,7 @@ server/                  # Nitro server (H3 handlers in server/routes/)
     │                    # discussion, repository, security, generic, ping, custom
     ├── drivers/         # Platform drivers (pluggable push targets)
     │   ├── types.ts     # PlatformDriver interface + SendResult (send + edit)
-    │   ├── index.ts     # getDriver() registry (discord + telegram)
+    │   ├── index.ts     # getDriver() registry (discord + telegram + feishu)
     │   ├── discord/     # index.ts (driver), render.ts (NeutralMessage → embed),
     │   │                # rest.ts, interactions.ts, commands.ts
     │   └── telegram/    # index.ts (driver), render.ts (NeutralMessage → Telegram HTML),

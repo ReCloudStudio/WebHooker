@@ -24,6 +24,8 @@ WebHooker 的运行需要若干密钥。本地开发时放入 `.dev.vars`，生�
 | `GITHUB_CLIENT_SECRET`  | App 设置中的 OAuth 客户端密钥                               |
 | `DISCORD_TOKEN`         | Discord 机器人 Token                                        |
 | `TELEGRAM_TOKEN`        | Telegram 机器人 Token（BotFather 获取）—— Telegram 路由必需 |
+| `FEISHU_APP_ID`         | 飞书应用 ID（应用凭证页获取）—— 飞书路由必需                |
+| `FEISHU_APP_SECRET`     | 飞书应用密钥 —— 飞书路由必需                                |
 
 > [!NOTE]
 > `GITHUB_APP_ID` 与 `GITHUB_PRIVATE_KEY`（PKCS#8 PEM）用于 GitHub App **安装流程**

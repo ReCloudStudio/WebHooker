@@ -186,6 +186,7 @@
                 <option value="">{{ t("groupEditor.logDisabled") }}</option>
                 <option value="discord">Discord</option>
                 <option value="telegram">Telegram</option>
+                <option value="feishu">{{ t("groupEditor.logFeishu") }}</option>
               </select>
               <template v-if="form.logPlatform === 'discord'">
                 <input
@@ -201,7 +202,7 @@
                   :placeholder="t('routeEditor.threadPlaceholder')"
                 />
               </template>
-              <template v-else-if="form.logPlatform === 'telegram'">
+              <template v-else-if="form.logPlatform === 'telegram' || form.logPlatform === 'feishu'">
                 <input
                   v-model="form.logChatId"
                   type="text"
@@ -209,6 +210,7 @@
                   :placeholder="t('routeEditor.chatPlaceholder')"
                 />
                 <input
+                  v-if="form.logPlatform === 'telegram'"
                   v-model="form.logTopicId"
                   type="text"
                   class="input mt-2"
@@ -263,7 +265,7 @@ const form = reactive({
   emoji: true,
   forgeSources: [] as ForgeSource[],
   lang: "",
-  logPlatform: "" as "" | "discord" | "telegram",
+  logPlatform: "" as "" | "discord" | "telegram" | "feishu",
   logChannelId: "",
   logThreadId: "",
   logChatId: "",
@@ -323,11 +325,8 @@ function save(): void {
   }
   let logTarget:
     | { platform: "discord"; channelId: string; threadId?: string }
-    | {
-        platform: "telegram";
-        chatId: string;
-        topicId?: string;
-      }
+    | { platform: "telegram"; chatId: string; topicId?: string }
+    | { platform: "feishu"; chatId: string }
     | undefined;
   if (form.logPlatform === "discord") {
     const channelId = form.logChannelId.trim();
@@ -343,6 +342,13 @@ function save(): void {
       return;
     }
     logTarget = { platform: "telegram", chatId, topicId: form.logTopicId.trim() || undefined };
+  } else if (form.logPlatform === "feishu") {
+    const chatId = form.logChatId.trim();
+    if (!chatId) {
+      formError.value = t("groupEditor.errLogFeishuChat");
+      return;
+    }
+    logTarget = { platform: "feishu", chatId };
   }
   const installationText = form.installationId.trim();
   let installationId: number | undefined;

@@ -13,7 +13,7 @@ import {
   handleOAuthCallback as handleGithubOAuthCallback,
   getInstallationAccount,
 } from "../github/oauth";
-import { removeToken, saveDiscordLink, saveTelegramLink } from "../github/store";
+import { removeToken, saveDiscordLink, saveTelegramLink, saveFeishuLink } from "../github/store";
 import { createAdminSession, adminCookie, getAdminSession } from "./session";
 import {
   loadGroups,
@@ -27,6 +27,7 @@ import {
 import { clientIp } from "./auth";
 import { recordAudit } from "../lib/audit";
 import { sendMessage } from "../drivers/telegram/rest";
+import { getTenantAccessToken, sendText as sendFeishuText } from "../drivers/feishu/rest";
 import { cfEnv } from "../cf";
 import { initConfigStore } from "../config";
 import type { Env, Group } from "../types";
@@ -37,6 +38,8 @@ interface PendingState {
   discordUserId?: string;
   telegramUserId?: string;
   telegramChatId?: string;
+  feishuUserId?: string;
+  feishuChatId?: string;
 }
 
 function linkedPage(login: string): string {
@@ -335,6 +338,22 @@ export async function handleOAuthCallback(event: H3Event): Promise<unknown> {
       ).catch(() => undefined);
     }
     return { ok: true, telegramUserId: pending.telegramUserId, login: result.login };
+  }
+
+  // Feishu account-linking flow: bind the Feishu user to this GitHub account.
+  if (pending.feishuUserId) {
+    await saveFeishuLink(env.DB, pending.feishuUserId, result.userId);
+    if (pending.feishuChatId) {
+      const tokenRes = await getTenantAccessToken(env);
+      if (tokenRes.ok && tokenRes.token) {
+        await sendFeishuText(
+          tokenRes.token,
+          pending.feishuChatId,
+          `✅ GitHub 账号已绑定：**@${result.login}**。现在可以用 /gh comment 评论了。`,
+        ).catch(() => undefined);
+      }
+    }
+    return { ok: true, feishuUserId: pending.feishuUserId, login: result.login };
   }
 
   const isBrowser = (getHeader(event, "accept") ?? "").includes("text/html");

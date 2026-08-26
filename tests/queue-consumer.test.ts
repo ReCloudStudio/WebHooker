@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import { handleQueueBatch } from "../server/lib/queue/consumer";
 import { invalidateConfigCache } from "../server/lib/config";
 import { invalidateGroupsCache } from "../server/lib/web/groups";
@@ -8,12 +8,10 @@ import type { DeliveryMessage, DispatchSummary } from "../server/lib/queue/deliv
 let summary: DispatchSummary;
 let dispatchCalls: number;
 
-mock.module("../server/lib/core/dispatch", () => ({
-  dispatchEvent: async (): Promise<DispatchSummary> => {
-    dispatchCalls += 1;
-    return summary;
-  },
-}));
+async function fakeDispatch(..._args: unknown[]): Promise<DispatchSummary> {
+  dispatchCalls += 1;
+  return summary;
+}
 
 function createMockKV(): { kv: KVNamespace; store: Map<string, string> } {
   const store = new Map<string, string>();
@@ -95,7 +93,7 @@ describe("handleQueueBatch", () => {
   it("marks DLQ messages dead and acks them", async () => {
     const { kv, store } = createMockKV();
     const msg = makeMessage(body());
-    await handleQueueBatch(makeBatch("webhooker-delivery-dlq", [msg]), createEnv(kv));
+    await handleQueueBatch(makeBatch("webhooker-delivery-dlq", [msg]), createEnv(kv), fakeDispatch);
     expect(msg.acked).toBe(true);
     expect(JSON.parse(store.get(STATE_KEY)!)).toMatchObject({ status: "dead" });
   });
@@ -104,7 +102,7 @@ describe("handleQueueBatch", () => {
     const { kv, store } = createMockKV();
     summary = { attempts: 1, failures: [] };
     const msg = makeMessage(body());
-    await handleQueueBatch(makeBatch("webhooker-delivery", [msg]), createEnv(kv));
+    await handleQueueBatch(makeBatch("webhooker-delivery", [msg]), createEnv(kv), fakeDispatch);
     expect(msg.acked).toBe(true);
     expect(msg.retried).toBeNull();
     expect(JSON.parse(store.get(STATE_KEY)!)).toMatchObject({ status: "delivered" });
@@ -114,7 +112,7 @@ describe("handleQueueBatch", () => {
     const { kv, store } = createMockKV();
     summary = { attempts: 2, failures: [{ target: "c1", errorCode: "DISCORD_5XX" }] };
     const msg = makeMessage(body(), 1);
-    await handleQueueBatch(makeBatch("webhooker-delivery", [msg]), createEnv(kv));
+    await handleQueueBatch(makeBatch("webhooker-delivery", [msg]), createEnv(kv), fakeDispatch);
     expect(msg.acked).toBe(false);
     expect(msg.retried).toEqual({ delaySeconds: 5 });
     expect(JSON.parse(store.get(STATE_KEY)!)).toMatchObject({ status: "retrying" });
@@ -124,7 +122,7 @@ describe("handleQueueBatch", () => {
     const { kv, store } = createMockKV();
     summary = { attempts: 2, failures: [{ target: "c1", errorCode: "DISCORD_ERROR" }] };
     const msg = makeMessage(body());
-    await handleQueueBatch(makeBatch("webhooker-delivery", [msg]), createEnv(kv));
+    await handleQueueBatch(makeBatch("webhooker-delivery", [msg]), createEnv(kv), fakeDispatch);
     expect(msg.acked).toBe(true);
     expect(msg.retried).toBeNull();
     expect(JSON.parse(store.get(STATE_KEY)!)).toMatchObject({ status: "failed" });
@@ -134,7 +132,7 @@ describe("handleQueueBatch", () => {
     const { kv, store } = createMockKV();
     store.set(STATE_KEY, JSON.stringify({ status: "delivered", at: Date.now() }));
     const msg = makeMessage(body());
-    await handleQueueBatch(makeBatch("webhooker-delivery", [msg]), createEnv(kv));
+    await handleQueueBatch(makeBatch("webhooker-delivery", [msg]), createEnv(kv), fakeDispatch);
     expect(msg.acked).toBe(true);
     expect(dispatchCalls).toBe(0);
   });

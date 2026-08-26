@@ -29,7 +29,7 @@ export const filterSchema = v.object({
 });
 
 export const routeTargetSchema = v.object({
-  platform: v.optional(v.picklist(["discord", "telegram"])),
+  platform: v.optional(v.picklist(["discord", "telegram", "feishu"])),
   channelId: v.optional(v.string()),
   threadId: v.optional(v.string()),
   chatId: v.optional(v.string()),

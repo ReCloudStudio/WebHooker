@@ -1,6 +1,6 @@
 # WebHooker
 
-GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare Workers 接收 webhook 事件，应用过滤器，将格式化消息路由到 Discord 频道/子区与 Telegram 群组/话题。各 forge 适配器位于 `server/lib/providers/`（目前支持 GitHub + Gitea；GitLab 等可后续扩展）。
+GitHub / Gitea webhook → Discord / Telegram / 飞书 分发服务。通过 Cloudflare Workers 接收 webhook 事件，应用过滤器，将格式化消息路由到 Discord 频道/子区、Telegram 群组/话题与飞书群聊卡片。各 forge 适配器位于 `server/lib/providers/`（目前支持 GitHub + Gitea；GitLab 等可后续扩展）。
 
 ## 功能特性
 
@@ -12,9 +12,9 @@ GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare W
 - 按事件类型、仓库、操作人、操作、分支、关键词，或任意载荷字段（`field` + JSONPath `path`，如 `pull_request.user.login`）过滤；支持 `*`/`?` 通配符与 `/正则/`，另有 12 个比较操作符（`eq`/`ne`/`contains`/`startsWith`/`endsWith`/`regex`/`gt`/`gte`/`lt`/`lte`/`in`/`exists`）
 - 在路由编辑器的可视化构建器中把过滤器组合成布尔 AST（`all` / `any` / `not` 节点）；可复用命名过滤器片段，并可对粘贴的 JSON 载荷做无存储的试匹配
 - 富消息：颜色编码、作者头像、字段、时间戳——渲染为 Discord embed 与 Telegram HTML
-- 路由到 Discord 频道/子区与 Telegram 群组/话题（一条路由可多目标）
-- `workflow_run` / `check_run` 进度**原地编辑**同一条消息（运行推进时更新），两个平台均支持
-- **分组级 Webhook 日志频道** —— 为分组指定一个 Discord 频道/子区或 Telegram 群组/话题，该分组路由每次分发 webhook 都会向其中发送摘要（每条「路由 × 目标」一行，✅/❌ 结果）
+- 路由到 Discord 频道/子区、Telegram 群组/话题与飞书群聊（一条路由可多目标）
+- `workflow_run` / `check_run` 进度**原地编辑**同一条消息（运行推进时更新），Discord、Telegram 与飞书均支持
+- **分组级 Webhook 日志频道** —— 为分组指定一个 Discord 频道/子区、Telegram 群组/话题或飞书群聊，该分组路由每次分发 webhook 都会向其中发送摘要（每条「路由 × 目标」一行，✅/❌ 结果）
 - GitHub OAuth 用户授权（评论、编辑评论、删除评论、合并、关闭、反应）
 - **Web 配置控制台**（`/admin`）— 通过 GitHub OAuth + 管理员白名单管理路由与分组、查看发送日志
 - **Discord Interactions Endpoint**（Ed25519 验签）支持 `/gh` 斜杠命令、消息右键菜单命令、PR 合并/关闭按钮与评论 modal
@@ -27,7 +27,7 @@ GitHub / Gitea webhook → Discord / Telegram 分发服务。通过 Cloudflare W
 
 ```text
 GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
-                 ├── POST /webhook → 验证 → 去重 → 入队 (Queue) → 分发 → Discord (REST) / Telegram (Bot API)
+                  ├── POST /webhook → 验证 → 去重 → 入队 (Queue) → 分发 → Discord (REST) / Telegram (Bot API) / 飞书 (Bot API)
                  ├── POST /discord/interactions → 验证 (Ed25519) → 处理命令/按钮/modal
                  ├── POST /telegram/webhook → 验证 (secret token) → 处理 /gh 命令
                  ├── GET  /auth/github → OAuth 流程
@@ -70,6 +70,8 @@ bunx wrangler dev    # 启动本地开发服务器
 | `TELEGRAM_TOKEN`            | Telegram Bot Token（BotFather 获取）—— Telegram 路由必需                    |
 | `TELEGRAM_WEBHOOK_SECRET`   | 可选；`POST /telegram/webhook` 的验签密钥                                   |
 | `TELEGRAM_RICH_HEADER_HOST` | 可选；覆盖内置 `GET /api/richheader` 的 Telegram 头像卡片地址               |
+| `FEISHU_APP_ID`             | 飞书应用 ID（应用凭证页获取）—— 飞书路由必需                                |
+| `FEISHU_APP_SECRET`         | 飞书应用密钥 —— 飞书路由必需                                                |
 | `BASE_URL`                  | 公网地址（用于 OAuth 回调与 Telegram webhook 同步）                         |
 | `ADMIN_USER_IDS`            | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                   |
 | `ALLOW_SELF_SIGNUP`         | 设为 `1` 时，无权限的 GitHub 用户首次登录自动获得个人分组（默认关闭）       |
@@ -93,13 +95,14 @@ bunx wrangler dev    # 启动本地开发服务器
     "stop": true,
     "targets": [
       { "platform": "discord", "channelId": "频道ID" },
-      { "platform": "telegram", "chatId": "-1001234567890" }
+      { "platform": "telegram", "chatId": "-1001234567890" },
+      { "platform": "feishu", "chatId": "oc_xxx" }
     ]
   }
 ]
 ```
 
-`target.platform` 选择推送目标：`discord`（默认）或 `telegram`。Discord 目标需 `target.channelId`（可选 `threadId` 指向子区）；Telegram 目标需 `target.chatId`（可选 `topicId` 指向话题）。路由还可设置 `stop: true`（跳过后续路由）。路由隶属于**分组**（D1 `d1_groups`，首次加载时从旧版 KV `config:groups` 同步），分组用于限定管理权限，并可限制哪些组织/用户的事件流入。完整模式见[路由与目标](https://webhooker.docs.worldexecute.me/zh/guide/routes)与[分组与访问控制](https://webhooker.docs.worldexecute.me/zh/guide/groups)指南。
+`target.platform` 选择推送目标：`discord`（默认）、`telegram` 或 `feishu`。Discord 目标需 `target.channelId`（可选 `threadId` 指向子区）；Telegram 目标需 `target.chatId`（可选 `topicId` 指向话题）；飞书目标需 `target.chatId`（可选 `topicId` 指向子话题）。路由还可设置 `stop: true`（跳过后续路由）。路由隶属于**分组**（D1 `d1_groups`，首次加载时从旧版 KV `config:groups` 同步），分组用于限定管理权限，并可限制哪些组织/用户的事件流入。完整模式见[路由与目标](https://webhooker.docs.worldexecute.me/zh/guide/routes)与[分组与访问控制](https://webhooker.docs.worldexecute.me/zh/guide/groups)指南。
 
 ### Web 控制台（`/admin`）
 

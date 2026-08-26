@@ -1,6 +1,6 @@
 # WebHooker
 
-GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook events via Cloudflare Workers, applies filters, and routes formatted messages to Discord channels/threads and Telegram chats/topics. Forge-specific adapters live under `server/lib/providers/` (GitHub + Gitea today; GitLab etc. can be added later).
+GitHub / Gitea webhook → Discord / Telegram / Feishu dispatcher. Receives webhook events via Cloudflare Workers, applies filters, and routes formatted messages to Discord channels/threads, Telegram chats/topics, and Feishu chat cards. Forge-specific adapters live under `server/lib/providers/` (GitHub + Gitea today; GitLab etc. can be added later).
 
 ## Features
 
@@ -12,9 +12,9 @@ GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook event
 - Filter by event type, repo, actor, action, branch, keyword, or any payload field (`field` with a JSONPath `path`, e.g. `pull_request.user.login`); supports `*`/`?` globs and `/regex/` patterns plus 12 comparison operators (`eq`/`ne`/`contains`/`startsWith`/`endsWith`/`regex`/`gt`/`gte`/`lt`/`lte`/`in`/`exists`)
 - Combine filters into a boolean AST (`all` / `any` / `not` nodes) via the route editor's visual builder; reuse named filter fragments and dry-run any filter against a pasted JSON payload without storing it
 - Rich messages with color coding, author avatars, fields, and timestamps — rendered as Discord embeds and Telegram HTML
-- Route to Discord channels/threads and Telegram chats/topics (multi-target routes)
-- `workflow_run` / `check_run` progress is edited **in place** (single message updated as the run advances) on both platforms
-- **Per-group webhook log channel** — point a group at a Discord channel/thread or Telegram chat/topic and every webhook the group's routes dispatch is summarized there (✅/❌ per route × target)
+- Route to Discord channels/threads, Telegram chats/topics, and Feishu group chats (multi-target routes)
+- `workflow_run` / `check_run` progress is edited **in place** (single message updated as the run advances) on Discord, Telegram, and Feishu
+- **Per-group webhook log channel** — point a group at a Discord channel/thread, Telegram chat/topic, or Feishu chat and every webhook the group's routes dispatch is summarized there (✅/❌ per route × target)
 - GitHub OAuth for user actions (comment, edit comment, delete comment, merge, close, react)
 - **Web UI config console** (`/admin`) — manage routes and groups with GitHub OAuth + admin whitelist, view send logs
 - **Discord Interactions Endpoint** (Ed25519-verified) for `/gh` slash commands, message context-menu commands, PR merge/close buttons, and comment modals
@@ -27,7 +27,7 @@ GitHub / Gitea webhook → Discord / Telegram dispatcher. Receives webhook event
 
 ```text
 GitHub Webhook → Cloudflare Worker (Nuxt 4 / Nitro)
-                 ├── POST /webhook → verify → dedup → enqueue (Queue) → dispatch → Discord (REST) / Telegram (Bot API)
+                  ├── POST /webhook → verify → dedup → enqueue (Queue) → dispatch → Discord (REST) / Telegram (Bot API) / Feishu (Bot API)
                  ├── POST /discord/interactions → verify (Ed25519) → handle command/button/modal
                  ├── POST /telegram/webhook → verify (secret token) → handle /gh commands
                  ├── GET  /auth/github → OAuth flow
@@ -70,6 +70,8 @@ bunx wrangler dev    # Start local dev server
 | `TELEGRAM_TOKEN`            | Telegram bot token (from BotFather) — required for Telegram routes                             |
 | `TELEGRAM_WEBHOOK_SECRET`   | Optional secret token for `POST /telegram/webhook` verification                                |
 | `TELEGRAM_RICH_HEADER_HOST` | Optional base URL overriding the built-in `GET /api/richheader` for Telegram avatar cards      |
+| `FEISHU_APP_ID`             | Feishu app ID (from the app Credentials page) — required for Feishu routes                     |
+| `FEISHU_APP_SECRET`         | Feishu app secret — required for Feishu routes                                                 |
 | `BASE_URL`                  | Public URL for OAuth callbacks and the Telegram webhook sync                                   |
 | `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access `/admin`                         |
 | `ALLOW_SELF_SIGNUP`         | `1` to give access-less GitHub users a personal group on first login (default off)             |
@@ -93,13 +95,14 @@ Routes are stored in D1 (`d1_routes`, seeded from legacy KV `config:routes` on f
     "stop": true,
     "targets": [
       { "platform": "discord", "channelId": "CHANNEL_ID" },
-      { "platform": "telegram", "chatId": "-1001234567890" }
+      { "platform": "telegram", "chatId": "-1001234567890" },
+      { "platform": "feishu", "chatId": "oc_xxx" }
     ]
   }
 ]
 ```
 
-`target.platform` selects the push target: `discord` (default) or `telegram`. Discord targets require `target.channelId` (optional `threadId` for a thread); Telegram targets require `target.chatId` (optional `topicId` for a topic). A route may also set `stop: true` (skip later routes). Routes belong to **groups** (D1 `d1_groups`, seeded from legacy KV `config:groups`) that scope admin access and can restrict which org/user events flow in. See the [Routes & Targets](https://webhooker.docs.worldexecute.me/guide/routes) and [Groups & Access Control](https://webhooker.docs.worldexecute.me/guide/groups) guides for the full schema.
+`target.platform` selects the push target: `discord` (default), `telegram`, or `feishu`. Discord targets require `target.channelId` (optional `threadId` for a thread); Telegram targets require `target.chatId` (optional `topicId` for a topic); Feishu targets require `target.chatId` (optional `topicId` for a topic). A route may also set `stop: true` (skip later routes). Routes belong to **groups** (D1 `d1_groups`, seeded from legacy KV `config:groups`) that scope admin access and can restrict which org/user events flow in. See the [Routes & Targets](https://webhooker.docs.worldexecute.me/guide/routes) and [Groups & Access Control](https://webhooker.docs.worldexecute.me/guide/groups) guides for the full schema.
 
 ### Web UI (`/admin`)
 
@@ -161,6 +164,7 @@ Every filter supports plain text, `*`/`?` globs, and `/regex/` patterns (case-in
 - **GitHub App** — create the app, subscribe to events, configure OAuth, and set the _Setup URL_ for tenant isolation: see [GitHub App Setup](https://webhooker.docs.worldexecute.me/guide/deployment#github-app-setup)
 - **Discord bot** — create the bot, invite it with `applications.commands` (combined permission integer `274877910016`), and configure the Interactions Endpoint: see [Discord Bot Setup](https://webhooker.docs.worldexecute.me/guide/deployment#discord-bot-setup). The bot never connects to the Discord Gateway, so it shows as **offline** — messaging is unaffected (always REST).
 - **Telegram bot** — create the bot with [@BotFather](https://t.me/BotFather), set `TELEGRAM_TOKEN` (optional `TELEGRAM_WEBHOOK_SECRET`); the webhook is synced automatically by the scheduled trigger: see [Telegram Bot Setup](https://webhooker.docs.worldexecute.me/guide/deployment#telegram-bot-setup)
+- **Feishu bot** — create a custom app, enable the bot, add it to the target group, and set `FEISHU_APP_ID` + `FEISHU_APP_SECRET`: see [Feishu Bot Setup](https://webhooker.docs.worldexecute.me/guide/deployment#feishu-bot-setup)
 - **Deployment** — KV namespace, D1 database + migrations, optional Queues, secrets, and deploy: see the [Deployment guide](https://webhooker.docs.worldexecute.me/guide/deployment)
 
 ### Bot Commands (comment on GitHub as yourself)

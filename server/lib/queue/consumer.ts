@@ -1,4 +1,4 @@
-import type { Env, WebhookEvent, WebhookProvider } from "../types";
+import type { Config, Env, Group, WebhookEvent, WebhookProvider } from "../types";
 import { dispatchEvent } from "../core/dispatch";
 import { loadConfig } from "../config";
 import { loadGroups } from "../web/groups";
@@ -6,6 +6,7 @@ import { log } from "../lib/log";
 import {
   DELIVERY_DLQ,
   type DeliveryMessage,
+  type DispatchSummary,
   classifyDelivery,
   deliveryStateKey,
   discardPayload,
@@ -18,6 +19,12 @@ import {
 export async function handleQueueBatch(
   batch: MessageBatch<DeliveryMessage>,
   env: Env,
+  dispatch: (
+    config: Config,
+    event: WebhookEvent,
+    env: Env,
+    groups?: Group[],
+  ) => Promise<DispatchSummary> = dispatchEvent,
 ): Promise<void> {
   for (const message of batch.messages) {
     const body = message.body;
@@ -26,7 +33,7 @@ export async function handleQueueBatch(
       message.ack();
       continue;
     }
-    await processMessage(env, body, message);
+    await processMessage(env, body, message, dispatch);
   }
 }
 
@@ -34,6 +41,12 @@ async function processMessage(
   env: Env,
   body: DeliveryMessage,
   message: Message<DeliveryMessage>,
+  dispatch: (
+    config: Config,
+    event: WebhookEvent,
+    env: Env,
+    groups?: Group[],
+  ) => Promise<DispatchSummary>,
 ): Promise<void> {
   const key = deliveryStateKey(body.provider, body.groupId, body.deliveryId);
   const prior = await getDeliveryState(env, key);
@@ -59,7 +72,7 @@ async function processMessage(
       config.routes = config.routes.filter((r) => r.groupId === body.groupId);
     }
     const groups = await loadGroups(env.KV);
-    const summary = await dispatchEvent(config, event, env, groups);
+    const summary = await dispatch(config, event, env, groups);
     const { failed, retryable } = classifyDelivery(summary);
 
     if (!failed) {

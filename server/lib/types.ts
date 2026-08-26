@@ -13,6 +13,8 @@ export interface Env {
   TELEGRAM_TOKEN?: string;
   TELEGRAM_WEBHOOK_SECRET?: string;
   TELEGRAM_RICH_HEADER_HOST?: string;
+  FEISHU_APP_ID?: string;
+  FEISHU_APP_SECRET?: string;
   /**
    * When enabled ("1"/"true"), GitHub users without any group access get a
    * personal group on first login instead of being blocked.
@@ -43,7 +45,7 @@ export interface Config {
 }
 
 export interface RouteTarget {
-  platform?: "discord" | "telegram";
+  platform?: "discord" | "telegram" | "feishu";
   channelId?: string;
   threadId?: string;
   chatId?: string;

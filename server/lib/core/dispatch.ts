@@ -192,9 +192,11 @@ export async function dispatchEvent(
           ? target.topicId
             ? `${target.chatId}/${target.topicId}`
             : (target.chatId ?? "")
-          : target.threadId
-            ? `${target.channelId}/${target.threadId}`
-            : (target.channelId ?? "");
+          : target.platform === "feishu"
+            ? (target.chatId ?? "")
+            : target.threadId
+              ? `${target.channelId}/${target.threadId}`
+              : (target.channelId ?? "");
 
       const base: {
         ts: number;

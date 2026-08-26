@@ -29,7 +29,7 @@ There are **no default routes** — each route must define its own target. If no
 }
 ```
 
-Each entry of `targets` is a push destination, so one route can forward to several channels at once (e.g. a Discord channel **and** a Telegram group). `target.platform` selects the platform: `discord` (default) or `telegram`. For **Discord**, `target.channelId` is required (a thread in `target.threadId` is optional). For **Telegram**, `target.chatId` (the group/supergroup chat id, e.g. `-1001234567890`) is required and `target.topicId` (the `message_thread_id` of a topic, equivalent of a Discord thread) is optional. There is no fallback to a default channel.
+Each entry of `targets` is a push destination, so one route can forward to several channels at once (e.g. a Discord channel **and** a Telegram group). `target.platform` selects the platform: `discord` (default), `telegram` or `feishu`. For **Discord**, `target.channelId` is required (a thread in `target.threadId` is optional). For **Telegram** and **Feishu**, `target.chatId` (the group/supergroup chat id, e.g. `-1001234567890`) is required and `target.topicId` (the `message_thread_id` of a topic, equivalent of a Discord thread) is optional. There is no fallback to a default channel.
 
 | Field            | Type     | Required | Description                                                                                                       |
 | ---------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
