@@ -6,16 +6,7 @@ const MAX_MARKDOWN = 4000;
 const MAX_NOTE = 500;
 
 type FeishuTemplate =
-  | "blue"
-  | "green"
-  | "red"
-  | "yellow"
-  | "orange"
-  | "purple"
-  | "indigo"
-  | "wathet"
-  | "lime"
-  | "grey";
+  "blue" | "green" | "red" | "yellow" | "orange" | "purple" | "indigo" | "wathet" | "lime" | "grey";
 
 function colorToTemplate(color?: number): FeishuTemplate {
   if (color == null) return "blue";
@@ -89,7 +80,9 @@ export function renderNeutralMessage(message: NeutralMessage): Record<string, un
 
   const meta: string[] = [];
   if (message.forge?.name) {
-    meta.push(message.forge.url ? `[${message.forge.name}](${message.forge.url})` : message.forge.name);
+    meta.push(
+      message.forge.url ? `[${message.forge.name}](${message.forge.url})` : message.forge.name,
+    );
   }
   if (message.footer) meta.push(message.footer);
   const ts = formatTimestamp(message.timestamp);
@@ -128,7 +121,8 @@ export function renderNeutralMessage(message: NeutralMessage): Record<string, un
       actions: message.actions.map((action) => ({
         tag: "button",
         text: { tag: "plain_text", content: action.label },
-        type: action.style === "danger" ? "danger" : action.style === "primary" ? "primary" : "default",
+        type:
+          action.style === "danger" ? "danger" : action.style === "primary" ? "primary" : "default",
         action_id: action.id,
         value: { v: action.id },
       })),

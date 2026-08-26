@@ -48,7 +48,10 @@ async function feishuRequest(
 
       if (!res.ok) {
         lastError = data?.msg ?? data?.error?.message ?? `HTTP ${res.status}`;
-        log.error({ status: res.status, err: lastError, label, attempts: attempt + 1 }, "Feishu API error");
+        log.error(
+          { status: res.status, err: lastError, label, attempts: attempt + 1 },
+          "Feishu API error",
+        );
         return {
           ok: false,
           error: lastError,
@@ -60,7 +63,10 @@ async function feishuRequest(
 
       if (data && typeof data.code === "number" && data.code !== 0) {
         lastError = data.msg ?? `Feishu code ${data.code}`;
-        log.error({ code: data.code, err: lastError, label, attempts: attempt + 1 }, "Feishu business error");
+        log.error(
+          { code: data.code, err: lastError, label, attempts: attempt + 1 },
+          "Feishu business error",
+        );
         return {
           ok: false,
           error: lastError,
@@ -113,7 +119,11 @@ export async function getTenantAccessToken(env: Env): Promise<TokenResult> {
   const appId = env.FEISHU_APP_ID?.trim();
   const appSecret = env.FEISHU_APP_SECRET?.trim();
   if (!appId || !appSecret) {
-    return { ok: false, error: "FEISHU_APP_ID/FEISHU_APP_SECRET not configured", errorCode: "NO_TOKEN" };
+    return {
+      ok: false,
+      error: "FEISHU_APP_ID/FEISHU_APP_SECRET not configured",
+      errorCode: "NO_TOKEN",
+    };
   }
 
   const cached = await env.KV.get(TOKEN_KEY);
@@ -126,9 +136,12 @@ export async function getTenantAccessToken(env: Env): Promise<TokenResult> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ app_id: appId, app_secret: appSecret }),
     });
-    const data = (await res.json().catch(() => null)) as
-      | { code?: number; msg?: string; tenant_access_token?: string; expire?: number }
-      | null;
+    const data = (await res.json().catch(() => null)) as {
+      code?: number;
+      msg?: string;
+      tenant_access_token?: string;
+      expire?: number;
+    } | null;
     if (!res.ok || !data || data.code !== 0 || !data.tenant_access_token) {
       const err = data?.msg ?? `HTTP ${res.status}`;
       return { ok: false, error: err, errorCode: "FEISHU_TOKEN", status: res.status };
@@ -169,11 +182,7 @@ export async function updateMessage(
   return feishuRequest(url, "PATCH", token, body, messageId);
 }
 
-export async function sendText(
-  token: string,
-  chatId: string,
-  text: string,
-): Promise<SendResult> {
+export async function sendText(token: string, chatId: string, text: string): Promise<SendResult> {
   const url = `${FEISHU_API}/open-apis/im/v1/messages?receive_id_type=chat_id`;
   const body: Record<string, unknown> = {
     receive_id: chatId,

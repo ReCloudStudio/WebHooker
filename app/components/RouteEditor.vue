@@ -287,7 +287,12 @@ watch(
         ? r.targets.map((tg) => ({
             ...blankTarget(),
             ...tg,
-            platform: tg.platform === "telegram" ? "telegram" : tg.platform === "feishu" ? "feishu" : "discord",
+            platform:
+              tg.platform === "telegram"
+                ? "telegram"
+                : tg.platform === "feishu"
+                  ? "feishu"
+                  : "discord",
           }))
         : [blankTarget()];
     if (r?.ast) {

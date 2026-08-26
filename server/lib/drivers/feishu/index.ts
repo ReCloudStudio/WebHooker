@@ -13,7 +13,11 @@ export class FeishuDriver implements PlatformDriver {
     }
     const tokenRes = await getTenantAccessToken(env);
     if (!tokenRes.ok || !tokenRes.token) {
-      return { ok: false, error: tokenRes.error ?? "No token", errorCode: tokenRes.errorCode ?? "NO_TOKEN" };
+      return {
+        ok: false,
+        error: tokenRes.error ?? "No token",
+        errorCode: tokenRes.errorCode ?? "NO_TOKEN",
+      };
     }
     return sendMessage(tokenRes.token, chatId, renderNeutralMessage(message));
   }
@@ -30,7 +34,11 @@ export class FeishuDriver implements PlatformDriver {
     }
     const tokenRes = await getTenantAccessToken(env);
     if (!tokenRes.ok || !tokenRes.token) {
-      return { ok: false, error: tokenRes.error ?? "No token", errorCode: tokenRes.errorCode ?? "NO_TOKEN" };
+      return {
+        ok: false,
+        error: tokenRes.error ?? "No token",
+        errorCode: tokenRes.errorCode ?? "NO_TOKEN",
+      };
     }
     return updateMessage(tokenRes.token, messageId, renderNeutralMessage(message));
   }

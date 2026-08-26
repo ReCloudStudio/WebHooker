@@ -1,6 +1,9 @@
 import { describe, it, expect } from "bun:test";
 import type { Env } from "../server/lib/types";
-import { verifyFeishuSignature, handleFeishuWebhookRequest } from "../server/lib/drivers/feishu/updates";
+import {
+  verifyFeishuSignature,
+  handleFeishuWebhookRequest,
+} from "../server/lib/drivers/feishu/updates";
 
 function sign(secret: string, timestamp: string, nonce: string, body: string): Promise<string> {
   return (async () => {
@@ -11,7 +14,11 @@ function sign(secret: string, timestamp: string, nonce: string, body: string): P
       false,
       ["sign"],
     );
-    const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${timestamp}\n${nonce}\n${body}`));
+    const sig = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(`${timestamp}\n${nonce}\n${body}`),
+    );
     let binary = "";
     const bytes = new Uint8Array(sig);
     for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i] ?? 0);

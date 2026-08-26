@@ -1,6 +1,11 @@
 import type { Env } from "../../types";
 import { log } from "../../lib/log";
-import { getOAuthURL, commentAsUser, mergePullRequestAsUser, closePullRequestAsUser } from "../../github/oauth";
+import {
+  getOAuthURL,
+  commentAsUser,
+  mergePullRequestAsUser,
+  closePullRequestAsUser,
+} from "../../github/oauth";
 import { getFeishuLink, removeFeishuLink } from "../../github/store";
 import { getTenantAccessToken, sendText, updateCard } from "./rest";
 
@@ -77,7 +82,8 @@ function describeError(err: unknown): string {
   if (err instanceof Error) {
     const msg = err.message;
     if (msg.includes("GITHUB_TOKEN_EXPIRED")) return "GitHub 绑定已过期，请重新用 /gh login 绑定。";
-    if (msg.includes("GITHUB_FORBIDDEN")) return "没有权限操作该仓库（GitHub 返回 403），请确认你的账号权限。";
+    if (msg.includes("GITHUB_FORBIDDEN"))
+      return "没有权限操作该仓库（GitHub 返回 403），请确认你的账号权限。";
     if (msg.includes("GITHUB_NOT_FOUND")) return "未找到对应的 GitHub 资源（404）。";
     return msg || "操作失败";
   }
@@ -111,11 +117,15 @@ async function handleLogin(env: Env, openId: string, chatId: string): Promise<vo
   };
   await env.KV.put(`state:${state}`, JSON.stringify(pending), { expirationTtl: 600 });
   const url = getOAuthURL(env.GITHUB_CLIENT_ID ?? "", state);
-  await replyToken(env, chatId, [
-    "点击下方链接绑定 GitHub 账号：",
-    url,
-    "绑定后可在飞书里用 /gh comment 评论、/gh merge 合并、/gh close 关闭 PR。",
-  ].join("\n"));
+  await replyToken(
+    env,
+    chatId,
+    [
+      "点击下方链接绑定 GitHub 账号：",
+      url,
+      "绑定后可在飞书里用 /gh comment 评论、/gh merge 合并、/gh close 关闭 PR。",
+    ].join("\n"),
+  );
 }
 
 async function handleLogout(env: Env, openId: string, chatId: string): Promise<void> {
@@ -128,7 +138,12 @@ async function handleLogout(env: Env, openId: string, chatId: string): Promise<v
   await replyToken(env, chatId, "已解绑 GitHub 账号。");
 }
 
-async function handleComment(env: Env, openId: string, chatId: string, text: string): Promise<void> {
+async function handleComment(
+  env: Env,
+  openId: string,
+  chatId: string,
+  text: string,
+): Promise<void> {
   const githubUserId = await getFeishuLink(env.DB, openId);
   if (!githubUserId) {
     await replyToken(env, chatId, "请先 /gh login 绑定 GitHub 账号。");
@@ -136,16 +151,31 @@ async function handleComment(env: Env, openId: string, chatId: string, text: str
   }
   const target = extractTarget(text);
   if (!target) {
-    await replyToken(env, chatId, "请在消息里带上 PR/Issue 链接，例如：/gh comment https://github.com/o/r/pull/7 看起来不错");
+    await replyToken(
+      env,
+      chatId,
+      "请在消息里带上 PR/Issue 链接，例如：/gh comment https://github.com/o/r/pull/7 看起来不错",
+    );
     return;
   }
   const ghIdx = text.indexOf("/gh");
   const rest = text.slice(ghIdx + 3).trim();
   const parts = rest.split(/\s+/);
   const linkIdx = parts.findIndex((p) => p.includes("github.com"));
-  const body = parts.slice(linkIdx + 1).join(" ").trim() || "（来自飞书）";
+  const body =
+    parts
+      .slice(linkIdx + 1)
+      .join(" ")
+      .trim() || "（来自飞书）";
   try {
-    const res = await commentAsUser(env.KV, githubUserId, target.owner, target.repo, target.number, body);
+    const res = await commentAsUser(
+      env.KV,
+      githubUserId,
+      target.owner,
+      target.repo,
+      target.number,
+      body,
+    );
     await replyToken(env, chatId, `✅ 已评论：[查看](${res.htmlUrl})（@${res.login}）`);
   } catch (err) {
     await replyToken(env, chatId, `❌ ${describeError(err)}`);
@@ -166,9 +196,13 @@ async function handleMergeOrClose(
   }
   const target = extractTarget(body);
   if (!target) {
-    await replyToken(env, chatId, action === "merge"
-      ? "请在消息里带上 PR 链接，例如：/gh merge https://github.com/o/r/pull/7"
-      : "请在消息里带上 PR 链接，例如：/gh close https://github.com/o/r/pull/7");
+    await replyToken(
+      env,
+      chatId,
+      action === "merge"
+        ? "请在消息里带上 PR 链接，例如：/gh merge https://github.com/o/r/pull/7"
+        : "请在消息里带上 PR 链接，例如：/gh close https://github.com/o/r/pull/7",
+    );
     return;
   }
   try {
@@ -177,7 +211,11 @@ async function handleMergeOrClose(
     } else {
       await closePullRequestAsUser(env.KV, githubUserId, target.owner, target.repo, target.number);
     }
-    await replyToken(env, chatId, `✅ 已${action === "merge" ? "合并" : "关闭"} ${target.owner}/${target.repo}#${target.number}`);
+    await replyToken(
+      env,
+      chatId,
+      `✅ 已${action === "merge" ? "合并" : "关闭"} ${target.owner}/${target.repo}#${target.number}`,
+    );
   } catch (err) {
     await replyToken(env, chatId, `❌ ${describeError(err)}`);
   }
@@ -218,7 +256,11 @@ async function handleMessage(env: Env, event: FeishuEvent): Promise<void> {
       await handleMergeOrClose(env, openId, chatId, "close", text);
       break;
     default:
-      await replyToken(env, chatId, "未知指令。可用：/gh login | logout | comment <链接> <内容> | merge <链接> | close <链接>");
+      await replyToken(
+        env,
+        chatId,
+        "未知指令。可用：/gh login | logout | comment <链接> <内容> | merge <链接> | close <链接>",
+      );
   }
 }
 
@@ -238,8 +280,7 @@ async function handleCardAction(env: Env, payload: Record<string, unknown>): Pro
   const event = (payload.event ?? {}) as FeishuEvent;
   const action = event.action ?? {};
   const actionId = action.action_id ?? action.value?.v ?? "";
-  const openId =
-    event.operator?.operator_id?.open_id ?? event.sender?.sender_id?.open_id ?? "";
+  const openId = event.operator?.operator_id?.open_id ?? event.sender?.sender_id?.open_id ?? "";
   const cardToken = event.token ?? "";
   const openMessageId = event.open_message_id ?? "";
 
@@ -282,7 +323,11 @@ async function handleCardAction(env: Env, payload: Record<string, unknown>): Pro
   }
 }
 
-async function replyCard(env: Env, cardToken: string, card: Record<string, unknown>): Promise<void> {
+async function replyCard(
+  env: Env,
+  cardToken: string,
+  card: Record<string, unknown>,
+): Promise<void> {
   const tokenRes = await getTenantAccessToken(env);
   if (!tokenRes.ok || !tokenRes.token) return;
   await updateCard(tokenRes.token, cardToken, card);
@@ -317,8 +362,7 @@ export async function handleFeishuWebhookRequest(request: Request, env: Env): Pr
     }
   }
 
-  const eventType =
-    (header?.event_type as string) ?? eventPart?.type ?? type;
+  const eventType = (header?.event_type as string) ?? eventPart?.type ?? type;
   try {
     if (eventType === "im.message.receive_v1" || eventType === "message") {
       await handleMessage(env, (payload.event ?? payload) as FeishuEvent);

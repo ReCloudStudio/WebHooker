@@ -256,7 +256,8 @@ function validateTarget(
       platform,
       channelId: platform === "discord" ? (target.channelId as string) : undefined,
       threadId: platform === "discord" ? ((target.threadId as string) ?? undefined) : undefined,
-      chatId: platform === "telegram" || platform === "feishu" ? (target.chatId as string) : undefined,
+      chatId:
+        platform === "telegram" || platform === "feishu" ? (target.chatId as string) : undefined,
       topicId: platform === "telegram" ? ((target.topicId as string) ?? undefined) : undefined,
     },
   };

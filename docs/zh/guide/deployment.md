@@ -231,11 +231,11 @@ WebHooker 使用应用级凭证（`FEISHU_APP_ID` / `FEISHU_APP_SECRET`）请求
 
 ### 所需权限
 
-| 权限 | 用途 |
-| ---- | ---- |
-| `im:message` | 读取和发送单聊与群聊消息。 |
+| 权限                     | 用途                                              |
+| ------------------------ | ------------------------------------------------- |
+| `im:message`             | 读取和发送单聊与群聊消息。                        |
 | `im:message:send_as_bot` | 以应用机器人身份发送消息（`im:message` 的替代）。 |
-| `im:message:send` | 旧版发送消息权限（`im:message` 的替代）。 |
+| `im:message:send`        | 旧版发送消息权限（`im:message` 的替代）。         |
 
 > [!NOTE]
 > 不支持“自定义机器人”的群级 Webhook URL。WebHooker 统一使用**应用机器人**，以保持与 Discord、Telegram 一致的凭证管理、消息编辑、多群路由与入站指令能力。

@@ -202,7 +202,9 @@
                   :placeholder="t('routeEditor.threadPlaceholder')"
                 />
               </template>
-              <template v-else-if="form.logPlatform === 'telegram' || form.logPlatform === 'feishu'">
+              <template
+                v-else-if="form.logPlatform === 'telegram' || form.logPlatform === 'feishu'"
+              >
                 <input
                   v-model="form.logChatId"
                   type="text"

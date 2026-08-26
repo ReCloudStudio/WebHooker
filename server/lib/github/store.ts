@@ -126,17 +126,12 @@ export async function saveFeishuLink(
   githubUserId: string,
 ): Promise<void> {
   await db
-    .prepare(
-      "INSERT OR REPLACE INTO feishu_links (feishu_user_id, github_user_id) VALUES (?, ?)",
-    )
+    .prepare("INSERT OR REPLACE INTO feishu_links (feishu_user_id, github_user_id) VALUES (?, ?)")
     .bind(feishuUserId, githubUserId)
     .run();
 }
 
-export async function getFeishuLink(
-  db: D1Database,
-  feishuUserId: string,
-): Promise<string | null> {
+export async function getFeishuLink(db: D1Database, feishuUserId: string): Promise<string | null> {
   const { results } = await db
     .prepare("SELECT github_user_id FROM feishu_links WHERE feishu_user_id = ?")
     .bind(feishuUserId)
@@ -145,8 +140,5 @@ export async function getFeishuLink(
 }
 
 export async function removeFeishuLink(db: D1Database, feishuUserId: string): Promise<void> {
-  await db
-    .prepare("DELETE FROM feishu_links WHERE feishu_user_id = ?")
-    .bind(feishuUserId)
-    .run();
+  await db.prepare("DELETE FROM feishu_links WHERE feishu_user_id = ?").bind(feishuUserId).run();
 }

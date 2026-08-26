@@ -11,7 +11,7 @@
 | `event`      | 事件类型（如 `push`、`pull_request`、`custom`）          |
 | `repo`       | 仓库全名（存在时）                                       |
 | `target`     | 消息发送到的目标 id                                      |
-| `platform`   | `discord`、`telegram` 或 `feishu`                       |
+| `platform`   | `discord`、`telegram` 或 `feishu`                        |
 | `ok`         | 发送是否成功                                             |
 | `status`     | 平台 API 的 HTTP 状态码（适用时）                        |
 | `error`      | 失败时的错误信息                                         |

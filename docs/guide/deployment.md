@@ -231,11 +231,11 @@ To enable inbound:
 
 ### Required permissions
 
-| Permission | Purpose |
-| ---------- | ------- |
-| `im:message` | Read and send direct messages and group chat messages. |
+| Permission               | Purpose                                                    |
+| ------------------------ | ---------------------------------------------------------- |
+| `im:message`             | Read and send direct messages and group chat messages.     |
 | `im:message:send_as_bot` | Send messages as an app bot (alternative to `im:message`). |
-| `im:message:send` | Send messages V2 (historical version, alternative). |
+| `im:message:send`        | Send messages V2 (historical version, alternative).        |
 
 > [!NOTE]
 > Custom bots (group-level webhook URL) are not supported. WebHooker uses an **app bot** so message editing, token caching, multi-group routing, and inbound commands work the same way as Discord and Telegram.

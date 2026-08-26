@@ -61,11 +61,11 @@ routes:
   #     - platform: discord
   #       channelId: "CHANNEL_ID_HERE"
   #       threadId: "THREAD_ID_HERE"
-    #   - platform: telegram
-    #       chatId: "-1001234567890"
-    #       topicId: "9876543210"
-    #   - platform: feishu
-    #       chatId: "oc_xxxxxxxxxxxxxxxx"  # Feishu group chat_id
+  #   - platform: telegram
+  #       chatId: "-1001234567890"
+  #       topicId: "9876543210"
+  #   - platform: feishu
+  #       chatId: "oc_xxxxxxxxxxxxxxxx"  # Feishu group chat_id
 
   # - id: exclude-bot
   #   name: "Exclude Bot Actions"
