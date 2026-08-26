@@ -1,14 +1,61 @@
+@import "tailwindcss";
+
 /* ---------------------------------------------------------------------------
  * Theme tokens — RGB triplets so Tailwind opacity modifiers (bg-accent/10)
  * work against them; values switch automatically with prefers-color-scheme
  * (unless an explicit data-theme="light" is set on <html>).
  * ------------------------------------------------------------------------- */
-:root {
-  color-scheme: light;
+@theme inline {
   --font-ui: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --radius: 12px;
   --radius-sm: 8px;
+  --radius: 12px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-card-hover: 0 8px 24px -12px rgba(15, 23, 42, 0.25);
+  --shadow-accent-lg: 0 12px 28px -10px rgb(var(--accent));
+  --shadow-drawer: -16px 0 48px rgba(15, 23, 42, 0.12);
+  --shadow-modal: 0 12px 40px rgba(15, 23, 42, 0.25);
+  --animate-rise: rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  --color-bg: rgb(var(--bg));
+  --color-surface: rgb(var(--surface));
+  --color-surface-2: rgb(var(--surface-2));
+  --color-surface-3: rgb(var(--surface-3));
+  --color-border: rgb(var(--border));
+  --color-border-strong: rgb(var(--border-strong));
+  --color-text: rgb(var(--text));
+  --color-muted: rgb(var(--muted));
+  --color-faint: rgb(var(--faint));
+  --color-accent: rgb(var(--accent));
+  --color-accent-strong: rgb(var(--accent-strong));
+  --color-accent-dim: rgb(var(--accent-dim));
+  --color-accent-text: rgb(var(--accent-text));
+  --color-accent-border: rgb(var(--accent-border));
+  --color-ok: rgb(var(--ok));
+  --color-ok-dim: rgb(var(--ok-dim));
+  --color-warn: rgb(var(--warn));
+  --color-warn-dim: rgb(var(--warn-dim));
+  --color-bad: rgb(var(--bad));
+  --color-bad-dim: rgb(var(--bad-dim));
+  --color-info: rgb(var(--info));
+  --color-info-dim: rgb(var(--info-dim));
+  --color-body-text: rgb(var(--body-text));
+  --color-code-bg: rgb(var(--code-bg));
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:root {
+  color-scheme: light;
   --header-bg: rgba(255, 255, 255, 0.82);
   --scrim: rgba(15, 23, 42, 0.4);
   --knob: #ffffff;
@@ -76,10 +123,6 @@
     --code-bg: 26 34 48;
   }
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @layer base {
   html,

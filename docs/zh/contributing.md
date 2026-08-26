@@ -15,7 +15,7 @@ bun run dev                  # 启动本地开发服务器
 ```text
 app/                     # Vue 3 UI（Nuxt app 目录）
 ├── app.vue              # 根组件 (NuxtPage)
-├── assets/css/main.css  # Tailwind CSS 入口：主题令牌（RGB 三元组 CSS 变量）+ @layer components (@apply)
+├── assets/css/main.css  # Tailwind CSS v4 入口：@import "tailwindcss" + @theme inline 令牌（RGB 三元组 CSS 变量）+ @layer components (@apply)
 ├── pages/               # index（落地页）、terms、privacy、admin/[...slug]（控制台 SPA）
 ├── components/          # ConsolePage、RouteCard/Editor、GroupEditor、MembersPanel、WebhookPanel、
 │                        # SendLogs、AuditLog、AppToasts、LegalLayout

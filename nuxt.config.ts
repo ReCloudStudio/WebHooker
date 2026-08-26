@@ -1,6 +1,8 @@
+import tailwindcss from "@tailwindcss/vite";
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
-  modules: ["@nuxtjs/tailwindcss"],
+  css: ["~/assets/css/main.css"],
   // Target: Cloudflare Workers (single _worker.js via the cloudflare_module preset).
   nitro: {
     preset: "cloudflare_module",
@@ -23,9 +25,8 @@ export default defineNuxtConfig({
       ],
     },
   },
-  tailwindcss: {
-    cssPath: "~/assets/css/main.css",
-    configPath: "tailwind.config",
+  vite: {
+    plugins: [tailwindcss()],
   },
   devtools: { enabled: false },
   runtimeConfig: {
