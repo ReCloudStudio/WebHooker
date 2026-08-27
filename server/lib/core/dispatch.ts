@@ -172,10 +172,12 @@ export async function dispatchEvent(
     const showEmoji = group?.emoji !== false;
     const message = formatEvent(route, event, tr, showEmoji);
     if (event.event === "check_suite") {
-      const suite = event.payload.check_suite as {
-        conclusion?: string;
-        check_runs_url?: string;
-      } | undefined;
+      const suite = event.payload.check_suite as
+        | {
+            conclusion?: string;
+            check_runs_url?: string;
+          }
+        | undefined;
       if (suite?.conclusion === "failure" && suite.check_runs_url) {
         const buildLogUrl = await getCheckSuiteBuildLogUrl(
           suite.check_runs_url,

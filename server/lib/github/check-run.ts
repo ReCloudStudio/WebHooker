@@ -22,14 +22,17 @@ export async function getCheckSuiteBuildLogUrl(
   if (!checkRunsUrl || !appId || !privateKey || !installationId) return undefined;
   try {
     const jwt = await createAppJwt(appId, privateKey);
-    const tokRes = await fetch(`https://api.github.com/app/installations/${installationId}/access_tokens`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": API_VERSION,
+    const tokRes = await fetch(
+      `https://api.github.com/app/installations/${installationId}/access_tokens`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": API_VERSION,
+        },
       },
-    });
+    );
     if (!tokRes.ok) return undefined;
     const { token } = (await tokRes.json()) as { token?: string };
     if (!token) return undefined;
