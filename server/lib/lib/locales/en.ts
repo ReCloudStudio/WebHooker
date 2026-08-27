@@ -75,6 +75,7 @@ export const en = {
     renamed: "Renamed",
     details: "Details",
     branch_tag: "Branch/Tag",
+    build_log: "Build Log",
   },
   common: {
     footer: "{repo}",

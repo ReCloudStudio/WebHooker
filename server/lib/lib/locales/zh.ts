@@ -75,6 +75,7 @@ export const zh = {
     renamed: "已重命名",
     details: "详情",
     branch_tag: "分支/标签",
+    build_log: "构建日志",
   },
   common: {
     footer: "{repo}",

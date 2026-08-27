@@ -171,6 +171,7 @@ export function formatCheckRun(
     name?: string;
     conclusion?: string;
     html_url?: string;
+    details_url?: string;
     status?: string;
     output?: { title?: string; summary?: string };
   };
@@ -192,6 +193,14 @@ export function formatCheckRun(
     fields.push({
       name: t("fields.details"),
       value: cap(checkRun.output.title, MAX_FIELD_VALUE),
+      inline: false,
+    });
+  }
+
+  if (status === "failure" && checkRun.details_url) {
+    fields.push({
+      name: t("fields.build_log"),
+      value: `[${t("fields.build_log")}](${checkRun.details_url})`,
       inline: false,
     });
   }
