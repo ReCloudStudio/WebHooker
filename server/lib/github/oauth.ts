@@ -24,7 +24,7 @@ function pemToBinary(pem: string): ArrayBuffer {
 }
 
 /** GitHub App JWT (RS256, PKCS#8 PEM key), valid ~10 minutes. */
-async function createAppJwt(appId: string, privateKey: string): Promise<string> {
+export async function createAppJwt(appId: string, privateKey: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const payload = b64url(JSON.stringify({ iat: now - 60, exp: now + 600, iss: appId }));

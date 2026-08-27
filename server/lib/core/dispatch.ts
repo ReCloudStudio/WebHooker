@@ -17,6 +17,7 @@ import {
 import { getDriver } from "../drivers";
 import type { SendResult } from "../drivers/types";
 import type { DispatchFailure, DispatchSummary } from "../queue/delivery";
+import { getCheckSuiteBuildLogUrl } from "../github/check-run";
 
 /** One dispatch attempt (route × target), collected for the group webhook log. */
 interface DispatchAttempt {
@@ -170,6 +171,28 @@ export async function dispatchEvent(
     const tr = trMap.get(group?.lang ?? "en")!;
     const showEmoji = group?.emoji !== false;
     const message = formatEvent(route, event, tr, showEmoji);
+    if (event.event === "check_suite") {
+      const suite = event.payload.check_suite as {
+        conclusion?: string;
+        check_runs_url?: string;
+      } | undefined;
+      if (suite?.conclusion === "failure" && suite.check_runs_url) {
+        const buildLogUrl = await getCheckSuiteBuildLogUrl(
+          suite.check_runs_url,
+          env.GITHUB_APP_ID,
+          env.GITHUB_PRIVATE_KEY,
+          event.installationId,
+        );
+        if (buildLogUrl) {
+          message.fields = message.fields ?? [];
+          message.fields.push({
+            name: translate("fields.build_log", {}, undefined, tr),
+            value: `[${translate("fields.build_log", {}, undefined, tr)}](${buildLogUrl})`,
+            inline: false,
+          });
+        }
+      }
+    }
     if (group?.forgeSources?.length) {
       message.forge = forgeInfo(event, group.forgeSources);
     }
