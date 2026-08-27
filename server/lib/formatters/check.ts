@@ -28,6 +28,7 @@ export function formatCheckSuite(
     status?: string;
     app?: { name?: string };
     html_url?: string;
+    details_url?: string;
   };
 
   const status = workflowStatus(suite.status, suite.conclusion);
@@ -65,6 +66,14 @@ export function formatCheckSuite(
       name: t("fields.commit"),
       value: commitLink(baseUrl, suite.head_sha),
       inline: true,
+    });
+  }
+
+  if (status === "failure" && suite.details_url) {
+    fields.push({
+      name: t("fields.build_log"),
+      value: `[${t("fields.build_log")}](${suite.details_url})`,
+      inline: false,
     });
   }
 
