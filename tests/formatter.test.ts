@@ -459,7 +459,7 @@ describe("limits and localization", () => {
     expect(msg.description).toBe(`${link} ${"x".repeat(MAX_COMMIT_SUBJECT)}`);
   });
 
-  it("tag push created mentions the tag", () => {
+  it("tag push created renders as a tag creation", () => {
     const msg = formatEvent(
       route,
       event("push", {
@@ -472,7 +472,11 @@ describe("limits and localization", () => {
         sender,
       }),
     );
-    expect(msg.description).toBe("🆕 Tag created");
+    expect(msg.title).toBe(
+      "acme/widget: 🏷️ Created tag [`v1.0`](https://github.com/acme/widget/releases/tag/v1.0)",
+    );
+    expect(msg.color).toBe(4176208);
+    expect(msg.description).toBeUndefined();
   });
 
   it("commit_comment without a commit id omits the sha", () => {

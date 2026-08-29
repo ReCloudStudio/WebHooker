@@ -57,6 +57,28 @@ export function formatPush(
     );
   }
 
+  // A newly-created branch/tag pushed via `git push` arrives as a push event
+  // with `created: true` and no commits — render it like the `create` event
+  // instead of a confusing "0 commits pushed".
+  if (created && count === 0) {
+    const refType = isTagPush ? "tag" : "branch";
+    const cleanRef = rawRef.replace("refs/heads/", "").replace("refs/tags/", "");
+    return buildMessage(
+      {
+        author,
+        title: t("events.create.title", {
+          repo: repo ?? t("common.repository"),
+          emoji: em(isTagPush ? "🏷️" : "🌿"),
+          type: refType,
+          ref: isTagPush ? tagLink(baseUrl, cleanRef) : branchLink(baseUrl, cleanRef),
+        }),
+        color: GITHUB_COLORS.create,
+      },
+      t,
+      repo,
+    );
+  }
+
   const descLines: string[] = [];
 
   if (forced) {

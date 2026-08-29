@@ -20,6 +20,10 @@ Check in order:
 - The user must run `/gh login` first and the OAuth secrets (`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`, `BASE_URL`) must be configured.
 - Slash commands sync from the scheduled trigger every 5 minutes; global registration can take ~1 hour to propagate.
 
+## I created a tag/branch but got a "0 commits" push message
+
+Creating a tag or an empty branch via `git push` arrives as a push event with `created: true` and no commits — since the event carries the `created` flag, it is rendered as a normal `create` message. If you still see "0 commits", the payload's `created` flag was absent (e.g. an old or non-conforming delivery).
+
 ## I deleted a branch but got a "0 commits" push message
 
 Branch deletions via `git push --delete` arrive as push events with `deleted: true` — they are rendered as a normal delete message. If you still see "0 commits", the payload's `deleted` flag was absent (e.g. an old delivery).
