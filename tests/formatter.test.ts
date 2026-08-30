@@ -183,6 +183,39 @@ describe("message title spec", () => {
     expect(msg.updateKey).toBeUndefined();
   });
 
+  it("check_run keys on name + head_sha for stable in-place edits", () => {
+    const running = formatEvent(
+      route,
+      event("check_run", {
+        check_run: {
+          id: 42,
+          name: "Cloudflare Pages",
+          head_sha: "abc123def456",
+          status: "in_progress",
+          conclusion: null,
+        },
+        repository: repo,
+        sender,
+      }),
+    );
+    const failed = formatEvent(
+      route,
+      event("check_run", {
+        check_run: {
+          id: 43,
+          name: "Cloudflare Pages",
+          head_sha: "abc123def456",
+          status: "completed",
+          conclusion: "failure",
+        },
+        repository: repo,
+        sender,
+      }),
+    );
+    expect(running.updateKey).toBe("check_run:acme/widget:Cloudflare Pages:abc123def456");
+    expect(failed.updateKey).toBe(running.updateKey);
+  });
+
   it("check_suite shows conclusion, service, branch and commit", () => {
     const suite = {
       html_url: "https://github.com/acme/widget/runs/2",

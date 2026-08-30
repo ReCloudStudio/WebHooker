@@ -33,4 +33,4 @@ With `Group.forgeSources` (a list of `{ host, type, name? }` entries) the messag
 
 ## In-Place Updates
 
-`workflow_run` and `check_run` messages are sent once and edited in place as the run progresses (queued → running → success/failure) — no duplicate messages. Tracking uses KV `msg:*` with a stable `updateKey` per run.
+`workflow_run` and `check_run` messages are sent once and edited in place as the run progresses (queued → running → success/failure) — no duplicate messages. Tracking uses KV `msg:*` with a stable `updateKey` per run: `workflow_run` keys on the workflow id, while `check_run` keys on the check name + commit SHA (falling back to the run id) so deployments that emit a fresh run id per phase — e.g. Cloudflare Pages — still edit the same message.

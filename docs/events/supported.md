@@ -60,7 +60,7 @@ Any event type without a dedicated formatter falls through to the generic format
 
 ## In-Place Message Updates
 
-`workflow_run` and `check_run` events (queued → running → success/failure) are sent once and then **edited in place** for each subsequent phase instead of posting a new message. The original message's link preview, author, and field layout are preserved; only the status, conclusion emoji, duration, and title are refreshed. Supported on both Discord (`editMessage`) and Telegram (`editMessageText` / `editMessageCaption`).
+`workflow_run` and `check_run` events (queued → running → success/failure) are sent once and then **edited in place** for each subsequent phase instead of posting a new message. The original message's link preview, author, and field layout are preserved; only the status, conclusion emoji, duration, and title are refreshed. Supported on both Discord (`editMessage`) and Telegram (`editMessageText` / `editMessageCaption`). `check_run` tracks by check name + commit SHA (falling back to the run id), so providers that issue a new run id per phase — e.g. Cloudflare Pages — still edit the same message.
 
 ## Filter Compatibility
 

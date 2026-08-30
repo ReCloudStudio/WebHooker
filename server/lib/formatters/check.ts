@@ -178,6 +178,7 @@ export function formatCheckRun(
   const checkRun = payload.check_run as {
     id?: number;
     name?: string;
+    head_sha?: string;
     conclusion?: string;
     html_url?: string;
     details_url?: string;
@@ -225,7 +226,12 @@ export function formatCheckRun(
       url: checkRun.html_url,
       color: GITHUB_COLORS[colorKey],
       fields,
-      updateKey: repo && checkRun.id != null ? `check_run:${repo}:${checkRun.id}` : undefined,
+      updateKey:
+        repo && checkRun.name && checkRun.head_sha
+          ? `check_run:${repo}:${checkRun.name}:${checkRun.head_sha}`
+          : repo && checkRun.id != null
+            ? `check_run:${repo}:${checkRun.id}`
+            : undefined,
     },
     t,
     repo,

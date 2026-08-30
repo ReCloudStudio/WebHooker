@@ -13,7 +13,7 @@ GitHub / Gitea webhook → Discord / Telegram / Feishu dispatcher. Receives webh
 - Combine filters into a boolean AST (`all` / `any` / `not` nodes) via the route editor's visual builder; reuse named filter fragments and dry-run any filter against a pasted JSON payload without storing it
 - Rich messages with color coding, author avatars, fields, and timestamps — rendered as Discord embeds and Telegram HTML
 - Route to Discord channels/threads, Telegram chats/topics, and Feishu group chats (multi-target routes)
-- `workflow_run` / `check_run` progress is edited **in place** (single message updated as the run advances) on Discord, Telegram, and Feishu
+- `workflow_run` / `check_run` progress is edited **in place** (single message updated as the run advances) on Discord, Telegram, and Feishu — `check_run` tracks by check name + commit SHA so deployments that issue a fresh run id per phase (e.g. Cloudflare Pages) still edit the same message
 - **Per-group webhook log channel** — point a group at a Discord channel/thread, Telegram chat/topic, or Feishu chat and every webhook the group's routes dispatch is summarized there (✅/❌ per route × target)
 - GitHub OAuth for user actions (comment, edit comment, delete comment, merge, close, react)
 - **Web UI config console** (`/admin`) — manage routes and groups with GitHub OAuth + admin whitelist, view send logs

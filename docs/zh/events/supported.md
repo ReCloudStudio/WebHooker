@@ -60,7 +60,7 @@ WebHooker 支持 28 种 GitHub webhook 事件类型，每种都有专用的格�
 
 ## 原地消息更新
 
-`workflow_run` / `check_run` 事件（queued → running → success/failure）只发送一条消息，后续每个阶段会**原地编辑**该消息，而不是发送新消息。消息的链接预览、作者和字段布局保持不变，仅刷新状态、结论 emoji、耗时和标题。Discord（`editMessage`）和 Telegram（`editMessageText` / `editMessageCaption`）均支持。
+`workflow_run` / `check_run` 事件（queued → running → success/failure）只发送一条消息，后续每个阶段会**原地编辑**该消息，而不是发送新消息。消息的链接预览、作者和字段布局保持不变，仅刷新状态、结论 emoji、耗时和标题。Discord（`editMessage`）和 Telegram（`editMessageText` / `editMessageCaption`）均支持。`check_run` 以 check 名 + commit SHA 追踪（回退到 run id），因此每个阶段都会换新 run id 的提供方（例如 Cloudflare Pages）仍会编辑同一条消息。
 
 ## 过滤器兼容性
 

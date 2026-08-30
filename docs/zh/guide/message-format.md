@@ -33,4 +33,4 @@
 
 ## 原地更新
 
-`workflow_run` 与 `check_run` 消息只发送一次，随运行进度原地编辑（queued → running → success/failure），不会重复发消息。追踪使用 KV `msg:*` 与每次运行的稳定 `updateKey`。
+`workflow_run` 与 `check_run` 消息只发送一次，随运行进度原地编辑（queued → running → success/failure），不会重复发消息。追踪使用 KV `msg:*` 与每次运行的稳定 `updateKey`：`workflow_run` 以 workflow id 为键，`check_run` 则以 check 名 + commit SHA 为键（回退到 run id），因此每个阶段都换新 run id 的部署（例如 Cloudflare Pages）仍会编辑同一条消息。
