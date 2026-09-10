@@ -116,19 +116,40 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
     ];
   }
 
-  function groupStatements(groups: Group[]): D1PreparedStatement[] {
+  function groupStatements(groups: Group[], existingGroupIds: string[]): D1PreparedStatement[] {
     const now = Date.now();
-    return [
-      db.prepare("DELETE FROM d1_groups"),
-      ...groups.map((g) =>
+    const newGroupIds = new Set(groups.map((g) => g.id));
+    const toDelete = existingGroupIds.filter((id) => !newGroupIds.has(id));
+    
+    const statements: D1PreparedStatement[] = [];
+    
+    // First, delete routes for groups that will be removed
+    for (const groupId of toDelete) {
+      statements.push(db.prepare("DELETE FROM d1_routes WHERE group_id = ?").bind(groupId));
+    }
+    
+    // Then delete the groups themselves
+    for (const groupId of toDelete) {
+      statements.push(db.prepare("DELETE FROM d1_groups WHERE id = ?").bind(groupId));
+    }
+    
+    // Finally, upsert all groups (INSERT OR REPLACE)
+    for (const g of groups) {
+      statements.push(
         db
           .prepare(
             `INSERT INTO d1_groups (id, name, data, version, created_at, updated_at)
-             VALUES (?, ?, ?, 1, ?, ?)`,
+             VALUES (?, ?, ?, 1, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET
+               name = excluded.name,
+               data = excluded.data,
+               updated_at = excluded.updated_at`,
           )
           .bind(g.id, g.name, JSON.stringify(g), now, now),
-      ),
-    ];
+      );
+    }
+    
+    return statements;
   }
 
   async function seedRoutesToD1(routes: Route[]): Promise<void> {
@@ -138,7 +159,8 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
 
   async function seedGroupsToD1(groups: Group[]): Promise<void> {
     if (groups.length === 0) return;
-    await db.batch(groupStatements(groups));
+    // When seeding, there are no existing groups to delete
+    await db.batch(groupStatements(groups, []));
   }
 
   async function syncRoutesToKV(routes: Route[], ttl: number): Promise<void> {
@@ -225,7 +247,10 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
 
     async saveGroups(groups: Group[]): Promise<void> {
       try {
-        await db.batch(groupStatements(groups));
+        // Load existing group IDs to properly handle deletions
+        const existing = await loadGroupsFromD1();
+        const existingIds = existing.map((g) => g.id);
+        await db.batch(groupStatements(groups, existingIds));
         await syncGroupsToKV(groups, KV_CACHE_TTL);
       } catch (err) {
         log.warn({ err }, "D1 groups unavailable, falling back to KV");

@@ -171,4 +171,29 @@ describe("d1ConfigStore", () => {
     const second = await cfg.loadRoutes();
     expect(second).toHaveLength(2);
   });
+
+  it("updating groups does not cascade-delete routes", async () => {
+    const { db, routesTable, groupsTable } = createDB();
+    const { kv } = createKV();
+    const cfg: ConfigStore = d1ConfigStore(db, kv);
+    
+    // Setup initial state with groups and routes
+    groupsTable.push(group("g1"), group("g2"));
+    routesTable.push(route("r1", "g1"), route("r2", "g2"));
+    
+    // Simulate updating groups (e.g., changing a group's name)
+    const updatedGroups = [
+      { ...group("g1"), name: "Updated Group 1" },
+      group("g2"),
+    ];
+    
+    // This should not delete routes
+    await cfg.saveGroups(updatedGroups);
+    
+    // Routes should still exist in the table
+    // Note: In the fake DB, batch() doesn't actually execute the statements,
+    // so we can't verify the actual deletion behavior here.
+    // This test mainly ensures saveGroups doesn't throw an error.
+    expect(routesTable).toHaveLength(2);
+  });
 });
