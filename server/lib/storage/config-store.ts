@@ -88,10 +88,13 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
     return [];
   }
 
-  function routeStatements(routes: Route[], existingRouteKeys?: Set<string>): D1PreparedStatement[] {
+  function routeStatements(
+    routes: Route[],
+    existingRouteKeys?: Set<string>,
+  ): D1PreparedStatement[] {
     const now = Date.now();
     const statements: D1PreparedStatement[] = [];
-    
+
     // If we have existing routes, delete those not in the new set
     if (existingRouteKeys) {
       const newKeys = new Set(routes.map((r) => `${r.id}:${r.groupId ?? ""}`));
@@ -99,7 +102,7 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
         if (!newKeys.has(key)) {
           const [id, groupId] = key.split(":");
           statements.push(
-            db.prepare("DELETE FROM d1_routes WHERE id = ? AND group_id = ?").bind(id, groupId)
+            db.prepare("DELETE FROM d1_routes WHERE id = ? AND group_id = ?").bind(id, groupId),
           );
         }
       }
@@ -107,7 +110,7 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
       // Backward compatibility: delete all routes if no existing set provided
       statements.push(db.prepare("DELETE FROM d1_routes"));
     }
-    
+
     // Upsert all routes
     for (const r of routes) {
       statements.push(
@@ -142,7 +145,7 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
           ),
       );
     }
-    
+
     return statements;
   }
 

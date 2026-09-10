@@ -35,24 +35,24 @@ export async function loadFragments(db: D1Database): Promise<NamedFragment[]> {
 
 export async function saveFragments(db: D1Database, fragments: NamedFragment[]): Promise<void> {
   const now = Date.now();
-  
+
   // Load existing fragments to determine what to delete
   const existing = await loadFragments(db);
   const existingKeys = new Set(existing.map((f) => `${f.id}:${f.groupId ?? ""}`));
   const newKeys = new Set(fragments.map((f) => `${f.id}:${f.groupId ?? ""}`));
-  
+
   const statements: D1PreparedStatement[] = [];
-  
+
   // Delete fragments that are no longer present
   for (const key of existingKeys) {
     if (!newKeys.has(key)) {
       const [id, groupId] = key.split(":");
       statements.push(
-        db.prepare("DELETE FROM d1_fragments WHERE id = ? AND group_id = ?").bind(id, groupId)
+        db.prepare("DELETE FROM d1_fragments WHERE id = ? AND group_id = ?").bind(id, groupId),
       );
     }
   }
-  
+
   // Upsert all fragments
   for (const f of fragments) {
     statements.push(
@@ -68,6 +68,6 @@ export async function saveFragments(db: D1Database, fragments: NamedFragment[]):
         .bind(f.id, f.groupId ?? "", f.name, JSON.stringify(f.node), now, now),
     );
   }
-  
+
   await db.batch(statements);
 }
