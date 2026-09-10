@@ -965,13 +965,21 @@ export async function adminGroupRename(
     return respondError(event, 500, "Failed to save groups");
   }
 
-  // Re-point routes, the tenant webhook secret and pending invites.
+  // Re-point routes, fragments, the tenant webhook secret and pending invites.
   const routes = await loadRoutes(env.KV);
   const touched = routes.filter((r) => r.groupId === groupId);
   if (touched.length > 0) {
     await saveRoutes(
       env.KV,
       routes.map((r) => (r.groupId === groupId ? { ...r, groupId: newId } : r)),
+    );
+  }
+  const fragments = await loadFragments(env.DB);
+  const touchedFragments = fragments.filter((f) => f.groupId === groupId);
+  if (touchedFragments.length > 0) {
+    await saveFragments(
+      env.DB,
+      fragments.map((f) => (f.groupId === groupId ? { ...f, groupId: newId } : f)),
     );
   }
   const secret = await getTenantSecret(env.KV, groupId);

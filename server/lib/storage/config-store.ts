@@ -88,15 +88,43 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
     return [];
   }
 
-  function routeStatements(routes: Route[]): D1PreparedStatement[] {
+  function routeStatements(routes: Route[], existingRouteKeys?: Set<string>): D1PreparedStatement[] {
     const now = Date.now();
-    return [
-      db.prepare("DELETE FROM d1_routes"),
-      ...routes.map((r) =>
+    const statements: D1PreparedStatement[] = [];
+    
+    // If we have existing routes, delete those not in the new set
+    if (existingRouteKeys) {
+      const newKeys = new Set(routes.map((r) => `${r.id}:${r.groupId ?? ""}`));
+      for (const key of existingRouteKeys) {
+        if (!newKeys.has(key)) {
+          const [id, groupId] = key.split(":");
+          statements.push(
+            db.prepare("DELETE FROM d1_routes WHERE id = ? AND group_id = ?").bind(id, groupId)
+          );
+        }
+      }
+    } else {
+      // Backward compatibility: delete all routes if no existing set provided
+      statements.push(db.prepare("DELETE FROM d1_routes"));
+    }
+    
+    // Upsert all routes
+    for (const r of routes) {
+      statements.push(
         db
           .prepare(
             `INSERT INTO d1_routes (id, group_id, name, enabled, filters, targets, stop, fallback, discord_role_ids, ast, version, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+             ON CONFLICT(id, group_id) DO UPDATE SET
+               name = excluded.name,
+               enabled = excluded.enabled,
+               filters = excluded.filters,
+               targets = excluded.targets,
+               stop = excluded.stop,
+               fallback = excluded.fallback,
+               discord_role_ids = excluded.discord_role_ids,
+               ast = excluded.ast,
+               updated_at = excluded.updated_at`,
           )
           .bind(
             r.id,
@@ -112,8 +140,10 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
             now,
             now,
           ),
-      ),
-    ];
+      );
+    }
+    
+    return statements;
   }
 
   function groupStatements(groups: Group[], existingGroupIds: string[]): D1PreparedStatement[] {
