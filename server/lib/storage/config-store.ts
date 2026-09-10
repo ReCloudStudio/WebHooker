@@ -120,19 +120,19 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
     const now = Date.now();
     const newGroupIds = new Set(groups.map((g) => g.id));
     const toDelete = existingGroupIds.filter((id) => !newGroupIds.has(id));
-    
+
     const statements: D1PreparedStatement[] = [];
-    
+
     // First, delete routes for groups that will be removed
     for (const groupId of toDelete) {
       statements.push(db.prepare("DELETE FROM d1_routes WHERE group_id = ?").bind(groupId));
     }
-    
+
     // Then delete the groups themselves
     for (const groupId of toDelete) {
       statements.push(db.prepare("DELETE FROM d1_groups WHERE id = ?").bind(groupId));
     }
-    
+
     // Finally, upsert all groups (INSERT OR REPLACE)
     for (const g of groups) {
       statements.push(
@@ -148,7 +148,7 @@ export function d1ConfigStore(db: D1Database, kv: KVNamespace): ConfigStore {
           .bind(g.id, g.name, JSON.stringify(g), now, now),
       );
     }
-    
+
     return statements;
   }
 
