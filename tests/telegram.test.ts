@@ -191,6 +191,36 @@ describe("telegram-rest sendPhoto", () => {
 });
 
 describe("TelegramDriver", () => {
+  it("uses a plain-text title for the rich header preview", async () => {
+    let capturedInit: RequestInit | undefined;
+    mockFetch((_url, init) => {
+      capturedInit = init;
+      return new Response(JSON.stringify({ ok: true, result: { message_id: 9 } }), { status: 200 });
+    });
+
+    const driver = new TelegramDriver();
+    await driver.send(
+      {
+        title: "OnionSchool/YangYiSongRequest: [CI — running](https://github.com/OnionSchool/YangYiSongRequest/actions)",
+        author: { name: "alice", iconUrl: "https://avatars.githubusercontent.com/u/1" },
+      },
+      { platform: "telegram", chatId: "-100123" },
+      {
+        TELEGRAM_TOKEN: "t",
+        BASE_URL: "https://webhooker.example.com",
+        KV: {} as never,
+        DB: {} as never,
+        GITHUB_WEBHOOK_SECRET: "s",
+      },
+    );
+
+    const body = JSON.parse(String(capturedInit!.body)) as { link_preview_options: { url: string } };
+    const previewUrl = new URL(body.link_preview_options.url);
+    expect(previewUrl.searchParams.get("content")).toBe(
+      "OnionSchool/YangYiSongRequest: CI — running",
+    );
+  });
+
   it("sends a small avatar photo (s=64) when the author has an icon", async () => {
     let capturedInit: RequestInit | undefined;
     mockFetch((url, init) => {

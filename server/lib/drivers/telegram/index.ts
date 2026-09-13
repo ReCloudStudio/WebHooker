@@ -1,7 +1,14 @@
+import MarkdownIt from "markdown-it";
 import type { RouteTarget, Env, NeutralMessage } from "../../types";
 import type { PlatformDriver, SendResult } from "../types";
 import { sendMessage, sendPhoto, editMessageText, editMessageCaption } from "./rest";
 import { renderNeutralMessage } from "./render";
+
+const markdown = new MarkdownIt({ html: false, linkify: false, breaks: false, typographer: false });
+
+function markdownToText(value: string): string {
+  return markdown.renderInline(value).replace(/<[^>]*>/gu, "");
+}
 
 function smallAvatar(url: string): string {
   const sep = url.includes("?") ? "&" : "?";
@@ -11,7 +18,7 @@ function smallAvatar(url: string): string {
 function richHeaderUrl(message: NeutralMessage, avatar: string, host: string): string {
   const params = new URLSearchParams();
   if (message.author?.name) params.set("title", message.author.name);
-  if (message.title) params.set("content", message.title);
+  if (message.title) params.set("content", markdownToText(message.title));
   params.set("avatar", avatar);
   return `${host.replace(/\/+$/, "")}/api/richheader?${params.toString()}`;
 }
