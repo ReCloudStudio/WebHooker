@@ -201,7 +201,8 @@ describe("TelegramDriver", () => {
     const driver = new TelegramDriver();
     await driver.send(
       {
-        title: "OnionSchool/YangYiSongRequest: [CI — running](https://github.com/OnionSchool/YangYiSongRequest/actions)",
+        title:
+          "OnionSchool/YangYiSongRequest: [CI — running](https://github.com/OnionSchool/YangYiSongRequest/actions)",
         author: { name: "alice", iconUrl: "https://avatars.githubusercontent.com/u/1" },
       },
       { platform: "telegram", chatId: "-100123" },
@@ -214,7 +215,9 @@ describe("TelegramDriver", () => {
       },
     );
 
-    const body = JSON.parse(String(capturedInit!.body)) as { link_preview_options: { url: string } };
+    const body = JSON.parse(String(capturedInit!.body)) as {
+      link_preview_options: { url: string };
+    };
     const previewUrl = new URL(body.link_preview_options.url);
     expect(previewUrl.searchParams.get("content")).toBe(
       "OnionSchool/YangYiSongRequest: CI — running",
