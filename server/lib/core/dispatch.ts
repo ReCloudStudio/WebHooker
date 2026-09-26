@@ -68,6 +68,24 @@ export async function dispatchEvent(
 
   const attempts: DispatchAttempt[] = [];
   const sendLogs: SendRecord[] = [];
+
+  let workflowJobsPromise: Promise<void> | undefined;
+  function ensureWorkflowJobs(): Promise<void> {
+    if (event.event !== "workflow_run") return Promise.resolve();
+    workflowJobsPromise ??= (async (): Promise<void> => {
+      const run = event.payload.workflow_run as { jobs_url?: string; jobs?: unknown[] } | undefined;
+      if (!run?.jobs_url || run.jobs?.length) return;
+      const jobs = await getWorkflowRunJobs(
+        run.jobs_url,
+        env.GITHUB_APP_ID,
+        env.GITHUB_PRIVATE_KEY,
+        event.installationId,
+      );
+      if (jobs) run.jobs = jobs;
+    })();
+    return workflowJobsPromise;
+  }
+
   const tasks: Promise<void>[] = [];
   for (const route of config.routes) {
     if (!accepted(route)) continue;
@@ -162,23 +180,6 @@ export async function dispatchEvent(
         log.error({ groupId, err }, "Group webhook log send failed");
       }
     }
-  }
-
-  let workflowJobsPromise: Promise<void> | undefined;
-  function ensureWorkflowJobs(): Promise<void> {
-    if (event.event !== "workflow_run") return Promise.resolve();
-    workflowJobsPromise ??= (async (): Promise<void> => {
-      const run = event.payload.workflow_run as { jobs_url?: string; jobs?: unknown[] } | undefined;
-      if (!run?.jobs_url || run.jobs?.length) return;
-      const jobs = await getWorkflowRunJobs(
-        run.jobs_url,
-        env.GITHUB_APP_ID,
-        env.GITHUB_PRIVATE_KEY,
-        event.installationId,
-      );
-      if (jobs) run.jobs = jobs;
-    })();
-    return workflowJobsPromise;
   }
 
   async function processRoute(route: Route): Promise<void> {

@@ -552,4 +552,65 @@ describe("dispatchEvent fallback routing", () => {
     });
     expect(titles.sort()).toEqual(["owner/repo", "owner/repo"].sort());
   });
+
+  it("dispatches workflow_run events and enriches them with jobs", async () => {
+    const sent: string[] = [];
+    const bodies: string[] = [];
+    mockFetch((url, init) => {
+      if (url.includes("api.github.com") && url.includes("/jobs")) {
+        return Response.json({
+          jobs: [
+            {
+              name: "build",
+              status: "completed",
+              conclusion: "success",
+              started_at: "2026-01-01T00:00:00Z",
+              completed_at: "2026-01-01T00:01:30Z",
+            },
+          ],
+        });
+      }
+      sent.push(url);
+      bodies.push(String(init?.body ?? ""));
+      return new Response("{}", { status: 200 });
+    });
+    const env = createEnv({ KV: createMockKV(), DB: createMockDB() });
+    const routes: Route[] = [
+      {
+        id: "wf-route",
+        name: "Workflow",
+        enabled: true,
+        filters: [{ type: "event", match: "workflow_run" }],
+        targets: [{ channelId: "111" }],
+      },
+    ];
+
+    const summary = await dispatchEvent(
+      { ...baseConfig, routes },
+      {
+        event: "workflow_run",
+        payload: {
+          action: "completed",
+          workflow_run: {
+            id: 42,
+            name: "CI",
+            conclusion: "success",
+            status: "completed",
+            html_url: "https://github.com/owner/repo/actions/runs/42",
+            head_branch: "main",
+            run_number: 7,
+            jobs_url: "https://api.github.com/repos/owner/repo/actions/runs/42/jobs",
+          },
+          repository: { full_name: "owner/repo" },
+          sender: { login: "octocat" },
+        },
+      },
+      env,
+    );
+
+    expect(summary.attempts).toBe(1);
+    expect(sent.filter((u) => u.includes("/111/"))).toHaveLength(1);
+    expect(bodies[0]).toContain("```diff");
+    expect(bodies[0]).toContain("build ✅ success · 1m 30s");
+  });
 });
