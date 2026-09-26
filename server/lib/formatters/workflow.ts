@@ -155,7 +155,7 @@ export function formatWorkflowRun(
           ? "running"
           : j.status === "queued"
             ? "queued"
-            : j.conclusion ?? "pending";
+            : (j.conclusion ?? "pending");
       const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
       const marker =
         status === "success"
@@ -163,8 +163,7 @@ export function formatWorkflowRun(
           : status === "running" || status === "queued" || status === "pending"
             ? " "
             : "-";
-      const done =
-        status !== "running" && status !== "queued" && status !== "pending";
+      const done = status !== "running" && status !== "queued" && status !== "pending";
       const duration = done ? jobDuration(j.started_at, j.completed_at) : undefined;
       return `${marker} ${cap(j.name ?? "", 200)} ${em(emoji)}${status}${duration ? ` · ${duration}` : ""}`;
     });

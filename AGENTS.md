@@ -199,7 +199,7 @@ tests/__snapshots__/     # formatter snapshot golden files (toMatchSnapshot)
 - Milestone progress bars (🟢🟡🟠⬜) are data visualization and are exempt from the emoji toggle.
 - `workflow_run` messages render a **Jobs** field as a Discord `diff` fenced code block
   (`server/lib/formatters/workflow.ts`): one line per job, `${marker} ${name} ${emoji}${status}` plus
-  ` · {duration}` for completed jobs. `+` (green) for `success`, `-` (red) for other non-pending
+  `· {duration}` for completed jobs. `+` (green) for `success`, `-` (red) for other non-pending
   conclusions, a plain space for running/queued/pending; job names clamp to 200 chars and the field
   to the platform field limit. Drivers without diff support (Telegram, Feishu) collapse it to inline code.
 - Commit hashes, branches and tags render as inline code wrapped in a hyperlink
