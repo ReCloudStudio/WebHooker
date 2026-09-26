@@ -284,16 +284,14 @@ watch(
     form.discordRolesText = r?.discordRoleIds?.length ? r.discordRoleIds.join(", ") : "";
     form.targets =
       r && r.targets.length
-        ? r.targets.map((tg) => ({
-            ...blankTarget(),
-            ...tg,
-            platform:
-              tg.platform === "telegram"
-                ? "telegram"
-                : tg.platform === "feishu"
-                  ? "feishu"
-                  : "discord",
-          }))
+        ? r.targets.map((tg) => {
+            const merged = { ...blankTarget(), ...tg };
+            merged.platform =
+              merged.platform === "telegram" || merged.platform === "feishu"
+                ? merged.platform
+                : "discord";
+            return merged;
+          })
         : [blankTarget()];
     if (r?.ast) {
       root.value = nodeToForm(r.ast);
