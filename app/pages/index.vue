@@ -2,9 +2,21 @@
   <div class="relative z-[1] mx-auto flex min-h-screen max-w-[720px] flex-col px-5 pb-16 pt-[72px]">
     <div class="mb-10 text-center">
       <div
-        class="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-xl font-extrabold tracking-tight text-white shadow-[0_8px_24px_-8px_var(--accent)]"
+        class="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-white shadow-[0_8px_24px_-8px_var(--accent)]"
       >
-        WH
+        <svg
+          viewBox="0 0 64 64"
+          class="h-8 w-8"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M41 23 V35.5 A10.5 10.5 0 0 1 20 35.5 L28 25.5" />
+          <circle cx="41" cy="18" r="4.5" fill="currentColor" stroke="none" />
+        </svg>
       </div>
       <h1 class="mb-2.5 text-[34px] font-extrabold tracking-[-0.03em]">
         Web<span class="text-accent">Hooker</span>

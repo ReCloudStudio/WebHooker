@@ -5,7 +5,20 @@
       class="sticky top-0 z-30 flex h-screen w-[240px] flex-shrink-0 flex-col border-r border-border bg-surface max-lg:hidden"
     >
       <div class="flex items-center gap-3 px-5 py-5">
-        <div class="brand-mark">WH</div>
+        <div class="brand-mark" aria-hidden="true">
+          <svg
+            viewBox="0 0 64 64"
+            class="h-[22px] w-[22px]"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M41 23 V35.5 A10.5 10.5 0 0 1 20 35.5 L28 25.5" />
+            <circle cx="41" cy="18" r="4.5" fill="currentColor" stroke="none" />
+          </svg>
+        </div>
         <div>
           <div class="text-sm font-extrabold tracking-tight">WebHooker</div>
           <div class="text-[10px] font-semibold uppercase tracking-[2px] text-faint">
