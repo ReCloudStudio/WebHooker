@@ -110,9 +110,7 @@ describe("getWorkflowRunJobs", () => {
       else sawUA = headers["User-Agent"];
       return new Response(
         JSON.stringify(
-          url.includes("/access_tokens")
-            ? { token: "ghs_test" }
-            : { jobs: [{ name: "build" }] },
+          url.includes("/access_tokens") ? { token: "ghs_test" } : { jobs: [{ name: "build" }] },
         ),
         { status: 200 },
       );
