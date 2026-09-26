@@ -34,3 +34,16 @@ With `Group.forgeSources` (a list of `{ host, type, name? }` entries) the messag
 ## In-Place Updates
 
 `workflow_run` and `check_run` messages are sent once and edited in place as the run progresses (queued → running → success/failure) — no duplicate messages. Tracking uses KV `msg:*` with a stable `updateKey` per run: `workflow_run` keys on the workflow id, while `check_run` keys on the check name + commit SHA (falling back to the run id) so deployments that emit a fresh run id per phase — e.g. Cloudflare Pages — still edit the same message.
+
+## Workflow Jobs
+
+`workflow_run` messages include a **Jobs** field listing every job in the run as a colored diff code block (Discord):
+
+```
++ build ✅ success · 1m 23s
+  deploy 🔄 running
+  lint ⏳ queued
+- test ❌ failure · 0m 45s
+```
+
+Each line is `{name} {emoji}{status}` plus the job duration when it has completed. Successful jobs are prefixed with `+` (green), failed/other finished jobs with `-` (red), and running/queued/pending jobs use a plain space (no color). The job name is clamped to 200 chars and the whole field to the platform field limit. Drivers without diff support (Telegram, Feishu) render the block as a single inline code span.

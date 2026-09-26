@@ -10,7 +10,7 @@ WebHooker supports 28 GitHub webhook event types, each with a dedicated formatte
 | `pull_request`                | PR opened/closed/merged/edited | PR title, branch, diff stats, labels                                                                             |
 | `issues`                      | Issue opened/closed/edited     | Issue title, labels, assignees                                                                                   |
 | `issue_comment`               | Comment on issue or PR         | Comment body, issue reference                                                                                    |
-| `workflow_run`                | CI/CD workflow phase updated   | Workflow status, conclusion, duration; phases update a single message in place                                   |
+| `workflow_run`                | CI/CD workflow phase updated   | Workflow status, conclusion, duration, colored per-job breakdown; phases update a single message in place        |
 | `workflow_job`                | CI job phase updated           | Job name, status, conclusion, workflow                                                                           |
 | `status`                      | Commit status updated          | Commit status, context, state, commit link                                                                       |
 | `deployment`                  | Deployment created             | Environment, ref, task                                                                                           |

@@ -95,6 +95,15 @@ export function formatWorkflowJob(
   );
 }
 
+function jobDuration(startedAt?: string, completedAt?: string): string | undefined {
+  if (!startedAt || !completedAt) return undefined;
+  const secs = Math.max(0, Math.round((Date.parse(completedAt) - Date.parse(startedAt)) / 1000));
+  if (!Number.isFinite(secs)) return undefined;
+  const mins = Math.floor(secs / 60);
+  const rem = secs % 60;
+  return `${mins}m ${rem}s`;
+}
+
 export function formatWorkflowRun(
   payload: Record<string, unknown>,
   repo: string | undefined,
@@ -112,7 +121,13 @@ export function formatWorkflowRun(
     created_at?: string;
     updated_at?: string;
     elapsed_seconds?: number;
-    jobs?: Array<{ name?: string; conclusion?: string }>;
+    jobs?: Array<{
+      name?: string;
+      status?: string;
+      conclusion?: string | null;
+      started_at?: string;
+      completed_at?: string;
+    }>;
   };
 
   const action = payload.action as string | undefined;
@@ -132,13 +147,30 @@ export function formatWorkflowRun(
 
   if (workflow.jobs?.length) {
     // Many-jobs workflows must stay under the Discord field value limit.
-    const jobLines = workflow.jobs.map(
-      (j) =>
-        `${em(WORKFLOW_CONCLUSION_EMOJI[j.conclusion ?? ""] ?? "⏳")}${cap(j.name ?? "", 200)}`,
-    );
+    // Discord colors `diff` blocks: `+` lines green, `-` lines red, and
+    // plain (space-prefixed) lines default gray/white — used for running.
+    const jobLines = workflow.jobs.map((j) => {
+      const status =
+        j.status === "in_progress"
+          ? "running"
+          : j.status === "queued"
+            ? "queued"
+            : j.conclusion ?? "pending";
+      const emoji = WORKFLOW_CONCLUSION_EMOJI[status] ?? "⏳";
+      const marker =
+        status === "success"
+          ? "+"
+          : status === "running" || status === "queued" || status === "pending"
+            ? " "
+            : "-";
+      const done =
+        status !== "running" && status !== "queued" && status !== "pending";
+      const duration = done ? jobDuration(j.started_at, j.completed_at) : undefined;
+      return `${marker} ${cap(j.name ?? "", 200)} ${em(emoji)}${status}${duration ? ` · ${duration}` : ""}`;
+    });
     fields.push({
       name: t("fields.job"),
-      value: cap(jobLines.join("\n"), MAX_FIELD_VALUE),
+      value: cap(`\`\`\`diff\n${jobLines.join("\n")}\n\`\`\``, MAX_FIELD_VALUE),
       inline: false,
     });
   }

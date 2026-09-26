@@ -197,6 +197,11 @@ tests/__snapshots__/     # formatter snapshot golden files (toMatchSnapshot)
   the locale files. Emoji is controlled per group through the `Group.emoji` toggle (default true);
   `showEmoji=false` must strip every emoji from titles, descriptions, fields and links.
 - Milestone progress bars (🟢🟡🟠⬜) are data visualization and are exempt from the emoji toggle.
+- `workflow_run` messages render a **Jobs** field as a Discord `diff` fenced code block
+  (`server/lib/formatters/workflow.ts`): one line per job, `${marker} ${name} ${emoji}${status}` plus
+  ` · {duration}` for completed jobs. `+` (green) for `success`, `-` (red) for other non-pending
+  conclusions, a plain space for running/queued/pending; job names clamp to 200 chars and the field
+  to the platform field limit. Drivers without diff support (Telegram, Feishu) collapse it to inline code.
 - Commit hashes, branches and tags render as inline code wrapped in a hyperlink
   (`commitLink`/`branchLink`/`tagLink` helpers in `server/lib/formatters/helpers.ts`, e.g.
   ``[`abc123d`](https://.../commit/abc123def456)``, ``[`main`](https://.../tree/main)``),

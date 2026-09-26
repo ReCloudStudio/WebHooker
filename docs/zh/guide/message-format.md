@@ -34,3 +34,16 @@
 ## 原地更新
 
 `workflow_run` 与 `check_run` 消息只发送一次，随运行进度原地编辑（queued → running → success/failure），不会重复发消息。追踪使用 KV `msg:*` 与每次运行的稳定 `updateKey`：`workflow_run` 以 workflow id 为键，`check_run` 则以 check 名 + commit SHA 为键（回退到 run id），因此每个阶段都换新 run id 的部署（例如 Cloudflare Pages）仍会编辑同一条消息。
+
+## Workflow 作业
+
+`workflow_run` 消息包含一个 **Jobs** 字段，以带颜色的 diff 代码块列出该次运行的全部作业（Discord）：
+
+```
++ build ✅ success · 1m 23s
+  deploy 🔄 running
+  lint ⏳ queued
+- test ❌ failure · 0m 45s
+```
+
+每行格式为 `{作业名} {emoji}{状态}`，作业完成后追加耗时。成功的作业以 `+` 前缀（绿色），失败/其他已结束的作业以 `-` 前缀（红色），运行中/排队中/待定的作业使用普通空格（无颜色）。作业名截断至 200 字符，整个字段截断至平台字段上限。不支持 diff 的驱动（Telegram、飞书）会把该代码块渲染为单个行内代码片段。

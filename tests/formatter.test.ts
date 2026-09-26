@@ -114,7 +114,7 @@ describe("message title spec", () => {
     expect(msg.title).toBe(
       "acme/widget: [CI — success](https://github.com/acme/widget/actions/runs/42)",
     );
-    expect(msg.fields![1].value).toBe("✅ build");
+    expect(msg.fields![1].value).toBe("```diff\n+ build ✅ success\n```");
   });
 
   it("workflow_run distinguishes queued and running from pending", () => {
@@ -152,6 +152,40 @@ describe("message title spec", () => {
       "acme/widget: [CI — running](https://github.com/acme/widget/actions/runs/42)",
     );
     expect(running.fields![0].value).toBe("🔄 running");
+  });
+
+  it("workflow_run jobs render as a colored diff block with durations", () => {
+    const msg = formatEvent(
+      route,
+      event("workflow_run", {
+        action: "completed",
+        workflow_run: {
+          name: "CI",
+          conclusion: "success",
+          html_url: "https://github.com/acme/widget/actions/runs/42",
+          run_number: 42,
+          jobs: [
+            { name: "build", status: "completed", conclusion: "success", started_at: "2024-01-01T00:00:00Z", completed_at: "2024-01-01T00:01:23Z" },
+            { name: "deploy", status: "in_progress", conclusion: null },
+            { name: "lint", status: "queued", conclusion: null },
+            { name: "test", status: "completed", conclusion: "failure", started_at: "2024-01-01T00:00:00Z", completed_at: "2024-01-01T00:00:45Z" },
+          ],
+        },
+        repository: repo,
+        sender,
+      }),
+    );
+    const jobField = msg.fields!.find((f) => f.name === "Job");
+    expect(jobField!.value).toBe(
+      [
+        "```diff",
+        "+ build ✅ success · 1m 23s",
+        "  deploy 🔄 running",
+        "  lint ⏳ queued",
+        "- test ❌ failure · 0m 45s",
+        "```",
+      ].join("\n"),
+    );
   });
 
   it("check_run uses status for queued and running", () => {
@@ -430,7 +464,7 @@ describe("group emoji toggle", () => {
       false,
     );
     expect(msg.fields![0].value).toBe("failure");
-    expect(msg.fields![1].value).toBe("build");
+    expect(msg.fields![1].value).toBe("```diff\n- build failure\n```");
   });
 });
 
