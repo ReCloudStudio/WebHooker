@@ -168,9 +168,7 @@ export async function dispatchEvent(
   function ensureWorkflowJobs(): Promise<void> {
     if (event.event !== "workflow_run") return Promise.resolve();
     workflowJobsPromise ??= (async (): Promise<void> => {
-      const run = event.payload.workflow_run as
-        | { jobs_url?: string; jobs?: unknown[] }
-        | undefined;
+      const run = event.payload.workflow_run as { jobs_url?: string; jobs?: unknown[] } | undefined;
       if (!run?.jobs_url || run.jobs?.length) return;
       const jobs = await getWorkflowRunJobs(
         run.jobs_url,
