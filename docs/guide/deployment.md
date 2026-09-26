@@ -40,7 +40,7 @@ There is no global channel secret. Each route in the [Web UI](/guide/configurati
 :::
 
 ::: tip GitHub App ID / private key are optional
-`GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` (PKCS#8 PEM) are only used by the [App install flow](#github-app-setup) to resolve the installing account's login on the post-install choice page. You can skip them — the page then shows an anonymous `inst-{installationId}` group. The OAuth flow only needs `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`.
+`GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` (PKCS#8 PEM) are used by the [App install flow](#github-app-setup) to resolve the installing account's login on the post-install choice page, and to mint installation tokens for API enrichment — fetching `workflow_run` job lists and check-suite build logs. You can skip them — the install page then shows an anonymous `inst-{installationId}` group, workflow job lists still load for public repositories (unauthenticated), and private-repo build logs are omitted. The OAuth flow only needs `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`.
 :::
 
 Discord interactions arrive via the HTTPS Interactions Endpoint, so set `DISCORD_PUBLIC_KEY` and point the **Interactions Endpoint URL** at `https://your-domain/discord/interactions`. See [Interactions Endpoint](#interactions-endpoint) below.
@@ -144,11 +144,11 @@ Your worker is now live at `https://webhooker.<your-subdomain>.workers.dev`.
    - **Webhook URL**: `https://your-domain/webhook`
    - **Webhook secret**: generate and copy to `GITHUB_WEBHOOK_SECRET`
 3. Set permissions:
-   - **Repository permissions**: Contents (read), Issues (write), Pull requests (write), Metadata (read), Checks (read), Deployments (read), Discussions (read), Code scanning alerts (read), Dependabot alerts (read)
+   - **Repository permissions**: Contents (read), Issues (write), Pull requests (write), Metadata (read), Checks (read), Actions (read), Deployments (read), Discussions (read), Code scanning alerts (read), Dependabot alerts (read)
    - **Organization permissions**: Members (read) — if needed
 4. Subscribe to events (all 28 supported):
    - Push, Pull request, Issues, Issue comment, Workflow run, Workflow job, Status, Deployment, Deployment status, Ping, Release, Create, Delete, Star, Fork, Check run, Check suite, Pull request review, Pull request review comment, Commit comment, Member, Label, Milestone, Discussion, Discussion comment, Repository, Code scanning alert, Dependabot alert
-5. Generate private key — optional; set `GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` to show the installing account's login on the post-install page (see the tip above).
+5. Generate private key — optional; set `GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` to show the installing account's login on the post-install page and to authenticate API enrichment (workflow job lists, build logs) for private repositories (see the tip above).
 
 ### 2. Install App
 

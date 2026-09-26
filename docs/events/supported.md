@@ -62,6 +62,8 @@ Any event type without a dedicated formatter falls through to the generic format
 
 `workflow_run` and `check_run` events (queued → running → success/failure) are sent once and then **edited in place** for each subsequent phase instead of posting a new message. The original message's link preview, author, and field layout are preserved; only the status, conclusion emoji, duration, and title are refreshed. Supported on both Discord (`editMessage`) and Telegram (`editMessageText` / `editMessageCaption`). `check_run` tracks by check name + commit SHA (falling back to the run id), so providers that issue a new run id per phase — e.g. Cloudflare Pages — still edit the same message.
 
+`workflow_run` messages also carry a colored **Jobs** breakdown. Because the webhook payload itself has no job list (only a `jobs_url`), the worker fetches it from the GitHub API — authenticated with a GitHub App installation token when `GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` are set, otherwise unauthenticated (public repositories). The App therefore needs the **Actions: read** repository permission.
+
 ## Filter Compatibility
 
 See the [Filter Tutorial](../guide/filters) for a hands-on guide with worked examples.

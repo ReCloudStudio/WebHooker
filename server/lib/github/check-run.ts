@@ -1,6 +1,5 @@
-import { createAppJwt } from "./oauth";
+import { getInstallationToken, GITHUB_API_VERSION } from "./app-token";
 
-const API_VERSION = "2022-11-28";
 const CLOUDFLARE_SLUG = "cloudflare-workers-and-pages";
 
 /**
@@ -21,27 +20,14 @@ export async function getCheckSuiteBuildLogUrl(
 ): Promise<string | undefined> {
   if (!checkRunsUrl || !appId || !privateKey || !installationId) return undefined;
   try {
-    const jwt = await createAppJwt(appId, privateKey);
-    const tokRes = await fetch(
-      `https://api.github.com/app/installations/${installationId}/access_tokens`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": API_VERSION,
-        },
-      },
-    );
-    if (!tokRes.ok) return undefined;
-    const { token } = (await tokRes.json()) as { token?: string };
+    const token = await getInstallationToken(appId, privateKey, installationId);
     if (!token) return undefined;
 
     const runsRes = await fetch(checkRunsUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": API_VERSION,
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
       },
     });
     if (!runsRes.ok) return undefined;

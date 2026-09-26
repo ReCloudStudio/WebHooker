@@ -47,3 +47,5 @@ With `Group.forgeSources` (a list of `{ host, type, name? }` entries) the messag
 ```
 
 Each line is `{name} {emoji}{status}` plus the job duration when it has completed. Successful jobs are prefixed with `+` (green), failed/other finished jobs with `-` (red), and running/queued/pending jobs use a plain space (no color). The job name is clamped to 200 chars and the whole field to the platform field limit. Drivers without diff support (Telegram, Feishu) render the block as a single inline code span.
+
+The `workflow_run` webhook payload itself carries no job list — only a `jobs_url`. The worker fetches the jobs from that URL (one GitHub API call per delivery, skipped when no route matches): authenticated with a GitHub App installation token when `GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` are configured, otherwise unauthenticated (public repositories only). The App therefore needs the **Actions: read** repository permission. If the fetch fails (missing permission, private repo without App creds, rate limit) the message simply omits the Jobs field.

@@ -40,7 +40,7 @@ bunx wrangler secret put ADMIN_USER_IDS       # 逗号分隔的 GitHub ID/登录
 :::
 
 ::: tip GitHub App ID / 私钥为可选
-`GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY`（PKCS#8 PEM）仅用于 [App 安装流程](#github-app-设置)，在安装后选择页解析安装所属账号的登录名。可以跳过不设——页面会显示匿名 `inst-{installationId}` 分组。OAuth 流程只需要 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`。
+`GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY`（PKCS#8 PEM）用于 [App 安装流程](#github-app-设置)，在安装后选择页解析安装所属账号的登录名，并用于签发安装令牌做 API 增强——拉取 `workflow_run` 作业列表与 check-suite 构建日志。可以跳过不设——安装页会显示匿名 `inst-{installationId}` 分组，公开仓库的作业列表仍会以匿名方式加载，私有仓库的构建日志则省略。OAuth 流程只需要 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`。
 :::
 
 Discord 交互通过 HTTPS Interactions Endpoint 送达，需要设置 `DISCORD_PUBLIC_KEY` 并把 **Interactions Endpoint URL** 指向 `https://your-domain/discord/interactions`。参见下方 [Interactions Endpoint](#interactions-endpoint)。
@@ -144,11 +144,11 @@ Worker 现在可通过 `https://webhooker.<your-subdomain>.workers.dev` 访问�
    - **Webhook URL**: `https://your-domain/webhook`
    - **Webhook secret**: 生成并复制到 `GITHUB_WEBHOOK_SECRET`
 3. 设置权限：
-   - **Repository permissions**: Contents (read)、Issues (write)、Pull requests (write)、Metadata (read)、Checks (read)、Deployments (read)、Discussions (read)、Code scanning alerts (read)、Dependabot alerts (read)
+   - **Repository permissions**: Contents (read)、Issues (write)、Pull requests (write)、Metadata (read)、Checks (read)、Actions (read)、Deployments (read)、Discussions (read)、Code scanning alerts (read)、Dependabot alerts (read)
    - **Organization permissions**: Members (read) —— 如果需要
 4. 订阅事件（全部 28 种支持的事件）：
    - Push、Pull request、Issues、Issue comment、Workflow run、Workflow job、Status、Deployment、Deployment status、Ping、Release、Create、Delete、Star、Fork、Check run、Check suite、Pull request review、Pull request review comment、Commit comment、Member、Label、Milestone、Discussion、Discussion comment、Repository、Code scanning alert、Dependabot alert
-5. 生成私钥 — 可选；设置 `GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` 后，安装后页面会显示安装所属账号的登录名（见上方提示）。
+5. 生成私钥 — 可选；设置 `GITHUB_APP_ID` + `GITHUB_PRIVATE_KEY` 后，安装后页面会显示安装所属账号的登录名，并以安装令牌鉴权私有仓库的 API 增强（作业列表、构建日志）（见上方提示）。
 
 ### 2. 安装 App
 

@@ -18,6 +18,7 @@ import { getDriver } from "../drivers";
 import type { SendResult } from "../drivers/types";
 import type { DispatchFailure, DispatchSummary } from "../queue/delivery";
 import { getCheckSuiteBuildLogUrl } from "../github/check-run";
+import { getWorkflowRunJobs } from "../github/workflow-jobs";
 
 /** One dispatch attempt (route × target), collected for the group webhook log. */
 interface DispatchAttempt {
@@ -163,9 +164,30 @@ export async function dispatchEvent(
     }
   }
 
+  let workflowJobsPromise: Promise<void> | undefined;
+  function ensureWorkflowJobs(): Promise<void> {
+    if (event.event !== "workflow_run") return Promise.resolve();
+    workflowJobsPromise ??= (async (): Promise<void> => {
+      const run = event.payload.workflow_run as
+        | { jobs_url?: string; jobs?: unknown[] }
+        | undefined;
+      if (!run?.jobs_url || run.jobs?.length) return;
+      const jobs = await getWorkflowRunJobs(
+        run.jobs_url,
+        env.GITHUB_APP_ID,
+        env.GITHUB_PRIVATE_KEY,
+        event.installationId,
+      );
+      if (jobs) run.jobs = jobs;
+    })();
+    return workflowJobsPromise;
+  }
+
   async function processRoute(route: Route): Promise<void> {
     const targets = route.targets && route.targets.length > 0 ? route.targets : [];
     if (targets.length === 0) return;
+
+    await ensureWorkflowJobs();
 
     const group = route.groupId ? groupById.get(route.groupId) : undefined;
     const tr = trMap.get(group?.lang ?? "en")!;

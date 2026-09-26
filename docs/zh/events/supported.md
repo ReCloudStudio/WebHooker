@@ -62,6 +62,8 @@ WebHooker 支持 28 种 GitHub webhook 事件类型，每种都有专用的格�
 
 `workflow_run` / `check_run` 事件（queued → running → success/failure）只发送一条消息，后续每个阶段会**原地编辑**该消息，而不是发送新消息。消息的链接预览、作者和字段布局保持不变，仅刷新状态、结论 emoji、耗时和标题。Discord（`editMessage`）和 Telegram（`editMessageText` / `editMessageCaption`）均支持。`check_run` 以 check 名 + commit SHA 追踪（回退到 run id），因此每个阶段都会换新 run id 的提供方（例如 Cloudflare Pages）仍会编辑同一条消息。
 
+`workflow_run` 消息还会附带带颜色的 **Jobs** 明细。由于 webhook 载荷本身不含作业列表（只有 `jobs_url`），Worker 会从 GitHub API 拉取——配置了 `GITHUB_APP_ID` / `GITHUB_PRIVATE_KEY` 时用 GitHub App 安装令牌鉴权，否则匿名请求（公开仓库）。因此 App 需要 **Actions: read** 仓库权限。
+
 ## 过滤器兼容性
 
 实操指南见[过滤器教程](../guide/filters)，包含完整示例。

@@ -108,6 +108,9 @@ server/                  # Nitro server
 │       └── updates.ts    # X-Lark-Signature verify + url_verification + /gh commands + card.action.trigger buttons
     ├── github/
     │   ├── oauth.ts     # OAuth URL, callback token exchange, getUserOctokit, comment/getComment/editComment/deleteComment/merge/close actions
+    │   ├── app-token.ts # createAppJwt-backed getInstallationToken + GITHUB_API_VERSION (shared App auth)
+    │   ├── check-run.ts # getCheckSuiteBuildLogUrl: Check-suite build-log enrichment (installation token)
+    │   ├── workflow-jobs.ts # getWorkflowRunJobs: fetch a workflow_run's jobs via jobs_url (App token or unauthenticated)
     │   └── store.ts     # KV token CRUD + D1 discord-link/telegram-link mapping (was token-store.ts)
     ├── web/             # HTTP UI/API logic (called from server/routes)
     │   ├── oauth.ts     # handleOAuthStart/Callback, install page + bind, personal-group self-signup
