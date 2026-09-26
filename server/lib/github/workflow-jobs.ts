@@ -1,4 +1,4 @@
-import { getInstallationToken, GITHUB_API_VERSION } from "./app-token";
+import { getInstallationToken, GITHUB_API_VERSION, GITHUB_USER_AGENT } from "./app-token";
 
 export interface WorkflowJob {
   name?: string;
@@ -32,6 +32,7 @@ export async function getWorkflowRunJobs(
     const headers: Record<string, string> = {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": GITHUB_API_VERSION,
+      "User-Agent": GITHUB_USER_AGENT,
     };
     if (token) headers.Authorization = `Bearer ${token}`;
     const res = await fetch(url.toString(), { headers });

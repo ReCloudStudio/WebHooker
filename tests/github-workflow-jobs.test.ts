@@ -99,4 +99,27 @@ describe("getWorkflowRunJobs", () => {
     globalThis.fetch = (() => Promise.reject(new Error("network"))) as typeof fetch;
     expect(await getWorkflowRunJobs(JOBS_URL, undefined, undefined, undefined)).toBeUndefined();
   });
+
+  it("always sends a User-Agent header (GitHub rejects requests without one)", async () => {
+    let sawUA: string | undefined;
+    let tokenUA: string | undefined;
+    const { appId, pem } = await makeAppKeyPair();
+    mockFetch((url, init) => {
+      const headers = (init?.headers ?? {}) as Record<string, string>;
+      if (url.includes("/access_tokens")) tokenUA = headers["User-Agent"];
+      else sawUA = headers["User-Agent"];
+      return new Response(
+        JSON.stringify(
+          url.includes("/access_tokens")
+            ? { token: "ghs_test" }
+            : { jobs: [{ name: "build" }] },
+        ),
+        { status: 200 },
+      );
+    });
+
+    expect(await getWorkflowRunJobs(JOBS_URL, appId, pem, 555)).toBeDefined();
+    expect(tokenUA).toBeTruthy();
+    expect(sawUA).toBeTruthy();
+  });
 });

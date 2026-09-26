@@ -1,4 +1,4 @@
-import { getInstallationToken, GITHUB_API_VERSION } from "./app-token";
+import { getInstallationToken, GITHUB_API_VERSION, GITHUB_USER_AGENT } from "./app-token";
 
 const CLOUDFLARE_SLUG = "cloudflare-workers-and-pages";
 
@@ -28,6 +28,7 @@ export async function getCheckSuiteBuildLogUrl(
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": GITHUB_API_VERSION,
+        "User-Agent": GITHUB_USER_AGENT,
       },
     });
     if (!runsRes.ok) return undefined;
