@@ -23,7 +23,7 @@ export function formatPush(
   const commits = (payload.commits ?? []) as Array<{
     id?: string;
     message?: string;
-    author?: { name?: string; email?: string };
+    author?: { name?: string; email?: string; username?: string };
     added?: string[];
     removed?: string[];
     modified?: string[];
@@ -34,6 +34,7 @@ export function formatPush(
   const forced = payload.forced as boolean | undefined;
   const created = payload.created as boolean | undefined;
   const deleted = payload.deleted as boolean | undefined;
+  const pusher = (payload.pusher as { name?: string } | undefined)?.name;
   const em = (e: string): string => emojiPrefix(e, showEmoji);
 
   // A branch/tag deletion pushed via `git push --delete` arrives as a push
@@ -93,8 +94,12 @@ export function formatPush(
   const commitsToShow = count <= 5 ? commits : commits.slice(0, 3);
   for (const c of commitsToShow) {
     const shortId = c.id?.slice(0, 7) ?? "???????";
-    const msg =
+    let msg =
       (c.message?.split("\n")[0] ?? "").slice(0, MAX_COMMIT_SUBJECT) || t("common.no_message");
+    const commitAuthor = c.author?.username;
+    if (commitAuthor && commitAuthor.toLowerCase() !== pusher?.toLowerCase()) {
+      msg += ` - [${commitAuthor}](https://github.com/${encodeURIComponent(commitAuthor)})`;
+    }
     const url = baseUrl && c.id ? `${baseUrl}/commit/${c.id}` : null;
     const hash = url ? `[\`${shortId}\`](${url})` : `\`${shortId}\``;
     descLines.push(`${hash} ${msg}`);

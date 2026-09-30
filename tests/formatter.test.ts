@@ -47,6 +47,58 @@ describe("message title spec", () => {
     ]);
   });
 
+  it("adds a commit author link when it differs from the pusher", () => {
+    const msg = formatEvent(
+      route,
+      event("push", {
+        ref: "refs/heads/main",
+        commits: [
+          {
+            id: "abcd1234ef",
+            message: "fix stuff",
+            author: { username: "commit-author" },
+            added: [],
+            removed: [],
+            modified: [],
+          },
+        ],
+        pusher: { name: "merge-bot" },
+        repository: repo,
+        sender,
+      }),
+    );
+
+    expect(msg.description).toBe(
+      "[`abcd123`](https://github.com/acme/widget/commit/abcd1234ef) fix stuff - [commit-author](https://github.com/commit-author)",
+    );
+  });
+
+  it("does not add a commit author link when it matches the pusher", () => {
+    const msg = formatEvent(
+      route,
+      event("push", {
+        ref: "refs/heads/main",
+        commits: [
+          {
+            id: "abcd1234ef",
+            message: "fix stuff",
+            author: { username: "octocat" },
+            added: [],
+            removed: [],
+            modified: [],
+          },
+        ],
+        pusher: { name: "OctoCat" },
+        repository: repo,
+        sender,
+      }),
+    );
+
+    expect(msg.description).toBe(
+      "[`abcd123`](https://github.com/acme/widget/commit/abcd1234ef) fix stuff",
+    );
+  });
+
   it("pull_request title is repo#number: title", () => {
     const msg = formatEvent(
       route,

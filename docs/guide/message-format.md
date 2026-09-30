@@ -23,6 +23,8 @@ Messages whose title has no colon separator (a `:` followed by a space) keep the
 
 Commit hashes, branches, and tags render as inline code wrapped in a hyperlink (e.g. ``[`abc123d`](https://…/commit/abc123def456)``), falling back to plain inline code when the repo base URL is unavailable.
 
+For push events, when a commit author's GitHub username differs from the pusher, the commit line ends with a link to that author (e.g. `- [octocat](https://github.com/octocat)`).
+
 ## Emoji
 
 Event-specific emoji are added by the formatters; per-group `Group.emoji` (default true) strips them all when disabled. Milestone progress bars are exempt. See [Message Language](./i18n).
