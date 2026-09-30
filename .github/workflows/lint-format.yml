@@ -42,17 +42,12 @@ jobs:
 
       - name: Commit and push fixes
         if: steps.check.outcome == 'failure'
-        run: |
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config commit.gpgsign false
-          git add -A
-          git commit -m "chore: auto-fix lint & formatting [skip ci]"
-          git push
+        uses: siiway/verified_bot_commit@v0
+        with:
+          message: "chore: auto-fix lint & formatting [skip ci]"
+          files: "**"
+          ref: ${{ github.head_ref || github.ref }}
+          if-no-commit: notice
 
       - name: Verify fixes
         run: |
