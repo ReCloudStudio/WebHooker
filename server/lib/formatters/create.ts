@@ -1,6 +1,6 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { branchLink, emojiPrefix, tagLink, type T, buildMessage, repoBaseUrl } from "./helpers";
+import { branchLink, emojiPrefix, refUrl, tagLink, type T, buildMessage, repoBaseUrl } from "./helpers";
 
 export function formatCreate(
   payload: Record<string, unknown>,
@@ -13,6 +13,7 @@ export function formatCreate(
   const ref = (payload.ref as string) ?? t("common.unknown");
   const baseUrl = repoBaseUrl(payload, repo);
   const refText = refType === "tag" ? tagLink(baseUrl, ref) : branchLink(baseUrl, ref);
+  const url = refUrl(baseUrl, ref, refType === "tag" ? "tag" : "branch");
 
   const emoji = refType === "tag" ? "🏷️" : "🌿";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
@@ -46,8 +47,9 @@ export function formatCreate(
         repo: repo ?? t("common.repository"),
         emoji: em(emoji),
         type: refType,
-        ref: refText,
+        ref,
       }),
+      url,
       color: GITHUB_COLORS.create,
       fields,
     },
@@ -66,7 +68,7 @@ export function formatDelete(
   const refType = (payload.ref_type as string) ?? "branch";
   const ref = (payload.ref as string) ?? t("common.unknown");
   const baseUrl = repoBaseUrl(payload, repo);
-  const refText = refType === "tag" ? tagLink(baseUrl, ref) : branchLink(baseUrl, ref);
+  const url = refUrl(baseUrl, ref, refType === "tag" ? "tag" : "branch");
 
   const emoji = refType === "tag" ? "🏷️" : "🌿";
   const em = (e: string): string => emojiPrefix(e, showEmoji);
@@ -78,8 +80,9 @@ export function formatDelete(
         repo: repo ?? t("common.repository"),
         emoji: em(emoji),
         type: refType,
-        ref: refText,
+        ref,
       }),
+      url,
       color: GITHUB_COLORS.delete,
     },
     t,

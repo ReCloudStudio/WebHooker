@@ -491,7 +491,10 @@ describe("group emoji toggle", () => {
       }),
     );
     expect(msg.title).toBe(
-      "acme/widget: 🌿 Deleted branch [`dependabot/npm_and_yarn/multi-e1b34b8be3`](https://github.com/acme/widget/tree/dependabot/npm_and_yarn/multi-e1b34b8be3)",
+      "acme/widget: 🌿 Deleted branch dependabot/npm_and_yarn/multi-e1b34b8be3",
+    );
+    expect(msg.url).toBe(
+      "https://github.com/acme/widget/tree/dependabot/npm_and_yarn/multi-e1b34b8be3",
     );
     expect(msg.description).toBeUndefined();
     expect(msg.fields).toBeUndefined();
@@ -630,8 +633,9 @@ describe("limits and localization", () => {
       }),
     );
     expect(msg.title).toBe(
-      "acme/widget: 🏷️ Created tag [`v1.0`](https://github.com/acme/widget/releases/tag/v1.0)",
+      "acme/widget: 🏷️ Created tag v1.0",
     );
+    expect(msg.url).toBe("https://github.com/acme/widget/releases/tag/v1.0");
     expect(msg.color).toBe(4176208);
     expect(msg.description).toBeUndefined();
   });

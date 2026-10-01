@@ -83,6 +83,19 @@ export function tagLink(baseUrl: string | undefined, tag: string, label?: string
     : `\`${display}\``;
 }
 
+/** URL for a branch or tag, when the repository base URL is available. */
+export function refUrl(
+  baseUrl: string | undefined,
+  ref: string,
+  type: "branch" | "tag",
+): string | undefined {
+  if (!baseUrl) return undefined;
+  const clean = ref.replace("refs/heads/", "").replace("refs/tags/", "");
+  return type === "tag"
+    ? `${baseUrl}/releases/tag/${encodeRefPath(clean)}`
+    : `${baseUrl}/tree/${encodeRefPath(clean)}`;
+}
+
 /* ---- Content size limits (mirror the Discord embed limits) ---- */
 export const MAX_TITLE = 256;
 export const MAX_DESCRIPTION = 4096;

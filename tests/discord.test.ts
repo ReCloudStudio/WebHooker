@@ -100,6 +100,16 @@ describe("discord role mentions", () => {
       icon_url: "https://github.com/fluidicon.png",
     });
   });
+
+  it("links the repository heading for a tag title", () => {
+    const out = renderNeutralMessage({
+      title: "acme/widget: 🏷️ Created tag v1.0",
+      url: "https://github.com/acme/widget/releases/tag/v1.0",
+    });
+    expect(out.embeds?.[0]?.title).toBe("acme/widget");
+    expect(out.embeds?.[0]?.url).toBe("https://github.com/acme/widget/releases/tag/v1.0");
+    expect(out.embeds?.[0]?.description).toBe("🏷️ Created tag v1.0");
+  });
 });
 
 describe("dispatchEvent fallback routing", () => {
