@@ -23,7 +23,7 @@ Messages whose title has no colon separator (a `:` followed by a space) keep the
 
 Commit hashes, branches, and tags render as inline code wrapped in a hyperlink (e.g. ``[`abc123d`](https://…/commit/abc123def456)``), falling back to plain inline code when the repo base URL is unavailable.
 
-For push events, when a commit author's GitHub username differs from the pusher, the commit line ends with a link to that author (e.g. `- [octocat](https://github.com/octocat)`).
+For push events, when a commit author's GitHub username differs from the pusher, the commit line ends with a link to that author (e.g. `- [octocat](https://github.com/octocat)`). When GitHub cannot resolve a bot account and returns `invalid-email-address`, the commit's author name is shown without a link.
 
 ## Emoji
 

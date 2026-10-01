@@ -99,6 +99,32 @@ describe("message title spec", () => {
     );
   });
 
+  it("uses the author name when GitHub cannot resolve a bot username", () => {
+    const msg = formatEvent(
+      route,
+      event("push", {
+        ref: "refs/heads/main",
+        commits: [
+          {
+            id: "abcd1234ef",
+            message: "fix stuff",
+            author: { name: "dependabot[bot]", username: "invalid-email-address" },
+            added: [],
+            removed: [],
+            modified: [],
+          },
+        ],
+        pusher: { name: "merge-bot" },
+        repository: repo,
+        sender,
+      }),
+    );
+
+    expect(msg.description).toBe(
+      "[`abcd123`](https://github.com/acme/widget/commit/abcd1234ef) fix stuff - dependabot[bot]",
+    );
+  });
+
   it("pull_request title is repo#number: title", () => {
     const msg = formatEvent(
       route,

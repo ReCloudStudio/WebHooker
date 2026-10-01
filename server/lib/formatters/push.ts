@@ -97,8 +97,13 @@ export function formatPush(
     let msg =
       (c.message?.split("\n")[0] ?? "").slice(0, MAX_COMMIT_SUBJECT) || t("common.no_message");
     const commitAuthor = c.author?.username;
+    const commitAuthorName = c.author?.name;
     if (commitAuthor && commitAuthor.toLowerCase() !== pusher?.toLowerCase()) {
-      msg += ` - [${commitAuthor}](https://github.com/${encodeURIComponent(commitAuthor)})`;
+      if (commitAuthor === "invalid-email-address") {
+        if (commitAuthorName) msg += ` - ${commitAuthorName}`;
+      } else {
+        msg += ` - [${commitAuthor}](https://github.com/${encodeURIComponent(commitAuthor)})`;
+      }
     }
     const url = baseUrl && c.id ? `${baseUrl}/commit/${c.id}` : null;
     const hash = url ? `[\`${shortId}\`](${url})` : `\`${shortId}\``;
