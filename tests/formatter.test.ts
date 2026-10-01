@@ -632,9 +632,7 @@ describe("limits and localization", () => {
         sender,
       }),
     );
-    expect(msg.title).toBe(
-      "acme/widget: 🏷️ Created tag v1.0",
-    );
+    expect(msg.title).toBe("acme/widget: 🏷️ Created tag v1.0");
     expect(msg.url).toBe("https://github.com/acme/widget/releases/tag/v1.0");
     expect(msg.color).toBe(4176208);
     expect(msg.description).toBeUndefined();

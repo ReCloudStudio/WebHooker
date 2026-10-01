@@ -1,6 +1,14 @@
 import type { NeutralMessage, NeutralAuthor } from "../types";
 import { GITHUB_COLORS } from "./colors";
-import { branchLink, emojiPrefix, refUrl, tagLink, type T, buildMessage, repoBaseUrl } from "./helpers";
+import {
+  branchLink,
+  emojiPrefix,
+  refUrl,
+  tagLink,
+  type T,
+  buildMessage,
+  repoBaseUrl,
+} from "./helpers";
 
 export function formatCreate(
   payload: Record<string, unknown>,
