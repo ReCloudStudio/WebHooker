@@ -45,7 +45,27 @@ jobs:
         uses: siiway/verified_bot_commit@v0
         with:
           message: "chore: auto-fix lint & formatting [skip ci]"
-          files: "**"
+          # Explicit whitelist instead of "**": the action downloads its own
+          # binary with `curl -o archive.tar.gz` into the workspace root, so
+          # "**" would commit that tarball (happened in Oct 2026). The
+          # archive.* entries in .gitignore are the second line of defense.
+          files: |
+            app/**
+            server/**
+            tests/**
+            docs/**
+            public/**
+            migrations/**
+            .github/**
+            *.md
+            *.ts
+            *.js
+            *.json
+            *.jsonc
+            *.yaml
+            *.yml
+            *.css
+            *.vue
           ref: ${{ github.head_ref || github.ref }}
           if-no-commit: notice
 

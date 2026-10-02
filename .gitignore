@@ -14,3 +14,7 @@ config.yaml
 .direnv/
 result
 saas-roadmap.md
+
+# verified_bot_commit action download artifacts (accidentally committed once)
+archive.tar.gz
+archive.zip
