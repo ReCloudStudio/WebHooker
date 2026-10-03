@@ -9,8 +9,8 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 ## Key Decisions
 
 - Runtime: Cloudflare Workers via the Nitro `cloudflare_module` preset (`_worker.js`), H3 event handlers in `server/routes/`
-- UI: Vue 3 + Tailwind CSS v4 (`@tailwindcss/vite`); admin console is a client-side SPA (`routeRules: "/admin/**": { ssr: false }`), home/legal pages render server-side
-- Styling: all theme colors are RGB-triplet CSS variables in `app/assets/css/main.css` declared as `@theme inline` tokens (so `bg-accent/10` opacity modifiers work); the design tokens switch with `prefers-color-scheme` (unless `<html data-theme="light">`); repeated control patterns are `@apply` component classes in the CSS `@layer components`
+- UI: Vue 3 + Tailwind CSS v4 (`@tailwindcss/vite`) + `@recloudstudio/ui` (Nuxt module, `Rc` prefix); admin console is a client-side SPA (`routeRules: "/admin/**": { ssr: false }`), home/legal pages render server-side
+- Styling: ReCloud UI supplies semantic components and blue theme tokens; `app/assets/css/main.css` retains `--wh-*` RGB-triplet aliases for app-specific Tailwind utilities and bespoke layouts (avoiding collision with ReCloud's `--surface`/`--text`/`--border` hex tokens); theme switching supports auto/light/dark via `useTheme` / `ThemeToggle`, toggling `<html>.dark` with inline anti-flash head script
 - Discord interactions: HTTPS Interactions Endpoint (`POST /discord/interactions`, Ed25519-signed) — no Discord Gateway / Durable Object; bot stays offline, messages always sent via REST
 - Storage: D1 is the source of truth for config (routes/groups via `d1_routes`/`d1_groups`, see `server/lib/storage/config-store.ts`), send/audit logs, dedup (`dedup_keys`), delivery state (`delivery_state`) and message tracking (`message_tracking` via `server/lib/storage/d1.ts` `canUseD1` gate). KV keeps only cache + short-lived/ephemeral state (tokens, OAuth state, admin sessions, `msg:*`-adjacent locks, per-group secrets `tenant:*`, invites, i18n overrides) with explicit TTLs. R2 parks oversized queue payloads (`webhooks/YYYY/MM/DD/*.json`, `server/lib/storage/payload.ts`) instead of KV. A `storage-prune` scheduled task cleans up expired dedup/delivery/message-tracking rows
 - Signature verification: Web Crypto API (HMAC-SHA256 for GitHub/Gitea, Ed25519 for Discord, timing-safe secret-token compare for Telegram)
@@ -18,7 +18,7 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 - Per-group webhook ingress: optional `POST /webhook/{groupId}` with a per-group secret in KV (`tenant:{groupId}`) — Gitea/classic-GitHub/custom webhooks are verified against the group's secret instead of the operator's global ones; only that group's routes fire. The legacy `POST /webhook` (global secrets, all routes) stays untouched
 - GitHub App tenant isolation: `Group.installationId` binds a group to one GitHub App installation; events whose `payload.installation.id` differs are rejected at dispatch (hard isolation on top of the optional `owners` list). The App's Setup URL points at `GET /auth/github/install`, which renders a choice page (create `inst-{installationId}` or bind to a group the signed-in user owns, verified by role); `POST /auth/github/install/bind` performs the provisioning. `installation.created` webhook events auto-provision as a fallback (create `inst-{installationId}` or bind existing groups whose `owners` match the installing account)
 - GitHub OAuth: octokit (token is stored hashed for reverse lookup)
-- Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist; left sidebar navigation (Overview / Groups / Send Logs / Audit / Stats) + topbar, deep-linkable routes (`/admin` overview · `/admin/groups` · `/admin/logs` · `/admin/audit` · `/admin/metrics`); the overview dashboard (`AdminHome.vue`) aggregates delivery KPIs, a routes table and recent send logs; the stats page (`MetricsPanel.vue`) renders KPI cards plus per-platform/per-event ok/failed bar legends and a per-status breakdown, and filters by group (`?groupId=`); the route/group editors (`RouteEditor.vue` / `GroupEditor.vue`) are slide-in drawers with an eyebrow header and sectioned form bodies
+- Admin WebUI: `/admin` config console, OAuth-session protected via `ADMIN_USER_IDS` whitelist (local-only `DEBUG_MODE=true` bypasses authentication); left sidebar navigation (Overview / Groups / Send Logs / Audit / Stats) + topbar, deep-linkable routes (`/admin` overview · `/admin/groups` · `/admin/logs` · `/admin/audit` · `/admin/metrics`); the overview dashboard (`AdminHome.vue`) aggregates delivery KPIs, a routes table and recent send logs; the stats page (`MetricsPanel.vue`) renders KPI cards plus per-platform/per-event ok/failed bar legends and a per-status breakdown, and filters by group (`?groupId=`); the route/group editors (`RouteEditor.vue` / `GroupEditor.vue`) are centered, scrollable `RcDialog` forms with an eyebrow header and sectioned bodies
 - Access control: every group has role-based members (`owner` / `admin` / `viewer`); super admins bypass; legacy `adminIds` are read as owners (backward compatible); owners manage members + invites; `owners` field stays super-only
 - Invites: single-use 7-day links (`invite:{token}`) for joining a group as admin/viewer; `ALLOW_SELF_SIGNUP=1` gives access-less users a personal group on first login (self-service SaaS entry)
 - Audit log: every admin operation (logins, group/route/member/invite changes) recorded in D1 `audit_logs`; pruned by the scheduled trigger after `AUDIT_RETENTION_DAYS` (default 90)
@@ -34,7 +34,7 @@ Core pipeline: GitHub Webhook → Worker (verify + filter + format) → Discord 
 ```text
 app/                     # Vue 3 UI (Nuxt app dir)
 ├── app.vue              # root component (NuxtPage)
-├── assets/css/main.css  # Tailwind v4 entry: @import "tailwindcss" + @theme inline tokens (RGB-triplet vars) + @layer components (@apply) + Vue transition glue
+├── assets/css/main.css  # Tailwind v4 entry: ReCloud-compatible RGB aliases + bespoke layout classes + Vue transition glue
 ├── pages/               # index (landing), terms, privacy, admin/[...slug] (console SPA)
 ├── components/          # ConsolePage (sidebar shell + topbar), AdminHome (overview dashboard),
 │                        # RouteCard/Editor (RouteEditor has FilterNodeEditor AST builder + TagInput chips),
@@ -258,7 +258,7 @@ Rule: no functional change ships without its documentation; docs and code must n
 - **D1 database**: Binding `DB` (database `webhooker`, id `214a0104-3235-47c0-b7bf-ddda95f3c8ac`) for `send_logs` + `audit_logs` + `discord_links` + `telegram_links` + `d1_groups` + `d1_routes` + `d1_fragments` + `dedup_keys` + `delivery_state` + `message_tracking` tables
 - **Queue**: optional `QUEUE` producer binding plus consumers `webhooker-delivery` and its DLQ `webhooker-delivery-dlq` (declared in `wrangler.jsonc`); when absent, webhook dispatch stays inline
 - **R2**: optional `PAYLOAD` binding (bucket `webhooker-payloads`) for oversized queue payloads; without it, oversized payloads fall back to KV `queue:payload:*`
-- **Access control**: `ADMIN_USER_IDS` (super admins), `ALLOW_SELF_SIGNUP` (optional personal group on first login), `AUDIT_RETENTION_DAYS` (default 90) — all plain env vars, not secrets
+- **Access control**: `ADMIN_USER_IDS` (super admins), `DEBUG_MODE=true` (local-only authentication bypass), `ALLOW_SELF_SIGNUP` (optional personal group on first login), `AUDIT_RETENTION_DAYS` (default 90) — all plain env vars, not secrets
 - **Discord**: `DISCORD_PUBLIC_KEY` (Interactions Endpoint signature verification, from Discord Developer Portal) and `DISCORD_APPLICATION_ID` (optional, auto-resolved via `GET /oauth2/applications/@me` when omitted) are required for interactions
 - **Telegram**: `TELEGRAM_TOKEN` (Bot API token from BotFather) required for Telegram routes; `TELEGRAM_WEBHOOK_SECRET` (optional secret token for `POST /telegram/webhook` verification); avatars are sent as a link-preview card via the built-in `GET /api/richheader` (overridable with `TELEGRAM_RICH_HEADER_HOST`)
 - **Webhook providers**: `GITEA_WEBHOOK_SECRET` (required to receive Gitea webhooks; Gitea signs `X-Gitea-Signature` with the hex HMAC-SHA256 of the body)
@@ -284,7 +284,7 @@ bunx wrangler deploy
 Full list of secrets used: `GITHUB_WEBHOOK_SECRET`, `GITEA_WEBHOOK_SECRET`,
 `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY`
 (PKCS#8 PEM), `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `DISCORD_TOKEN`,
-`DISCORD_PUBLIC_KEY`, `TELEGRAM_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ADMIN_USER_IDS`,
+`DISCORD_PUBLIC_KEY`, `TELEGRAM_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ADMIN_USER_IDS`, `DEBUG_MODE`,
 plus optional `BASE_URL`, `DISCORD_APPLICATION_ID`, `TELEGRAM_RICH_HEADER_HOST`,
 `NUXT_PUBLIC_DOCS_URL`, `NUXT_PUBLIC_REPO_URL`, `NUXT_PUBLIC_LEGAL_CONTACT`. See `.env.example` and `docs/guide/configuration.md`.
 

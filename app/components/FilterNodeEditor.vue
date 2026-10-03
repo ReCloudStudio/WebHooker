@@ -15,6 +15,9 @@ const emit = defineEmits<{ (e: "remove"): void }>();
 const { t } = useI18n();
 
 const NODE_KINDS = ["all", "any"] as const;
+const filterTypeOptions = computed(() => FILTER_TYPES.map((value) => ({ label: t("filter." + value), value })));
+const filterOpOptions = computed(() => FILTER_OPS.map((value) => ({ label: t("filterOp." + value), value })));
+const nodeKindOptions = computed(() => NODE_KINDS.map((value) => ({ label: t("filterNode." + value), value })));
 
 function addChild(kind: "leaf" | "all" | "any" | "not"): void {
   props.node.children.push(blankNode(kind));
@@ -33,25 +36,22 @@ function unwrapNot(): void {
 <template>
   <div class="node-editor" :class="{ 'node-nested': depth > 0 }">
     <div v-if="node.kind === 'leaf'" class="leaf-row">
-      <select v-model="node.leaf.type" class="node-select">
-        <option v-for="ft in FILTER_TYPES" :key="ft" :value="ft">{{ t("filter." + ft) }}</option>
-      </select>
+      <RcSelect v-model="node.leaf.type" class="node-select" :options="filterTypeOptions" />
 
-      <input
+      <RcInput
         v-if="node.leaf.type === 'field'"
         v-model="node.leaf.path"
         class="input node-path"
         :placeholder="t('routeEditor.pathPlaceholder')"
       />
 
-      <select
+      <RcSelect
         v-if="node.leaf.type !== 'keyword'"
         v-model="node.leaf.op"
         class="node-select"
+        :options="filterOpOptions"
         :title="t('routeEditor.op')"
-      >
-        <option v-for="op in FILTER_OPS" :key="op" :value="op">{{ t("filterOp." + op) }}</option>
-      </select>
+      />
 
       <TagInput
         v-if="node.leaf.type === 'keyword' || node.leaf.op !== 'exists'"
@@ -60,46 +60,45 @@ function unwrapNot(): void {
         :placeholder="t('routeEditor.valuesPlaceholder')"
       />
 
-      <label class="inline node-exclude" :title="t('routeEditor.not')">
-        <input v-model="node.leaf.exclude" type="checkbox" />
-        <span>{{ t("routeEditor.not") }}</span>
-      </label>
+      <RcCheckbox v-model="node.leaf.exclude" class="node-exclude" :label="t('routeEditor.not')" :title="t('routeEditor.not')" />
 
-      <button
+      <RcButton
         v-if="deletable"
         type="button"
+        variant="destructive"
+        size="icon"
         class="icon-btn danger"
         :title="t('routeEditor.remove')"
         @click="emit('remove')"
       >
         ✕
-      </button>
+      </RcButton>
     </div>
 
     <div v-else-if="node.kind === 'all' || node.kind === 'any'" class="node-group">
       <div class="node-group-head">
-        <select v-model="node.kind" class="node-combo">
-          <option v-for="k in NODE_KINDS" :key="k" :value="k">{{ t("filterNode." + k) }}</option>
-        </select>
+        <RcSelect v-model="node.kind" class="node-combo" :options="nodeKindOptions" />
         <div class="node-actions">
-          <button type="button" class="btn btn-ghost node-add" @click="addChild('leaf')">
+          <RcButton type="button" variant="ghost" size="xs" class="node-add" @click="addChild('leaf')">
             + {{ t("routeEditor.addLeaf") }}
-          </button>
-          <button type="button" class="btn btn-ghost node-add" @click="addChild('all')">
+          </RcButton>
+          <RcButton type="button" variant="ghost" size="xs" class="node-add" @click="addChild('all')">
             + {{ t("routeEditor.addGroup") }}
-          </button>
-          <button type="button" class="btn btn-ghost node-add" @click="addChild('not')">
+          </RcButton>
+          <RcButton type="button" variant="ghost" size="xs" class="node-add" @click="addChild('not')">
             + {{ t("routeEditor.addNot") }}
-          </button>
-          <button
+          </RcButton>
+          <RcButton
             v-if="deletable"
             type="button"
+            variant="destructive"
+            size="icon"
             class="icon-btn danger"
             :title="t('routeEditor.remove')"
             @click="emit('remove')"
           >
             ✕
-          </button>
+          </RcButton>
         </div>
       </div>
       <div class="node-children">
@@ -119,18 +118,20 @@ function unwrapNot(): void {
       <div class="node-group-head">
         <span class="node-combo node-combo-label">{{ t("filterNode.not") }}</span>
         <div class="node-actions">
-          <button type="button" class="btn btn-ghost node-add" @click="unwrapNot">
+          <RcButton type="button" variant="ghost" size="xs" class="node-add" @click="unwrapNot">
             {{ t("filterNode.unwrap") }}
-          </button>
-          <button
+          </RcButton>
+          <RcButton
             v-if="deletable"
             type="button"
+            variant="destructive"
+            size="icon"
             class="icon-btn danger"
             :title="t('routeEditor.remove')"
             @click="emit('remove')"
           >
             ✕
-          </button>
+          </RcButton>
         </div>
       </div>
       <div class="node-children">

@@ -1,7 +1,7 @@
 import type { H3Event } from "h3";
 import { createError, getHeader } from "h3";
 import type { Group, GroupRole } from "../types";
-import { getAdminSession, type AdminSession } from "./session";
+import { getAdminSession, isDebugMode, type AdminSession } from "./session";
 import {
   loadGroups,
   resolveScope,
@@ -28,9 +28,13 @@ const AUTH_KEY = "auth";
 export async function loadAuth(event: H3Event): Promise<AuthContext | null> {
   const env = cfEnv(event);
   initConfigStore(env);
+  const groups = await loadGroups(env.KV);
+  if (isDebugMode(env)) {
+    const session: AdminSession = { userId: "debug", login: "debug" };
+    return { session, scope: resolveScope(env, groups, session.userId, session.login), groups };
+  }
   const session = await getAdminSession(env.KV, getHeader(event, "cookie"));
   if (!session) return null;
-  const groups = await loadGroups(env.KV);
   const scope = resolveScope(env, groups, session.userId, session.login);
   return { session, scope, groups };
 }

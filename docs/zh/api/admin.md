@@ -1,6 +1,6 @@
 # Admin API
 
-管理端点用于管理路由、分组、成员、邀请、webhook 密钥、发送日志与审计日志。它们需要会话 Cookie，可通过 `GET /admin/login`（GitHub OAuth）获取；登录用户必须列在 `ADMIN_USER_IDS` 中，或管理某个分组。设置方法见[配置 → Web 控制台](../guide/configuration.md#web-ui)。
+管理端点用于管理路由、分组、成员、邀请、webhook 密钥、发送日志与审计日志。它们需要会话 Cookie，可通过 `GET /admin/login`（GitHub OAuth）获取；登录用户必须列在 `ADMIN_USER_IDS` 中，或管理某个分组。仅限本地开发，精确设置 `DEBUG_MODE=true` 会跳过认证并授予完整权限，绝不能在部署环境启用。设置方法见[配置 → Web 控制台](../guide/configuration.md#web-ui)。
 
 控制台本身在 `/admin` 提供；其标签页可通过 URL 路径直达（`/admin/groups`、`/admin/logs`、`/admin/audit`）。
 

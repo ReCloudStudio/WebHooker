@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import {
   isAdminUser,
+  isDebugMode,
   createAdminSession,
   getAdminSession,
   destroyAdminSession,
@@ -72,6 +73,12 @@ const sampleRoutes: Route[] = [
 ];
 
 describe("isAdminUser", () => {
+  it("enables the bypass only for the exact true value", () => {
+    expect(isDebugMode(createEnv({ DEBUG_MODE: "true" }))).toBe(true);
+    expect(isDebugMode(createEnv({ DEBUG_MODE: "TRUE" }))).toBe(false);
+    expect(isAdminUser(createEnv({ DEBUG_MODE: "true" }), "99999", "someone")).toBe(true);
+  });
+
   it("allows matching user id", () => {
     const env = createEnv({ ADMIN_USER_IDS: "12345,67890" });
     expect(isAdminUser(env, "12345", "other")).toBe(true);

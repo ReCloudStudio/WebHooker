@@ -15,7 +15,7 @@ bun run dev                  # Start local dev server
 ```text
 app/                     # Vue 3 UI (Nuxt app dir)
 ├── app.vue              # Root component (NuxtPage)
-├── assets/css/main.css  # Tailwind CSS v4 entry: @import "tailwindcss" + @theme inline tokens (RGB-triplet CSS variables) + @layer components (@apply)
+├── assets/css/main.css  # Tailwind CSS v4 entry: ReCloud UI-compatible RGB aliases + bespoke layout classes
 ├── pages/               # index (landing), terms, privacy, admin/[...slug] (console SPA)
 ├── components/          # ConsolePage, RouteCard/Editor, GroupEditor, MembersPanel, WebhookPanel,
 │                        # SendLogs, AuditLog, AppToasts, LegalLayout

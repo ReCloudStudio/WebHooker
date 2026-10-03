@@ -36,7 +36,7 @@ The `/admin/api/*` endpoints (routes, groups, members, invites, webhook secrets,
 
 ## Admin Console
 
-See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup, and the [Admin API](./admin) reference for all management endpoints. Admin endpoints require a session cookie obtained via `GET /admin/login` (GitHub OAuth); the signed-in user must be listed in `ADMIN_USER_IDS` or manage a group.
+See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup, and the [Admin API](./admin) reference for all management endpoints. Admin endpoints require a session cookie obtained via `GET /admin/login` (GitHub OAuth); the signed-in user must be listed in `ADMIN_USER_IDS` or manage a group. For local development only, exact `DEBUG_MODE=true` bypasses authentication and grants full access; never deploy with it enabled.
 
 ## Health Check
 

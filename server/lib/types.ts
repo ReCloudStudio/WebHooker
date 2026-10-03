@@ -8,6 +8,7 @@ export interface Env {
   DISCORD_TOKEN?: string;
   BASE_URL?: string;
   ADMIN_USER_IDS?: string;
+  DEBUG_MODE?: string;
   DISCORD_PUBLIC_KEY?: string;
   DISCORD_APPLICATION_ID?: string;
   TELEGRAM_TOKEN?: string;

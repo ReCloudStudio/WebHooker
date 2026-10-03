@@ -44,6 +44,7 @@ WebHooker requires several secrets to function. For local development, store the
 | `TELEGRAM_RICH_HEADER_HOST` | Base URL of an external rich-header service; when unset, the built-in `GET /api/richheader` serves the Telegram avatar card | Built-in `/api/richheader`        |
 | `BASE_URL`                  | Public URL for OAuth callbacks                                                                                              | `http://localhost:8787`           |
 | `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access the Web UI                                                    | Disabled                          |
+| `DEBUG_MODE`                | Local development only: exact `true` bypasses all `/admin` authentication and grants full access                            | Disabled                          |
 | `ALLOW_SELF_SIGNUP`         | When enabled (`1`/`true`), GitHub users without any group access get a personal group on first login instead of `403`       | Disabled                          |
 | `AUDIT_RETENTION_DAYS`      | Audit-log retention in days for the scheduled cleanup                                                                       | `90`                              |
 | `NUXT_PUBLIC_DOCS_URL`      | Docs site URL used by the landing page (client-side runtime config)                                                         | Landing page defaults             |
@@ -59,6 +60,8 @@ WebHooker ships with a built-in config console at `/admin` for managing routes, 
 1. Configure `ADMIN_USER_IDS` with the GitHub user IDs allowed to manage everything. Logins are also accepted, e.g. `ADMIN_USER_IDS=12345,RhenCloud`. If unset, the console is disabled (unless `ALLOW_SELF_SIGNUP` is enabled).
 2. Open `/admin` and sign in with GitHub.
 3. Users without any access get `403`, except when `ALLOW_SELF_SIGNUP=1` (they receive a personal group) or when they follow a group [invite link](./groups#invites).
+
+For local debugging only, set `DEBUG_MODE=true` to bypass GitHub OAuth and grant complete console access. Do not set this variable in a deployed environment.
 
 The console is served as an SPA at `/admin`; its tabs are deep-linkable via the URL path (`/admin/groups`, `/admin/logs`, `/admin/audit`). URLs outside `/admin` that do not match an endpoint return a plain `404` instead of the console.
 

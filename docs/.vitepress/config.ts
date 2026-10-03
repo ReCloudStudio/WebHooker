@@ -90,7 +90,7 @@ export default defineConfig({
         },
         footer: {
           message: "Released under the MIT License.",
-          copyright: "Copyright 2026 ReCloudStudio",
+          copyright: "Copyright 2026 ReCloud Studio",
         },
         editLink: {
           pattern: `${github}/edit/main/docs/:path`,
@@ -178,7 +178,7 @@ export default defineConfig({
         },
         footer: {
           message: "基于 MIT 许可发布。",
-          copyright: "Copyright 2026 ReCloudStudio",
+          copyright: "Copyright 2026 ReCloud Studio",
         },
         editLink: {
           pattern: `${github}/edit/main/docs/:path`,

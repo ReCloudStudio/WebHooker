@@ -1,5 +1,5 @@
 <template>
-  <section class="members-panel webhook-panel">
+  <RcCard variant="outline" padding="md" class="members-panel webhook-panel">
     <div class="panel-head">
       <h3>{{ t("webhook.title") }}</h3>
       <span class="lbl-note">{{ t("webhook.note") }}</span>
@@ -11,9 +11,9 @@
       <div class="wh-row">
         <span class="wh-label">{{ t("webhook.url") }}</span>
         <code class="wh-value">{{ info.url }}</code>
-        <button class="btn btn-ghost btn-sm" @click="copy(info.url, 'url')">
+        <RcButton type="button" variant="ghost" size="sm" @click="copy(info.url, 'url')">
           {{ copied === "url" ? t("webhook.copied") : t("webhook.copy") }}
-        </button>
+        </RcButton>
       </div>
 
       <div class="wh-row">
@@ -21,28 +21,32 @@
         <code class="wh-value">{{
           info.secret ? info.secret : info.hasSecret ? maskedSecret : t("webhook.noSecret")
         }}</code>
-        <button
+        <RcButton
           v-if="info.secret"
-          class="btn btn-ghost btn-sm"
+          type="button"
+          variant="ghost"
+          size="sm"
           @click="copy(info.secret!, 'secret')"
         >
           {{ copied === "secret" ? t("webhook.copied") : t("webhook.copy") }}
-        </button>
+        </RcButton>
       </div>
       <p v-if="info.hasSecret && !info.secret" class="hint">{{ t("webhook.secretHidden") }}</p>
 
       <div class="wh-actions">
-        <button class="btn btn-accent btn-sm" :disabled="busy" @click="onRegenerate">
+        <RcButton type="button" size="sm" :disabled="busy" @click="onRegenerate">
           {{ info.hasSecret ? t("webhook.regenerate") : t("webhook.generate") }}
-        </button>
-        <button
+        </RcButton>
+        <RcButton
           v-if="info.hasSecret"
-          class="btn btn-ghost btn-sm"
+          type="button"
+          variant="ghost"
+          size="sm"
           :disabled="busy"
           @click="onDisable"
         >
           {{ t("webhook.disable") }}
-        </button>
+        </RcButton>
       </div>
 
       <details class="wh-usage">
@@ -55,7 +59,7 @@
     </template>
 
     <div class="err">{{ error }}</div>
-  </section>
+  </RcCard>
 </template>
 
 <script setup lang="ts">

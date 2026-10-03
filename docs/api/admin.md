@@ -1,6 +1,6 @@
 # Admin API
 
-Admin endpoints manage routes, groups, members, invites, webhook secrets, send logs, and the audit log. They require an admin session cookie obtained via `GET /admin/login` (GitHub OAuth); the signed-in user must be listed in `ADMIN_USER_IDS` or manage a group. See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup.
+Admin endpoints manage routes, groups, members, invites, webhook secrets, send logs, and the audit log. They require an admin session cookie obtained via `GET /admin/login` (GitHub OAuth); the signed-in user must be listed in `ADMIN_USER_IDS` or manage a group. For local development only, exact `DEBUG_MODE=true` bypasses authentication and grants full access; never deploy with it enabled. See [Configuration → Web UI](../guide/configuration.md#web-ui) for setup.
 
 The console itself is served at `/admin`; its tabs are deep-linkable via the URL path (`/admin/groups`, `/admin/logs`, `/admin/audit`).
 

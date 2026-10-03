@@ -1,10 +1,6 @@
 @import "tailwindcss";
 
-/* ---------------------------------------------------------------------------
- * Theme tokens — RGB triplets so Tailwind opacity modifiers (bg-accent/10)
- * work against them; values switch automatically with prefers-color-scheme
- * (unless an explicit data-theme="light" is set on <html>).
- * ------------------------------------------------------------------------- */
+/* ReCloud UI-compatible RGB aliases for app-specific Tailwind utilities. */
 @theme inline {
   --font-ui: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -12,35 +8,34 @@
   --radius: 12px;
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
   --shadow-card-hover: 0 8px 24px -12px rgba(15, 23, 42, 0.25);
-  --shadow-accent-lg: 0 12px 28px -10px rgb(var(--accent));
-  --shadow-drawer: -16px 0 48px rgba(15, 23, 42, 0.12);
+  --shadow-accent-lg: 0 12px 28px -10px rgb(var(--wh-accent));
   --shadow-modal: 0 12px 40px rgba(15, 23, 42, 0.25);
   --animate-rise: rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 
-  --color-bg: rgb(var(--bg));
-  --color-surface: rgb(var(--surface));
-  --color-surface-2: rgb(var(--surface-2));
-  --color-surface-3: rgb(var(--surface-3));
-  --color-border: rgb(var(--border));
-  --color-border-strong: rgb(var(--border-strong));
-  --color-text: rgb(var(--text));
-  --color-muted: rgb(var(--muted));
-  --color-faint: rgb(var(--faint));
-  --color-accent: rgb(var(--accent));
-  --color-accent-strong: rgb(var(--accent-strong));
-  --color-accent-dim: rgb(var(--accent-dim));
-  --color-accent-text: rgb(var(--accent-text));
-  --color-accent-border: rgb(var(--accent-border));
-  --color-ok: rgb(var(--ok));
-  --color-ok-dim: rgb(var(--ok-dim));
-  --color-warn: rgb(var(--warn));
-  --color-warn-dim: rgb(var(--warn-dim));
-  --color-bad: rgb(var(--bad));
-  --color-bad-dim: rgb(var(--bad-dim));
-  --color-info: rgb(var(--info));
-  --color-info-dim: rgb(var(--info-dim));
-  --color-body-text: rgb(var(--body-text));
-  --color-code-bg: rgb(var(--code-bg));
+  --color-bg: rgb(var(--wh-bg));
+  --color-surface: rgb(var(--wh-surface));
+  --color-surface-2: rgb(var(--wh-surface-2));
+  --color-surface-3: rgb(var(--wh-surface-3));
+  --color-border: rgb(var(--wh-border));
+  --color-border-strong: rgb(var(--wh-border-strong));
+  --color-text: rgb(var(--wh-text));
+  --color-muted: rgb(var(--wh-muted));
+  --color-faint: rgb(var(--wh-faint));
+  --color-accent: rgb(var(--wh-accent));
+  --color-accent-strong: rgb(var(--wh-accent-strong));
+  --color-accent-dim: rgb(var(--wh-accent-dim));
+  --color-accent-text: rgb(var(--wh-accent-text));
+  --color-accent-border: rgb(var(--wh-accent-border));
+  --color-ok: rgb(var(--wh-ok));
+  --color-ok-dim: rgb(var(--wh-ok-dim));
+  --color-warn: rgb(var(--wh-warn));
+  --color-warn-dim: rgb(var(--wh-warn-dim));
+  --color-bad: rgb(var(--wh-bad));
+  --color-bad-dim: rgb(var(--wh-bad-dim));
+  --color-info: rgb(var(--wh-info));
+  --color-info-dim: rgb(var(--wh-info-dim));
+  --color-body-text: rgb(var(--wh-body-text));
+  --color-code-bg: rgb(var(--wh-code-bg));
 }
 
 @keyframes rise {
@@ -56,72 +51,71 @@
 
 :root {
   color-scheme: light;
-  --header-bg: rgba(255, 255, 255, 0.82);
-  --scrim: rgba(15, 23, 42, 0.4);
-  --knob: #ffffff;
-  --dot: rgba(15, 23, 42, 0.05);
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --wh-header-bg: rgba(255, 255, 255, 0.82);
+  --wh-scrim: rgba(15, 23, 42, 0.4);
+  --wh-knob: #ffffff;
+  --wh-dot: rgba(15, 23, 42, 0.05);
+  --wh-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
 
-  --bg: 246 247 249;
-  --surface: 255 255 255;
-  --surface-2: 243 244 246;
-  --surface-3: 236 238 242;
-  --border: 230 232 236;
-  --border-strong: 212 216 222;
-  --text: 15 23 42;
-  --muted: 91 100 114;
-  --faint: 154 163 178;
-  --accent: 79 70 229;
-  --accent-strong: 67 56 202;
-  --accent-dim: 238 242 255;
-  --accent-text: 55 48 163;
-  --accent-border: 224 231 255;
-  --ok: 22 163 74;
-  --ok-dim: 236 253 243;
-  --warn: 180 83 9;
-  --warn-dim: 254 243 199;
-  --bad: 220 38 38;
-  --bad-dim: 254 242 242;
-  --info: 37 99 235;
-  --info-dim: 239 246 255;
-  --body-text: 48 54 61;
-  --code-bg: 240 241 243;
+  --wh-bg: 248 250 252;
+  --wh-surface: 255 255 255;
+  --wh-surface-2: 248 250 252;
+  --wh-surface-3: 241 245 249;
+  --wh-border: 226 232 240;
+  --wh-border-strong: 203 213 225;
+  --wh-text: 15 23 42;
+  --wh-muted: 71 85 105;
+  --wh-faint: 100 116 139;
+  --wh-accent: 37 99 235;
+  --wh-accent-strong: 29 78 216;
+  --wh-accent-dim: 239 246 255;
+  --wh-accent-text: 30 64 175;
+  --wh-accent-border: 191 219 254;
+  --wh-ok: 22 163 74;
+  --wh-ok-dim: 240 253 244;
+  --wh-warn: 217 119 6;
+  --wh-warn-dim: 255 251 235;
+  --wh-bad: 220 38 38;
+  --wh-bad-dim: 254 242 242;
+  --wh-info: 37 99 235;
+  --wh-info-dim: 239 246 255;
+  --wh-body-text: 48 54 61;
+  --wh-code-bg: 240 241 243;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --header-bg: rgba(15, 20, 28, 0.82);
-    --scrim: rgba(2, 6, 12, 0.6);
-    --knob: #dfe4ee;
-    --dot: rgba(148, 163, 184, 0.08);
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.5);
+:root.dark,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --wh-header-bg: rgba(15, 20, 28, 0.82);
+  --wh-scrim: rgba(2, 6, 12, 0.6);
+  --wh-knob: #dfe4ee;
+  --wh-dot: rgba(148, 163, 184, 0.08);
+  --wh-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.5);
 
-    --bg: 11 15 23;
-    --surface: 19 26 36;
-    --surface-2: 26 34 48;
-    --surface-3: 35 45 61;
-    --border: 39 49 67;
-    --border-strong: 56 70 96;
-    --text: 230 233 239;
-    --muted: 154 166 184;
-    --faint: 107 119 137;
-    --accent: 99 102 241;
-    --accent-strong: 129 140 248;
-    --accent-dim: 28 33 64;
-    --accent-text: 199 210 254;
-    --accent-border: 47 55 102;
-    --ok: 34 197 94;
-    --ok-dim: 16 36 26;
-    --warn: 251 191 36;
-    --warn-dim: 42 36 16;
-    --bad: 240 82 82;
-    --bad-dim: 42 22 24;
-    --info: 59 130 246;
-    --info-dim: 23 37 84;
-    --body-text: 195 202 214;
-    --code-bg: 26 34 48;
-  }
+  --wh-bg: 2 6 23;
+  --wh-surface: 15 23 42;
+  --wh-surface-2: 30 41 59;
+  --wh-surface-3: 51 65 85;
+  --wh-border: 51 65 85;
+  --wh-border-strong: 71 85 105;
+  --wh-text: 241 245 249;
+  --wh-muted: 148 163 184;
+  --wh-faint: 100 116 139;
+  --wh-accent: 96 165 250;
+  --wh-accent-strong: 147 197 253;
+  --wh-accent-dim: 30 58 138;
+  --wh-accent-text: 191 219 254;
+  --wh-accent-border: 30 64 175;
+  --wh-ok: 34 197 94;
+  --wh-ok-dim: 16 36 26;
+  --wh-warn: 251 191 36;
+  --wh-warn-dim: 42 36 16;
+  --wh-bad: 240 82 82;
+  --wh-bad-dim: 42 22 24;
+  --wh-info: 59 130 246;
+  --wh-info-dim: 23 37 84;
+  --wh-body-text: 195 202 214;
+  --wh-code-bg: 26 34 48;
 }
 
 @layer base {
@@ -140,7 +134,7 @@
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+    background-image: radial-gradient(var(--wh-dot) 1px, transparent 1px);
     background-size: 22px 22px;
     mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent 40%);
   }
@@ -154,7 +148,7 @@
 
   .header {
     @apply sticky top-0 z-20 flex items-center justify-between gap-4 px-8 py-3.5 border-b border-border;
-    background: var(--header-bg);
+    background: var(--wh-header-bg);
     backdrop-filter: blur(12px);
   }
 
@@ -426,7 +420,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: var(--knob);
+    background: var(--wh-knob);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
     transition: transform 0.18s;
   }
@@ -506,19 +500,38 @@
     @apply rounded-[5px] bg-accent-dim px-1.5 py-px font-mono text-accent;
   }
 
-  /* ---- Drawer / overlay ---- */
-  .overlay {
-    @apply fixed inset-0 z-40 backdrop-blur-[2px];
-    background: var(--scrim);
+  /* ---- Modal editors (RcDialog wrapper) ---- */
+  .editor-dialog {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    max-height: calc(100dvh - 2rem) !important;
+    overflow: hidden !important;
+    padding: 0 !important;
   }
 
-  .editor {
-    @apply fixed bottom-0 right-0 top-0 z-50 flex w-[min(520px,100vw)] flex-col border-l border-border bg-surface shadow-drawer;
+  .editor-dialog > div:first-child {
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .editor-dialog > div:nth-child(2) {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+  }
+
+  .editor-dialog > div:nth-child(3) {
+    margin-top: 0 !important;
+    flex-shrink: 0 !important;
+    padding: 0 !important;
   }
 
   .editor-head {
     @apply flex items-center justify-between gap-3 border-b border-border px-6 py-4;
-    background: var(--header-bg);
+    background: var(--wh-header-bg);
     backdrop-filter: blur(12px);
   }
 
@@ -541,7 +554,7 @@
   .editor-body {
     @apply flex-1 overflow-y-auto px-6 py-5;
     scrollbar-width: thin;
-    scrollbar-color: var(--scrim) transparent;
+    scrollbar-color: var(--wh-scrim) transparent;
   }
 
   .editor-section {
@@ -972,7 +985,7 @@
 
   .modal-overlay {
     @apply fixed inset-0 z-[60] flex items-center justify-center p-6 backdrop-blur-[2px];
-    background: var(--scrim);
+    background: var(--wh-scrim);
   }
 
   .detail-head {
@@ -1263,14 +1276,4 @@
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.slide-enter-from,
-.slide-leave-to {
-  transform: translateX(100%);
 }

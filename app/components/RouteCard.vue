@@ -1,20 +1,18 @@
 <template>
-  <article class="route-card" :class="{ disabled: !route.enabled }">
+  <RcCard variant="outline" padding="none" :class="cardClass">
     <div class="route-card-main">
       <div class="route-card-header">
-        <label v-if="!readonly" class="switch">
-          <input type="checkbox" :checked="route.enabled" @change="onToggle" />
-          <span class="track"></span>
-        </label>
+        <RcSwitch v-if="!readonly" :model-value="route.enabled" size="sm" @update:model-value="onToggle" />
         <span v-if="readonly" class="dot" :class="route.enabled ? 'ok' : 'bad'"></span>
         <div class="route-card-title">
           <span class="route-name">{{ route.name || t("route.untitled") }}</span>
           <span class="route-id">{{ route.id }}</span>
         </div>
         <div class="route-card-badges">
-          <span
+          <RcBadge
             v-for="(tg, i) in route.targets"
             :key="i"
+            size="xs"
             class="route-badge"
             :class="
               tg.platform === 'telegram'
@@ -41,14 +39,10 @@
                   ? t("route.feishu")
                   : "Discord"
             }}
-          </span>
-          <span v-if="route.fallback" class="route-badge route-badge-fallback">{{
-            t("route.fallback")
-          }}</span>
-          <span v-if="route.stop" class="route-badge route-badge-stop">{{ t("route.stop") }}</span>
-          <span v-if="route.discordRoleIds?.length" class="route-badge route-badge-role"
-            >@roles</span
-          >
+          </RcBadge>
+          <RcBadge v-if="route.fallback" variant="warning" size="xs" class="route-badge route-badge-fallback">{{ t("route.fallback") }}</RcBadge>
+          <RcBadge v-if="route.stop" variant="destructive" size="xs" class="route-badge route-badge-stop">{{ t("route.stop") }}</RcBadge>
+          <RcBadge v-if="route.discordRoleIds?.length" size="xs" class="route-badge route-badge-role">@roles</RcBadge>
         </div>
       </div>
 
@@ -84,7 +78,10 @@
     </div>
 
     <div v-if="!readonly" class="route-card-actions">
-      <button
+      <RcButton
+        type="button"
+        variant="ghost"
+        size="icon"
         class="route-action-btn"
         :disabled="atFirst"
         :title="t('route.moveUp')"
@@ -102,8 +99,11 @@
         >
           <path d="m18 15-6-6-6 6" />
         </svg>
-      </button>
-      <button
+      </RcButton>
+      <RcButton
+        type="button"
+        variant="ghost"
+        size="icon"
         class="route-action-btn"
         :disabled="atLast"
         :title="t('route.moveDown')"
@@ -121,8 +121,11 @@
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
-      </button>
-      <button
+      </RcButton>
+      <RcButton
+        type="button"
+        variant="ghost"
+        size="icon"
         class="route-action-btn"
         :title="t('routeEditor.editTitle')"
         @click="$emit('edit', route)"
@@ -140,8 +143,11 @@
           <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
           <path d="m15 5 4 4" />
         </svg>
-      </button>
-      <button
+      </RcButton>
+      <RcButton
+        type="button"
+        variant="destructive"
+        size="icon"
         class="route-action-btn route-action-btn-danger"
         :title="t('routeEditor.close')"
         @click="$emit('delete', route)"
@@ -159,9 +165,9 @@
           <path d="M18 6 6 18" />
           <path d="m6 6 12 12" />
         </svg>
-      </button>
+      </RcButton>
     </div>
-  </article>
+  </RcCard>
 </template>
 
 <script setup lang="ts">
@@ -181,6 +187,7 @@ const summary = computed(() => {
   const node: FilterNode = props.route.ast ?? { all: props.route.filters };
   return describeNode(node, t);
 });
+const cardClass = computed(() => `route-card${props.route.enabled ? "" : " disabled"}`);
 const emit = defineEmits<{
   (e: "toggle", route: Route): void;
   (e: "edit", route: Route): void;
@@ -188,8 +195,8 @@ const emit = defineEmits<{
   (e: "move", route: Route, dir: -1 | 1): void;
 }>();
 
-function onToggle(event: Event): void {
-  const next = { ...props.route, enabled: (event.target as HTMLInputElement).checked };
+function onToggle(enabled: boolean): void {
+  const next = { ...props.route, enabled };
   emit("toggle", next);
 }
 </script>

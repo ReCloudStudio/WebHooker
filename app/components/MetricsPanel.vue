@@ -3,7 +3,7 @@ import type { DeliveryMetrics, Group, MetricsBreakdown } from "~/types";
 
 const { t } = useI18n();
 
-defineProps<{
+const props = defineProps<{
   metrics: DeliveryMetrics | null;
   loading: boolean;
   error: string;
@@ -19,6 +19,11 @@ const emit = defineEmits<{
 
 const sortBy = ref<"total" | "failed" | "rate">("total");
 
+const groupOptions = computed(() => [
+  { label: t("metrics.allGroups"), value: "all" },
+  ...props.groups.map((g) => ({ label: g.name || g.id, value: g.id })),
+]);
+
 function pct(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
@@ -28,8 +33,8 @@ function pctOf(count: number, total: number): string {
   return `${((count / total) * 100).toFixed(0)}%`;
 }
 
-function onGroupFilter(e: Event): void {
-  emit("update:selectedGroupId", (e.target as HTMLSelectElement).value);
+function onGroupFilter(value: string): void {
+  emit("update:selectedGroupId", value === "all" ? "" : value);
   emit("filter");
 }
 
@@ -113,40 +118,38 @@ function cycleSort(): void {
       <span class="kpi-label">{{ t("metrics.title") }}</span>
       <div class="log-filters">
         <label class="filter-label">{{ t("metrics.filterGroup") }}</label>
-        <select
+        <RcSelect
           class="filter-select"
-          :value="selectedGroupId"
+          :model-value="selectedGroupId || 'all'"
+          :options="groupOptions"
           :disabled="loading"
-          @change="onGroupFilter"
-        >
-          <option value="">{{ t("metrics.allGroups") }}</option>
-          <option v-for="g in groups" :key="g.id" :value="g.id">
-            {{ g.name || g.id }}
-          </option>
-        </select>
+          @update:model-value="onGroupFilter"
+        />
       </div>
-      <button class="btn btn-ghost btn-sm" :disabled="loading" @click="emit('refresh')">
+      <RcButton variant="ghost" size="sm" :disabled="loading" @click="emit('refresh')">
         {{ t("metrics.refresh") }}
-      </button>
+      </RcButton>
     </div>
 
     <p v-if="error" class="err">{{ error }}</p>
-    <p v-else-if="!loading && !metrics" class="empty-log">{{ t("metrics.empty") }}</p>
+    <RcEmptyState v-else-if="!loading && !metrics" :title="t('metrics.empty')" class="empty-log" />
 
     <template v-else-if="metrics">
       <div class="metric-kpis">
-        <div
+        <RcCard
           v-for="k in summary(metrics)"
           :key="k.label"
+          variant="outline"
+          padding="md"
           class="metric-kpi"
           :class="TONE[k.tone] ?? ''"
         >
           <span class="metric-kpi-value">{{ k.value }}</span>
           <span class="metric-kpi-label">{{ k.label }}</span>
-        </div>
+        </RcCard>
       </div>
 
-      <article v-if="metrics.byPlatform.length" class="metric-block">
+      <RcCard v-if="metrics.byPlatform.length" variant="outline" padding="md" class="metric-block">
         <h3 class="metric-block-title">{{ t("metrics.byPlatform") }}</h3>
         <div
           v-for="r in rows(metrics.byPlatform, (r) => r.platform ?? 'unknown')"
@@ -170,12 +173,14 @@ function cycleSort(): void {
           </div>
           <span class="metric-total">{{ r.total }}</span>
         </div>
-      </article>
+      </RcCard>
 
-      <article v-if="metrics.byEvent.length" class="metric-block">
+      <RcCard v-if="metrics.byEvent.length" variant="outline" padding="md" class="metric-block">
         <div class="metric-block-head">
           <h3 class="metric-block-title">{{ t("metrics.byEvent") }}</h3>
-          <button class="metric-sort-toggle" @click="cycleSort">{{ sortLabel() }}</button>
+          <RcButton variant="ghost" size="xs" class="metric-sort-toggle" @click="cycleSort">{{
+            sortLabel()
+          }}</RcButton>
         </div>
         <div
           v-for="r in rows(metrics.byEvent, (r) => r.event ?? 'unknown')"
@@ -199,9 +204,9 @@ function cycleSort(): void {
           </div>
           <span class="metric-total">{{ r.total }}</span>
         </div>
-      </article>
+      </RcCard>
 
-      <article v-if="metrics.byStatus.length" class="metric-block">
+      <RcCard v-if="metrics.byStatus.length" variant="outline" padding="md" class="metric-block">
         <h3 class="metric-block-title">{{ t("metrics.byStatus") }}</h3>
         <div class="metric-status-row">
           <span
@@ -216,9 +221,14 @@ function cycleSort(): void {
             {{ s.status }} · {{ s.count }}
           </span>
         </div>
-      </article>
+      </RcCard>
 
-      <article v-if="metrics.recentFailures.length" class="metric-block">
+      <RcCard
+        v-if="metrics.recentFailures.length"
+        variant="outline"
+        padding="md"
+        class="metric-block"
+      >
         <h3 class="metric-block-title">{{ t("metrics.recentFailures") }}</h3>
         <div
           v-for="f in metrics.recentFailures"
@@ -232,7 +242,7 @@ function cycleSort(): void {
             <span class="log-time">{{ f.target }}</span>
           </div>
         </div>
-      </article>
+      </RcCard>
     </template>
   </div>
 </template>

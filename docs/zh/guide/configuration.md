@@ -43,6 +43,7 @@ WebHooker 的运行需要若干密钥。本地开发时放入 `.dev.vars`，生�
 | `TELEGRAM_RICH_HEADER_HOST` | 外部 rich-header 服务的基础 URL；未设置时使用内置 `GET /api/richheader` 提供 Telegram 头像卡片 | 内置 `/api/richheader`  |
 | `BASE_URL`                  | OAuth 回调的公共 URL                                                                           | `http://localhost:8787` |
 | `ADMIN_USER_IDS`            | 允许访问 WebUI 的 GitHub 用户 ID（或登录名），逗号分隔                                         | 未设置时 WebUI 关闭     |
+| `DEBUG_MODE`                | 仅本地开发：精确设为 `true` 时跳过全部 `/admin` 身份验证并授予完整权限                         | 关闭                    |
 | `ALLOW_SELF_SIGNUP`         | 开启（`1`/`true`）后，没有任何分组权限的 GitHub 用户首次登录会自动获得个人分组而非 403         | 关闭                    |
 | `AUDIT_RETENTION_DAYS`      | 定时清理时审计日志的保留天数                                                                   | `90`                    |
 | `NUXT_PUBLIC_DOCS_URL`      | 落地页使用的文档站 URL（客户端运行时配置）                                                     | 落地页默认值            |
@@ -58,6 +59,8 @@ WebHooker 在 `/admin` 提供内置配置控制台，可在浏览器中管理路
 1. 配置 `ADMIN_USER_IDS`，填写允许管理一切的 GitHub 用户 ID，也支持登录名，例如 `ADMIN_USER_IDS=12345,RhenCloud`。未设置时控制台禁用（除非开启 `ALLOW_SELF_SIGNUP`）。
 2. 打开 `/admin` 并使用 GitHub 登录。
 3. 没有任何访问权限的用户会得到 `403`，除非 `ALLOW_SELF_SIGNUP=1`（获得个人分组）或跟随分组[邀请链接](./groups#邀请)。
+
+仅供本地调试：设置 `DEBUG_MODE=true` 可跳过 GitHub OAuth，并授予完整控制台权限。部署环境切勿设置此变量。
 
 控制台以 SPA 形式在 `/admin` 提供；其标签页可通过 URL 路径直达（`/admin/groups`、`/admin/logs`、`/admin/audit`）。`/admin` 之外未匹配到端点的 URL 直接返回 `404`，而不会展示控制台。
 

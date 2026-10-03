@@ -4,25 +4,21 @@
       <span class="kpi-label">{{ t("logs.lastSends", { n: logs.length }) }}</span>
       <div class="log-filters">
         <label class="filter-label">{{ t("logs.filterGroup") }}</label>
-        <select
+        <RcSelect
           class="filter-select"
-          :value="selectedGroupId"
+          :model-value="selectedGroupId || 'all'"
+          :options="groupOptions"
           :disabled="loading"
-          @change="onGroupFilter"
-        >
-          <option value="">{{ t("logs.allGroups") }}</option>
-          <option v-for="g in groups" :key="g.id" :value="g.id">
-            {{ g.name || g.id }}
-          </option>
-        </select>
+          @update:model-value="onGroupFilter"
+        />
       </div>
-      <button class="btn btn-ghost btn-sm" :disabled="loading" @click="refresh">
+      <RcButton variant="ghost" size="sm" :disabled="loading" @click="refresh">
         {{ t("logs.refresh") }}
-      </button>
+      </RcButton>
     </div>
 
     <p v-if="error" class="err">{{ error }}</p>
-    <p v-else-if="!loading && !logs.length" class="empty-log">{{ t("logs.empty") }}</p>
+    <RcEmptyState v-else-if="!loading && !logs.length" :title="t('logs.empty')" class="empty-log" />
 
     <div class="log-list">
       <article
@@ -55,30 +51,28 @@
       </article>
     </div>
 
-    <div v-if="detailOpen" class="modal-overlay" @click.self="closeDetail">
-      <div class="log-detail">
-        <div class="detail-head">
-          <h3>{{ t("logs.detailTitle") }}</h3>
-          <button class="icon-btn" @click="closeDetail">✕</button>
-        </div>
+    <RcDialog
+      :open="detailOpen"
+      :title="t('logs.detailTitle')"
+      class="log-detail"
+      @update:open="onDetailOpenChange"
+    >
+      <div v-if="detailLoading" class="flex justify-center py-8"><RcSpinner size="sm" /></div>
+      <p v-else-if="detailError" class="err">{{ detailError }}</p>
 
-        <p v-if="detailLoading" class="empty-log">{{ t("status.loading") }}</p>
-        <p v-else-if="detailError" class="err">{{ detailError }}</p>
+      <dl v-else-if="detail" class="detail-grid">
+        <template v-for="row in detailRows" :key="row.label">
+          <dt>{{ row.label }}</dt>
+          <dd>
+            <pre v-if="row.block" class="log-block">{{ row.value }}</pre>
+            <code v-else-if="row.code">{{ row.value }}</code>
+            <span v-else>{{ row.value }}</span>
+          </dd>
+        </template>
+      </dl>
 
-        <dl v-else-if="detail" class="detail-grid">
-          <template v-for="row in detailRows" :key="row.label">
-            <dt>{{ row.label }}</dt>
-            <dd>
-              <pre v-if="row.block" class="log-block">{{ row.value }}</pre>
-              <code v-else-if="row.code">{{ row.value }}</code>
-              <span v-else>{{ row.value }}</span>
-            </dd>
-          </template>
-        </dl>
-
-        <p v-else class="err">{{ t("logs.detailMissing") }}</p>
-      </div>
-    </div>
+      <p v-else class="err">{{ t("logs.detailMissing") }}</p>
+    </RcDialog>
   </div>
 </template>
 
@@ -105,6 +99,11 @@ const detailOpen = ref(false);
 const detail = ref<SendRecord | null>(null);
 const detailLoading = ref(false);
 const detailError = ref("");
+
+const groupOptions = computed(() => [
+  { label: t("logs.allGroups"), value: "all" },
+  ...props.groups.map((g) => ({ label: g.name || g.id, value: g.id })),
+]);
 
 const detailRows = computed(() => {
   const l = detail.value;
@@ -142,8 +141,8 @@ function refresh(): void {
   emit("refresh");
 }
 
-function onGroupFilter(e: Event): void {
-  emit("update:selectedGroupId", (e.target as HTMLSelectElement).value);
+function onGroupFilter(value: string): void {
+  emit("update:selectedGroupId", value === "all" ? "" : value);
   emit("filter");
 }
 
@@ -165,5 +164,9 @@ async function openDetail(l: SendRecord): Promise<void> {
 function closeDetail(): void {
   detailOpen.value = false;
   detail.value = null;
+}
+
+function onDetailOpenChange(open: boolean): void {
+  if (!open) closeDetail();
 }
 </script>

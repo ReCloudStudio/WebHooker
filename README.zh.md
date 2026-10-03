@@ -16,7 +16,7 @@ GitHub / Gitea webhook → Discord / Telegram / 飞书 分发服务。通过 Clo
 - `workflow_run` / `check_run` 进度**原地编辑**同一条消息（运行推进时更新），Discord、Telegram 与飞书均支持 —— `check_run` 以 check 名 + commit SHA 追踪，因此每个阶段都换新 run id 的部署（如 Cloudflare Pages）仍会编辑同一条消息；`workflow_run` 内嵌带颜色的逐作业代码块（🟢 成功、🔴 失败、运行中/排队中不着色）
 - **分组级 Webhook 日志频道** —— 为分组指定一个 Discord 频道/子区、Telegram 群组/话题或飞书群聊，该分组路由每次分发 webhook 都会向其中发送摘要（每条「路由 × 目标」一行，✅/❌ 结果）
 - GitHub OAuth 用户授权（评论、编辑评论、删除评论、合并、关闭、反应）
-- **Web 配置控制台**（`/admin`）— 通过 GitHub OAuth + 管理员白名单管理路由与分组、查看发送日志
+- **Web 配置控制台**（`/admin`）— 基于 ReCloud UI，使用居中路由/分组对话框；通过 GitHub OAuth + 管理员白名单管理路由与分组、查看发送日志
 - **Discord Interactions Endpoint**（Ed25519 验签）支持 `/gh` 斜杠命令、消息右键菜单命令、PR 合并/关闭按钮与评论 modal
 - **Telegram `/gh` 命令**（login/logout/comment/merge/close），通过 Telegram webhook 接收，头像以链接预览卡片呈现
 - Cloudflare D1 存储配置（路由/分组）、发送日志、平台账号绑定、去重、投递状态与消息更新追踪 + KV 存储临时状态/缓存/安全令牌 + 可选 R2 存储超大负载
@@ -74,6 +74,7 @@ bunx wrangler dev    # 启动本地开发服务器
 | `FEISHU_APP_SECRET`         | 飞书应用密钥 —— 飞书路由必需                                                |
 | `BASE_URL`                  | 公网地址（用于 OAuth 回调与 Telegram webhook 同步）                         |
 | `ADMIN_USER_IDS`            | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                   |
+| `DEBUG_MODE`                | 仅本地开发：精确设为 `true` 时跳过全部 `/admin` 身份验证                   |
 | `ALLOW_SELF_SIGNUP`         | 设为 `1` 时，无权限的 GitHub 用户首次登录自动获得个人分组（默认关闭）       |
 | `AUDIT_RETENTION_DAYS`      | 定时清理时审计日志的保留天数（默认 90）                                     |
 | `NUXT_PUBLIC_DOCS_URL`      | 可选；落地页使用的文档站点 URL                                              |
@@ -111,6 +112,8 @@ bunx wrangler dev    # 启动本地开发服务器
 1. 设置 `ADMIN_USER_IDS` 为允许管理控制台的 GitHub 用户 ID（或登录名），例如 `ADMIN_USER_IDS=12345,RhenCloud`。
 2. 访问 `/admin` 并用 GitHub 登录。无任何权限的用户收到 `403`——除非开启 `ALLOW_SELF_SIGNUP=1`（自动获得个人分组）或通过分组邀请链接加入。
 3. 修改会立即写入 D1，配置缓存随之失效，webhook 管线随即生效。
+
+仅限本地调试时，可设 `DEBUG_MODE=true` 跳过 GitHub OAuth 并获得完整控制台权限。部署环境切勿设置此变量。
 
 在 `/admin/logout` 退出登录。每个分组都有带角色的 `members`（`owner` / `admin` / `viewer`）；所有管理操作（登录、分组/路由/成员/邀请变更）都会写入 D1 `audit_logs` 表。
 

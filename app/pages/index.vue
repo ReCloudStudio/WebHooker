@@ -1,79 +1,79 @@
-﻿<template>
-  <div class="relative z-[1] mx-auto flex min-h-screen max-w-[720px] flex-col px-5 pb-16 pt-[72px]">
-    <div class="mb-10 text-center">
-      <div
-        class="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-white shadow-[0_8px_24px_-8px_var(--accent)]"
-      >
-        <svg
-          viewBox="0 0 64 64"
-          class="h-8 w-8"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="6"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M41 23 V35.5 A10.5 10.5 0 0 1 20 35.5 L28 25.5" />
-          <circle cx="41" cy="18" r="4.5" fill="currentColor" stroke="none" />
-        </svg>
+<template>
+  <main class="landing-shell">
+    <section class="landing-hero">
+      <RcBadge variant="brand" size="sm">ReCloud Studio</RcBadge>
+      <div class="brand-lockup">
+        <AppLogo :size="64" class="brand-logo" />
+        <div>
+          <p class="eyebrow">Event relay console</p>
+          <h1>Web<span>Hooker</span></h1>
+        </div>
       </div>
-      <h1 class="mb-2.5 text-[34px] font-extrabold tracking-[-0.03em]">
-        Web<span class="text-accent">Hooker</span>
-      </h1>
-      <p class="m-0 text-[15px] leading-relaxed text-muted">
+      <p class="hero-copy">
         {{
           lang === "zh"
-            ? "将 GitHub webhook 事件转发到 Discord 频道，并支持在 Discord 中以你本人身份操作 GitHub。"
-            : "Forward GitHub webhook events to Discord, and act on GitHub from Discord as yourself."
+            ? "把 GitHub webhook 可靠地带到你的协作空间，并在一个清晰的控制台中掌控每一条路由。"
+            : "Bring GitHub webhook activity into your collaboration space, with every route under clear control."
         }}
       </p>
-    </div>
-    <nav class="grid gap-3">
-      <a
-        v-for="it in items"
+      <div class="hero-meta">
+        <span><GitBranch :size="15" /> GitHub</span>
+        <span class="meta-line" aria-hidden="true" />
+        <span><Radio :size="15" /> Discord · Telegram · Feishu</span>
+      </div>
+    </section>
+
+    <section class="landing-actions" :aria-label="t('导航', 'Navigation')">
+      <RcCard
+        v-for="(it, index) in items"
         :key="it.label"
-        class="flex items-center gap-4 rounded-[14px] border border-border bg-surface px-5 py-[18px] text-text no-underline shadow-card transition-all duration-150 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-card-hover"
-        :class="
-          it.primary
-            ? 'border-accent bg-accent shadow-none hover:border-accent hover:shadow-accent-lg'
-            : ''
-        "
-        :href="it.href"
-        :target="it.external ? '_blank' : undefined"
-        :rel="it.external ? 'noopener noreferrer' : undefined"
+        variant="outline"
+        :hoverable="true"
+        padding="none"
+        class="landing-action"
       >
-        <span
-          class="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-accent"
-          :class="it.primary ? 'bg-white/15 text-white' : 'bg-surface-2'"
-          v-html="icon(it.icon)"
-        />
-        <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span class="text-[15px] font-bold" :class="it.primary ? 'text-white' : ''">{{
-            it.label
-          }}</span>
-          <span class="text-[13px]" :class="it.primary ? 'text-white/80' : 'text-muted'">{{
-            it.desc
-          }}</span>
-        </span>
-        <span class="flex-none text-lg" :class="it.primary ? 'text-white' : 'text-faint'">{{
-          it.external ? "↗" : "→"
-        }}</span>
-      </a>
-    </nav>
-    <footer class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-10">
-      <span class="text-[13px] text-muted">WebHooker · GitHub → Discord</span>
-      <NuxtLink
-        class="rounded-full border border-border bg-surface px-3.5 py-1.5 text-[13px] text-muted no-underline transition-colors hover:border-border-strong hover:text-text"
-        :to="`/?lang=${altLang}`"
-        >{{ lang === "zh" ? "English" : "中文" }}</NuxtLink
-      >
+        <a
+          :href="it.href"
+          :target="it.external ? '_blank' : undefined"
+          :rel="it.external ? 'noopener noreferrer' : undefined"
+        >
+          <span class="action-index">0{{ index + 1 }}</span>
+          <component :is="it.icon" class="action-icon" :size="22" :stroke-width="1.8" />
+          <span class="action-copy">
+            <strong>{{ it.label }}</strong>
+            <small>{{ it.desc }}</small>
+          </span>
+          <ArrowUpRight v-if="it.external" class="action-arrow" :size="19" />
+          <ArrowRight v-else class="action-arrow" :size="19" />
+        </a>
+      </RcCard>
+    </section>
+
+    <footer class="landing-footer">
+      <span>WebHooker <i /> GitHub event delivery</span>
+      <div class="landing-footer-actions">
+        <ThemeToggle show-label />
+        <NuxtLink :to="`/?lang=${altLang}`">
+          <Languages :size="15" /> {{ lang === "zh" ? "English" : "中文" }}
+        </NuxtLink>
+      </div>
     </footer>
-  </div>
+  </main>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BookOpen,
+  FileCheck2,
+  GitBranch,
+  Github,
+  Languages,
+  LogIn,
+  Radio,
+  ShieldCheck,
+} from "lucide-vue-next";
 
 const DEFAULT_REPO = "https://github.com/ReCloudStudio/WebHooker";
 const DEFAULT_DOCS = "https://webhooker.docs.worldexecute.me";
@@ -94,71 +94,35 @@ const items = computed(() => {
   const docs = lang.value === "zh" ? `${docsBase.value}/zh` : `${docsBase.value}/`;
   const q = (p: string): string => `${p}?lang=${lang.value}`;
   return [
-    {
-      href: docs,
-      label: t("文档", "Documentation"),
-      desc: t("部署、配置与事件参考", "Deployment, configuration & event reference"),
-      icon: "docs",
-      external: true,
-    },
-    {
-      href: repo.value,
-      label: t("GitHub 仓库", "GitHub Repository"),
-      desc: t("源代码、问题与发布", "Source code, issues & releases"),
-      icon: "github",
-      external: true,
-    },
-    {
-      href: q("/terms"),
-      label: t("服务条款", "Terms of Service"),
-      desc: t("使用本服务的条款", "The terms for using this service"),
-      icon: "terms",
-      external: false,
-    },
-    {
-      href: q("/privacy"),
-      label: t("隐私政策", "Privacy Policy"),
-      desc: t("我们如何处理你的数据", "How we handle your data"),
-      icon: "privacy",
-      external: false,
-    },
-    {
-      href: "/admin/login",
-      label: t("登录控制台", "Sign in to Console"),
-      desc: t("管理路由与分组", "Manage routes and groups"),
-      icon: "login",
-      external: false,
-      primary: true,
-    },
+    { href: docs, label: t("文档", "Documentation"), desc: t("部署、配置与事件参考", "Deployment, configuration & event reference"), icon: BookOpen, external: true },
+    { href: repo.value, label: t("GitHub 仓库", "GitHub Repository"), desc: t("源代码、问题与发布", "Source code, issues & releases"), icon: Github, external: true },
+    { href: q("/terms"), label: t("服务条款", "Terms of Service"), desc: t("使用本服务的条款", "The terms for using this service"), icon: FileCheck2, external: false },
+    { href: q("/privacy"), label: t("隐私政策", "Privacy Policy"), desc: t("我们如何处理你的数据", "How we handle your data"), icon: ShieldCheck, external: false },
+    { href: "/admin", label: t("登录控制台", "Sign in to Console"), desc: t("管理路由与分组", "Manage routes and groups"), icon: LogIn, external: false },
   ];
 });
 
-const ICON_PATHS: Record<string, string> = {
-  docs: '<path d="M4 4a2 2 0 0 1 2-2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4z"/><path d="M13 2v5h5"/><path d="M8 12h8M8 16h6"/>',
-  github:
-    '<path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.36 1.09 2.94.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/>',
-  terms:
-    '<path d="M9 12h6M9 16h6M9 8h2"/><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>',
-  privacy:
-    '<path d="M12 2l7 3v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V5l7-3z"/><path d="M9 12l2 2 4-4"/>',
-  login:
-    '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/>',
-};
-
-function icon(name: string): string {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">${ICON_PATHS[name] ?? ""}</svg>`;
-}
-
 useHead({
   title: "WebHooker",
-  meta: [
-    {
-      name: "description",
-      content:
-        lang.value === "zh"
-          ? "GitHub webhook 转发到 Discord"
-          : "GitHub webhooks forwarded to Discord",
-    },
-  ],
+  meta: [{ name: "description", content: lang.value === "zh" ? "GitHub webhook 转发到 Discord" : "GitHub webhooks forwarded to Discord" }],
 });
 </script>
+
+<style scoped>
+.landing-shell { position: relative; z-index: 1; width: min(100% - 2rem, 880px); min-height: 100vh; margin: 0 auto; padding: clamp(4rem, 10vh, 8rem) 0 2rem; overflow-x: clip; }
+.landing-shell::before { position: absolute; z-index: -1; top: 3rem; right: -7rem; width: 24rem; height: 24rem; border-radius: 999px; background: radial-gradient(circle, color-mix(in srgb, rgb(var(--wh-accent)) 18%, transparent), transparent 68%); content: ""; filter: blur(10px); }
+.landing-hero { max-width: 640px; animation: intro 500ms ease-out both; }
+.brand-lockup { display: flex; align-items: center; gap: 1.1rem; margin: 1.5rem 0; }
+.brand-logo { box-shadow: 0 16px 38px rgb(var(--wh-accent) / .28); }
+.eyebrow { margin: 0 0 .25rem; color: rgb(var(--wh-accent)); font-size: .7rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+h1 { margin: 0; font-size: clamp(2.55rem, 7vw, 4.6rem); font-weight: 800; letter-spacing: -.07em; line-height: .88; } h1 span { color: rgb(var(--wh-accent)); }
+.hero-copy { margin: 1.75rem 0 1.2rem; color: rgb(var(--wh-muted)); font-size: clamp(1rem, 2vw, 1.15rem); line-height: 1.8; }
+.hero-meta { display: flex; align-items: center; gap: .75rem; color: rgb(var(--wh-faint)); font-size: .77rem; font-weight: 700; letter-spacing: .025em; } .hero-meta span:not(.meta-line) { display: inline-flex; align-items: center; gap: .35rem; } .meta-line { width: 1.5rem; height: 1px; background: rgb(var(--wh-border-strong)); }
+.landing-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; margin-top: clamp(2.5rem, 6vh, 4.5rem); }
+.landing-action { overflow: hidden; animation: intro 500ms ease-out both; } .landing-action:nth-child(2) { animation-delay: 60ms; } .landing-action:nth-child(3) { animation-delay: 120ms; } .landing-action:nth-child(4) { animation-delay: 180ms; } .landing-action:nth-child(5) { animation-delay: 240ms; }
+.landing-action a { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: .85rem; min-height: 6.7rem; padding: 1.15rem; color: inherit; text-decoration: none; }
+.action-index { align-self: start; color: rgb(var(--wh-faint)); font-family: var(--font-mono); font-size: .63rem; } .action-icon { color: rgb(var(--wh-accent)); } .action-copy { display: grid; gap: .22rem; min-width: 0; } .action-copy strong { font-size: .95rem; } .action-copy small { color: rgb(var(--wh-muted)); font-size: .77rem; line-height: 1.4; } .action-arrow { color: rgb(var(--wh-faint)); transition: transform 150ms ease; } .landing-action:hover .action-arrow { color: rgb(var(--wh-accent)); transform: translate(2px, -2px); }
+.landing-footer { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 2rem; color: rgb(var(--wh-faint)); font-size: .75rem; } .landing-footer span { display: flex; align-items: center; gap: .45rem; } .landing-footer i { width: .22rem; height: .22rem; border-radius: 999px; background: rgb(var(--wh-accent)); } .landing-footer-actions { display: flex; align-items: center; gap: .75rem; } .landing-footer a { display: inline-flex; align-items: center; gap: .4rem; color: rgb(var(--wh-muted)); text-decoration: none; } .landing-footer a:hover { color: rgb(var(--wh-accent)); }
+@keyframes intro { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 580px) { .landing-shell { width: min(100% - 1.5rem, 880px); padding-top: 3rem; } .landing-actions { grid-template-columns: 1fr; } .landing-footer { align-items: flex-start; flex-direction: column; } .hero-meta { align-items: flex-start; flex-direction: column; } .meta-line { display: none; } }
+</style>

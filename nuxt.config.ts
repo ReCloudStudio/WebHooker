@@ -2,6 +2,10 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
+  modules: ["@recloudstudio/ui/nuxt"],
+  recloudUI: {
+    prefix: "Rc",
+  },
   css: ["~/assets/css/main.css"],
   // Target: Cloudflare Workers (single _worker.js via the cloudflare_module preset).
   nitro: {
@@ -18,10 +22,15 @@ export default defineNuxtConfig({
     head: {
       title: "WebHooker",
       link: [
-        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        { rel: "icon", type: "image/svg+xml", href: "/logo.svg" },
         {
           rel: "stylesheet",
           href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap",
+        },
+      ],
+      script: [
+        {
+          innerHTML: `(function(){try{var t=localStorage.getItem("wh-theme");var d=t==="dark"||(!t&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d){document.documentElement.classList.add("dark");document.documentElement.setAttribute("data-theme","dark");}else if(t==="light"){document.documentElement.setAttribute("data-theme","light");}}catch(e){}})();`,
         },
       ],
     },

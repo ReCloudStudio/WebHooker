@@ -36,7 +36,7 @@ https://your-worker.workers.dev
 
 ## 管理控制台
 
-参见[配置 → Web 控制台](../guide/configuration.md#web-ui)了解设置方法，管理端点的完整参考见 [Admin API](./admin)。管理端点需要会话 Cookie，可通过 `GET /admin/login`（GitHub OAuth）获取；登录用户必须列在 `ADMIN_USER_IDS` 中，或管理某个分组。
+参见[配置 → Web 控制台](../guide/configuration.md#web-ui)了解设置方法，管理端点的完整参考见 [Admin API](./admin)。管理端点需要会话 Cookie，可通过 `GET /admin/login`（GitHub OAuth）获取；登录用户必须列在 `ADMIN_USER_IDS` 中，或管理某个分组。仅限本地开发，精确设置 `DEBUG_MODE=true` 会跳过认证并授予完整权限，绝不能在部署环境启用。
 
 ## 健康检查
 

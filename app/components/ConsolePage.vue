@@ -1,122 +1,65 @@
 <template>
-  <div class="flex min-h-screen bg-bg text-text">
-    <!-- Sidebar -->
-    <aside
-      class="sticky top-0 z-30 flex h-screen w-[240px] flex-shrink-0 flex-col border-r border-border bg-surface max-lg:hidden"
-    >
-      <div class="flex items-center gap-3 px-5 py-5">
-        <div class="brand-mark" aria-hidden="true">
-          <svg
-            viewBox="0 0 64 64"
-            class="h-[22px] w-[22px]"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M41 23 V35.5 A10.5 10.5 0 0 1 20 35.5 L28 25.5" />
-            <circle cx="41" cy="18" r="4.5" fill="currentColor" stroke="none" />
-          </svg>
-        </div>
-        <div>
-          <div class="text-sm font-extrabold tracking-tight">WebHooker</div>
-          <div class="text-[10px] font-semibold uppercase tracking-[2px] text-faint">
-            {{ t("app.tagline") }}
-          </div>
-        </div>
-      </div>
-
-      <nav class="flex-1 space-y-0.5 px-3">
+  <div class="console-shell">
+    <aside class="console-sidebar">
+      <NuxtLink class="console-brand" to="/">
+        <AppLogo :size="32" />
+        <span><strong>WebHooker</strong><small>{{ t("app.tagline") }}</small></span>
+      </NuxtLink>
+      <p class="console-nav-label">{{ t("app.tagline") }}</p>
+      <nav class="console-nav">
         <button
           v-for="n in nav"
           :key="n.id"
-          class="flex w-full items-center gap-3 rounded-[8px] px-3 py-2 text-[13px] font-semibold transition-colors"
-          :class="
-            n.id === activeNav
-              ? 'bg-accent-dim text-accent'
-              : 'text-muted hover:bg-surface-2 hover:text-text'
-          "
+          class="console-nav-item"
+          :class="{ active: n.id === activeNav }"
           @click="switchView(n.id)"
         >
-          <span
-            class="h-1.5 w-1.5 rounded-full"
-            :class="n.id === activeNav ? 'bg-accent' : 'bg-border-strong'"
-          />
+          <component :is="navIcon(n.id)" :size="17" :stroke-width="1.8" />
           {{ n.label }}
         </button>
       </nav>
-
-      <div class="border-t border-border px-3 py-4">
-        <a
-          class="block rounded-[8px] px-3 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-surface-2"
-          href="/admin/logout"
-        >
-          {{ t("app.signOut") }}
-        </a>
+      <div class="console-sidebar-footer">
+        <a href="/admin/logout"><LogOut :size="16" />{{ t("app.signOut") }}</a>
       </div>
     </aside>
 
-    <!-- Main column -->
-    <div class="flex min-w-0 flex-1 flex-col">
-      <header
-        class="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-border px-6 py-3"
-        style="background: var(--header-bg); backdrop-filter: blur(12px)"
-      >
+    <div class="console-main">
+      <header class="console-topbar">
         <div>
-          <h1 class="text-[15px] font-extrabold tracking-tight">{{ pageTitle }}</h1>
-          <p v-if="needLogin" class="text-[11px] text-faint">{{ t("login.title") }}</p>
-          <p v-else class="text-[11px] text-faint">
-            {{ loadingAny ? t("status.loading") : t("status.connected") }}
-          </p>
+          <p class="console-kicker">WebHooker / {{ activeNav }}</p>
+          <h1>{{ pageTitle }}</h1>
         </div>
-        <div class="flex items-center gap-2">
-          <button v-if="view === 'overview'" class="btn btn-ghost btn-sm" @click="refreshOverview">
-            {{ t("metrics.refresh") }}
-          </button>
-          <button class="btn btn-ghost btn-sm" @click="toggle">{{ t("app.langToggle") }}</button>
-          <button
+        <div class="console-actions">
+          <RcBadge v-if="!needLogin && loadingAny" variant="soft" size="sm" dot class="console-status">
+            {{ t("status.loading") }}
+          </RcBadge>
+          <RcButton v-if="view === 'overview'" variant="ghost" size="sm" @click="refreshOverview"><RefreshCw :size="15" />{{ t("metrics.refresh") }}</RcButton>
+          <ThemeToggle />
+          <RcButton variant="ghost" size="sm" @click="toggle"><Languages :size="15" />{{ t("app.langToggle") }}</RcButton>
+          <RcButton
             v-if="!needLogin && selectedGroup && canEditRoutes(selectedGroup.id)"
-            class="btn btn-accent btn-sm"
             @click="openNew"
-          >
-            {{ t("app.newRoute") }}
-          </button>
-          <button
+          ><Plus :size="16" />{{ t("app.newRoute") }}</RcButton>
+          <RcButton
             v-if="!needLogin && !selectedGroup && view === 'groups' && isSuper"
-            class="btn btn-accent btn-sm"
             @click="openNewGroup"
-          >
-            {{ t("app.newGroup") }}
-          </button>
+          ><Plus :size="16" />{{ t("app.newGroup") }}</RcButton>
         </div>
       </header>
 
-      <!-- Mobile nav -->
-      <nav class="flex gap-1 overflow-x-auto border-b border-border px-4 py-2 lg:hidden">
-        <button
-          v-for="n in nav"
-          :key="n.id"
-          class="whitespace-nowrap rounded-[7px] px-3 py-1.5 text-[13px] font-semibold transition-colors"
-          :class="n.id === activeNav ? 'bg-accent-dim text-accent' : 'text-muted'"
-          @click="switchView(n.id)"
-        >
-          {{ n.label }}
-        </button>
-      </nav>
+      <div class="console-mobile-nav"><RcTabs :model-value="activeNav" :items="mobileNav" @update:model-value="switchView($event as View)" /></div>
 
-      <main class="mx-auto w-full max-w-[1180px] px-6 pb-24 pt-6 max-sm:px-4">
-        <div v-if="needLogin" class="login">
-          <div class="login-card">
+      <main class="console-content">
+        <div v-if="needLogin" class="console-login">
+          <RcCard variant="outline" padding="lg" class="console-login-card">
+            <template #header><LockKeyhole :size="24" /></template>
             <h2>{{ t("login.title") }}</h2>
-            <p v-if="forbidden">{{ t("login.forbidden") }}</p>
-            <p v-else>{{ t("login.prompt") }}</p>
-            <a class="btn btn-accent btn-lg" href="/admin/login">{{ t("login.button") }}</a>
-          </div>
+            <p>{{ forbidden ? t("login.forbidden") : t("login.prompt") }}</p>
+            <a href="/admin/login"><RcButton size="lg"><LogIn :size="17" />{{ t("login.button") }}</RcButton></a>
+          </RcCard>
         </div>
 
         <template v-else>
-          <!-- Overview dashboard -->
           <AdminHome
             v-if="view === 'overview'"
             :key="refreshKey"
@@ -128,22 +71,13 @@
             :metrics-loading="metricsLoading"
           />
 
-          <!-- Group detail view -->
           <template v-else-if="selectedGroup">
-            <section class="toolbar">
-              <div class="crumbs">
-                <button class="btn btn-ghost btn-sm" @click="exitGroup">
-                  {{ t("group.back") }}
-                </button>
-                <span class="kpi-label">{{
-                  t("group.routesIn", { name: selectedGroup.name })
-                }}</span>
-                <span class="kpi">{{ groupRoutes.length }}</span>
+            <section class="console-context-bar">
+              <div>
+                <RcButton variant="ghost" size="sm" @click="exitGroup"><ArrowLeft :size="15" />{{ t("group.back") }}</RcButton>
+                <p>{{ t("group.routesIn", { name: selectedGroup.name }) }}</p>
               </div>
-              <div class="status">
-                <span class="dot" :class="groupRoutesLoading ? '' : 'ok'"></span>
-                <span>{{ groupRoutesLoading ? t("status.loading") : t("status.connected") }}</span>
-              </div>
+              <RcBadge :variant="groupRoutesLoading ? 'soft' : 'success'" size="sm" dot>{{ groupRoutes.length }}</RcBadge>
             </section>
 
             <p v-if="groupRoutesError" class="err">{{ groupRoutesError }}</p>
@@ -164,15 +98,10 @@
               />
             </section>
 
-            <section v-if="!groupRoutesLoading && !groupRoutes.length" class="empty">
-              <p>{{ t("routes.emptyGroup") }}</p>
-              <button
-                v-if="canEditRoutes(selectedGroup.id)"
-                class="btn btn-accent"
-                @click="openNew"
-              >
-                {{ t("routes.createFirst") }}
-              </button>
+            <section v-if="!groupRoutesLoading && !groupRoutes.length" class="console-empty">
+              <RcEmptyState :title="t('routes.emptyGroup')">
+                <RcButton v-if="canEditRoutes(selectedGroup.id)" @click="openNew"><Plus :size="16" />{{ t("routes.createFirst") }}</RcButton>
+              </RcEmptyState>
             </section>
 
             <MembersPanel
@@ -189,48 +118,39 @@
             />
           </template>
 
-          <!-- Top-level views -->
           <template v-else-if="view === 'groups'">
-            <section class="toolbar">
-              <div>
-                <span class="kpi-label">{{ t("kpi.groups") }}</span>
-                <span class="kpi">{{ groups.length }}</span>
-              </div>
-              <div class="status">
-                <span class="dot" :class="groupsLoading ? '' : 'ok'"></span>
-                <span>{{ groupsLoading ? t("status.loading") : t("status.connected") }}</span>
-              </div>
+            <section class="console-context-bar">
+              <div><p>{{ t("kpi.groups") }}</p><strong>{{ groups.length }}</strong></div>
+              <RcBadge v-if="groupsLoading" variant="soft" size="sm" dot>{{ t("status.loading") }}</RcBadge>
             </section>
 
             <p v-if="groupsError" class="err">{{ groupsError }}</p>
 
             <section class="routes">
-              <article
+              <RcCard
                 v-for="(g, i) in groups"
                 :key="g.id"
-                class="card cursor-pointer"
+                variant="outline"
+                :hoverable="true"
+                padding="md"
+                class="console-group-card"
                 :style="{ animationDelay: i * 45 + 'ms' }"
                 @click="enterGroup(g)"
               >
-                <div class="card-head">
-                  <div class="card-title">
+                <template #header><div class="card-head"><div class="card-title">
                     <span class="route-name">{{ g.name || t("route.untitled") }}</span>
                     <span class="route-id">{{ g.id }}</span>
-                    <span v-if="roleOf(g.id)" class="badge lang">{{
-                      t("role.badge", { role: t("roles." + roleOf(g.id)) })
-                    }}</span>
+                    <RcBadge v-if="roleOf(g.id)" variant="brand" size="xs">{{ t("role.badge", { role: t("roles." + roleOf(g.id)) }) }}</RcBadge>
                   </div>
                   <div v-if="canEditGroup(g.id)" class="card-actions" @click.stop>
-                    <button
-                      class="icon-btn"
+                    <RcButton
+                      variant="ghost" size="icon"
                       :title="t('groupEditor.editTitle')"
                       @click="openEditGroup(g)"
-                    >
-                      ✎
-                    </button>
-                    <button class="icon-btn danger" @click="onDeleteGroup(g)">✕</button>
+                    ><Pencil :size="15" /></RcButton>
+                    <RcButton variant="ghost" color="error" size="icon" @click="onDeleteGroup(g)"><Trash2 :size="15" /></RcButton>
                   </div>
-                </div>
+                </div></template>
                 <div class="target">
                   <span
                     ><b>{{ t("groups.members") }}</b
@@ -245,27 +165,17 @@
                     }}</code></span
                   >
                 </div>
-                <div class="group-open mt-2.5 text-right text-xs font-medium text-accent">
-                  {{ t("groups.open") }}
-                </div>
-              </article>
+                <template #footer><span class="console-open"><ArrowRight :size="15" />{{ t("groups.open") }}</span></template>
+              </RcCard>
             </section>
 
-            <section v-if="!groupsLoading && !groups.length" class="empty">
-              <p>{{ t("groups.empty") }}</p>
-              <button v-if="isSuper" class="btn btn-accent" @click="openNewGroup">
-                {{ t("groups.createFirst") }}
-              </button>
+            <section v-if="!groupsLoading && !groups.length" class="console-empty">
+              <RcEmptyState :title="t('groups.empty')"><RcButton v-if="isSuper" @click="openNewGroup"><Plus :size="16" />{{ t("groups.createFirst") }}</RcButton></RcEmptyState>
             </section>
           </template>
 
           <template v-else-if="view === 'logs'">
-            <section class="toolbar">
-              <div class="status">
-                <span class="dot" :class="logsLoading ? '' : 'ok'"></span>
-                <span>{{ logsLoading ? t("status.loading") : t("status.connected") }}</span>
-              </div>
-            </section>
+            <section v-if="logsLoading" class="console-context-bar"><RcBadge variant="soft" size="sm" dot>{{ t("status.loading") }}</RcBadge></section>
             <SendLogs
               :logs="logs"
               :loading="logsLoading"
@@ -328,6 +238,23 @@
 </template>
 
 <script setup lang="ts">
+import {
+  Activity,
+  ArrowLeft,
+  ArrowRight,
+  ClipboardList,
+  Gauge,
+  Languages,
+  Layers3,
+  LockKeyhole,
+  LogIn,
+  LogOut,
+  Pencil,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+} from "lucide-vue-next";
 import type { Group, Route } from "~/types";
 import { useAuditApi } from "~/composables/useAudit";
 import WebhookPanel from "~/components/WebhookPanel.vue";
@@ -369,6 +296,19 @@ const nav = computed(() => [
   { id: "audit" as View, label: t("tab.audit"), path: "/admin/audit" },
   { id: "metrics" as View, label: t("tab.metrics"), path: "/admin/metrics" },
 ]);
+
+const mobileNav = computed(() => nav.value.map(({ id, label }) => ({ value: id, label, icon: navIcon(id) })));
+
+function navIcon(id: View) {
+  const icons = {
+    overview: Gauge,
+    groups: Layers3,
+    logs: Activity,
+    audit: ClipboardList,
+    metrics: ShieldCheck,
+  } satisfies Record<View, typeof Gauge>;
+  return icons[id];
+}
 
 const activeNav = computed<View>(() => view.value ?? "overview");
 
@@ -652,3 +592,16 @@ async function onDeleteGroup(group: Group): Promise<void> {
   }
 }
 </script>
+
+<style scoped>
+.console-shell { display: grid; grid-template-columns: 264px minmax(0, 1fr); min-height: 100vh; background: rgb(var(--wh-bg)); color: rgb(var(--wh-text)); }
+.console-sidebar { position: sticky; top: 0; display: flex; height: 100vh; flex-direction: column; border-right: 1px solid rgb(var(--wh-border)); background: linear-gradient(165deg, rgb(var(--wh-surface)), rgb(var(--wh-surface-2))); padding: 1.25rem .85rem; }
+.console-brand { display: flex; align-items: center; gap: .7rem; padding: .45rem .55rem 1.75rem; color: rgb(var(--wh-text)); text-decoration: none; } .console-brand :deep(svg) { color: rgb(var(--wh-accent)); } .console-brand span { display: grid; gap: .1rem; } .console-brand strong { font-size: 1rem; letter-spacing: -.04em; } .console-brand small, .console-nav-label, .console-kicker { color: rgb(var(--wh-faint)); font-size: .62rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.console-nav-label { margin: 0 .65rem .45rem; } .console-nav { display: grid; gap: .2rem; } .console-nav-item { display: flex; align-items: center; gap: .7rem; width: 100%; border: 0; border-radius: .65rem; background: transparent; padding: .7rem; color: rgb(var(--wh-muted)); font: inherit; font-size: .82rem; font-weight: 700; text-align: left; transition: background-color 150ms ease, color 150ms ease; cursor: pointer; } .console-nav-item:hover { background: rgb(var(--wh-surface-2)); color: rgb(var(--wh-text)); } .console-nav-item.active { background: rgb(var(--wh-accent)); color: white; box-shadow: 0 8px 18px rgb(var(--wh-accent) / .2); }
+.console-sidebar-footer { display: grid; gap: .9rem; margin-top: auto; padding: .9rem .55rem .25rem; border-top: 1px solid rgb(var(--wh-border)); } .console-sidebar-footer a { display: inline-flex; align-items: center; gap: .55rem; color: rgb(var(--wh-muted)); font-size: .8rem; font-weight: 700; text-decoration: none; } .console-sidebar-footer a:hover { color: rgb(var(--wh-bad)); }
+.console-main { min-width: 0; } .console-topbar { position: sticky; top: 0; z-index: 20; display: flex; min-height: 76px; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid rgb(var(--wh-border)); background: color-mix(in srgb, rgb(var(--wh-bg)) 87%, transparent); padding: .8rem clamp(1rem, 3vw, 2.5rem); backdrop-filter: blur(18px); } .console-topbar h1 { margin: .1rem 0 0; font-size: 1.15rem; letter-spacing: -.035em; } .console-kicker { margin: 0; } .console-actions { display: flex; align-items: center; justify-content: flex-end; gap: .45rem; } .console-status { white-space: nowrap; }
+.console-mobile-nav { display: none; } .console-content { width: min(100% - 2rem, 1240px); margin: 0 auto; padding: clamp(1.25rem, 3vw, 2.5rem) 0 5rem; } .console-login { display: grid; min-height: 62vh; place-items: center; } .console-login-card { width: min(100%, 430px); text-align: center; } .console-login-card :deep(.rc-card-header) { justify-content: center; color: rgb(var(--wh-accent)); } .console-login-card h2 { margin: .35rem 0 .65rem; font-size: 1.35rem; letter-spacing: -.035em; } .console-login-card p { margin: 0 0 1.4rem; color: rgb(var(--wh-muted)); }
+.console-context-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding: .8rem 1rem; border: 1px solid rgb(var(--wh-border)); border-radius: .85rem; background: rgb(var(--wh-surface) / .6); } .console-context-bar > div { display: flex; align-items: center; gap: .8rem; } .console-context-bar p { margin: 0; color: rgb(var(--wh-muted)); font-size: .8rem; font-weight: 700; } .console-context-bar strong { font-size: 1.25rem; letter-spacing: -.04em; } .console-empty { padding: 4rem 1rem; } .console-group-card { cursor: pointer; } .console-open { display: inline-flex; align-items: center; gap: .35rem; color: rgb(var(--wh-accent)); font-size: .75rem; font-weight: 800; }
+@media (max-width: 900px) { .console-shell { display: block; } .console-sidebar { display: none; } .console-mobile-nav { display: block; border-bottom: 1px solid rgb(var(--wh-border)); padding: .5rem 1rem; overflow-x: auto; } .console-mobile-nav :deep(.rc-tabs) { min-width: max-content; } }
+@media (max-width: 620px) { .console-topbar { align-items: flex-start; flex-direction: column; } .console-actions { width: 100%; justify-content: flex-start; overflow-x: auto; padding-bottom: .05rem; } .console-status { display: none; } .console-content { width: min(100% - 1.25rem, 1240px); } }
+</style>

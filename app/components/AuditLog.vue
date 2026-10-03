@@ -4,25 +4,25 @@
       <span class="kpi-label">{{ t("audit.title") }}</span>
       <div class="log-filters">
         <label class="filter-label">{{ t("audit.filterGroup") }}</label>
-        <select
+        <RcSelect
           class="filter-select"
-          :value="selectedGroupId"
+          :model-value="selectedGroupId || 'all'"
+          :options="groupOptions"
           :disabled="loading"
-          @change="onGroupFilter"
-        >
-          <option value="">{{ t("audit.allGroups") }}</option>
-          <option v-for="g in groups" :key="g.id" :value="g.id">
-            {{ g.name || g.id }}
-          </option>
-        </select>
+          @update:model-value="onGroupFilter"
+        />
       </div>
-      <button class="btn btn-ghost btn-sm" :disabled="loading" @click="refresh">
+      <RcButton variant="ghost" size="sm" :disabled="loading" @click="refresh">
         {{ t("audit.refresh") }}
-      </button>
+      </RcButton>
     </div>
 
     <p v-if="error" class="err">{{ error }}</p>
-    <p v-else-if="!loading && !entries.length" class="empty-log">{{ t("audit.empty") }}</p>
+    <RcEmptyState
+      v-else-if="!loading && !entries.length"
+      :title="t('audit.empty')"
+      class="empty-log"
+    />
 
     <div class="log-list">
       <article v-for="e in entries" :key="e.id ?? e.ts" class="log-entry">
@@ -57,7 +57,7 @@ import type { AuditEntry, Group } from "~/types";
 
 const { t } = useI18n();
 
-defineProps<{
+const props = defineProps<{
   entries: AuditEntry[];
   loading: boolean;
   error: string;
@@ -74,8 +74,13 @@ function refresh(): void {
   emit("refresh");
 }
 
-function onGroupFilter(e: Event): void {
-  emit("update:selectedGroupId", (e.target as HTMLSelectElement).value);
+const groupOptions = computed(() => [
+  { label: t("audit.allGroups"), value: "all" },
+  ...props.groups.map((g) => ({ label: g.name || g.id, value: g.id })),
+]);
+
+function onGroupFilter(value: string): void {
+  emit("update:selectedGroupId", value === "all" ? "" : value);
   emit("filter");
 }
 </script>

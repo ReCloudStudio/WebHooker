@@ -11,7 +11,7 @@ import type { Route, Group, GroupMember, GroupRole, ForgeSource, FilterNode } fr
 import { loadRoutes, saveRoutes } from "../config";
 import { loadFragments, saveFragments, type NamedFragment } from "../fragments";
 import { evaluateFilterNode, explainFilterNode } from "../events/filter-ast";
-import { getAdminSession, destroyAdminSession, clearAdminCookie } from "./session";
+import { getAdminSession, destroyAdminSession, clearAdminCookie, isDebugMode } from "./session";
 import { saveGroups, loadGroups, identityMatches, normalizeGroupMembers } from "./groups";
 import {
   requireAnyAccess,
@@ -492,6 +492,10 @@ function getRequestOrigin(event: H3Event): string {
 
 /** GET /admin/login */
 export async function adminLogin(event: H3Event): Promise<void> {
+  if (isDebugMode(cfEnv(event))) {
+    await sendRedirect(event, "/admin");
+    return;
+  }
   await sendRedirect(event, "/auth/github?redirect=/admin");
 }
 

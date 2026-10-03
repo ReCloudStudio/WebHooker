@@ -16,7 +16,7 @@ GitHub / Gitea webhook → Discord / Telegram / Feishu dispatcher. Receives webh
 - `workflow_run` / `check_run` progress is edited **in place** (single message updated as the run advances) on Discord, Telegram, and Feishu — `check_run` tracks by check name + commit SHA so deployments that issue a fresh run id per phase (e.g. Cloudflare Pages) still edit the same message; `workflow_run` embeds a colored per-job code block (🟢 success, 🔴 failure, running/queued inline)
 - **Per-group webhook log channel** — point a group at a Discord channel/thread, Telegram chat/topic, or Feishu chat and every webhook the group's routes dispatch is summarized there (✅/❌ per route × target)
 - GitHub OAuth for user actions (comment, edit comment, delete comment, merge, close, react)
-- **Web UI config console** (`/admin`) — manage routes and groups with GitHub OAuth + admin whitelist, view send logs
+- **Web UI config console** (`/admin`) — ReCloud UI-based console with centered route/group dialogs; manage routes and groups with GitHub OAuth + admin whitelist, view send logs
 - **Discord Interactions Endpoint** (Ed25519-verified) for `/gh` slash commands, message context-menu commands, PR merge/close buttons, and comment modals
 - **Telegram `/gh` commands** (login/logout/comment/merge/close) via the Telegram webhook, with avatar link-preview cards
 - Cloudflare D1 for config (routes/groups), send logs, platform account links, dedup, delivery state and message tracking + KV for ephemeral state/cache/security tokens, + optional R2 for oversized payloads
@@ -74,6 +74,7 @@ bunx wrangler dev    # Start local dev server
 | `FEISHU_APP_SECRET`         | Feishu app secret — required for Feishu routes                                                 |
 | `BASE_URL`                  | Public URL for OAuth callbacks and the Telegram webhook sync                                   |
 | `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access `/admin`                         |
+| `DEBUG_MODE`                | Local development only: set to exact `true` to bypass all `/admin` authentication               |
 | `ALLOW_SELF_SIGNUP`         | `1` to give access-less GitHub users a personal group on first login (default off)             |
 | `AUDIT_RETENTION_DAYS`      | Audit-log retention in days for the scheduled cleanup (default 90)                             |
 | `NUXT_PUBLIC_DOCS_URL`      | Optional docs site URL used by the landing page                                                |
@@ -111,6 +112,8 @@ The built-in config console lets you manage routes and groups in the browser (ad
 1. Set `ADMIN_USER_IDS` to the GitHub user IDs (or logins) allowed to manage the console, e.g. `ADMIN_USER_IDS=12345,RhenCloud`.
 2. Visit `/admin` and sign in with GitHub. Users with no access get `403` — unless `ALLOW_SELF_SIGNUP=1` (they receive a personal group) or they follow a group invite link.
 3. Changes are written to D1 immediately, the config cache is invalidated, and the webhook pipeline picks them up on the next run.
+
+For local-only debugging, `DEBUG_MODE=true` bypasses GitHub OAuth and grants full console access. Never set it in a deployed environment.
 
 Sign out at `/admin/logout`. Every group has `members` with a role (`owner` / `admin` / `viewer`); all admin operations are recorded in the D1 `audit_logs` table.
 
