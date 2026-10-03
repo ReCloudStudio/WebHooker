@@ -174,14 +174,20 @@
                   <div class="flex items-start justify-between gap-2.5">
                     <div class="min-w-0 flex-1">
                       <div class="flex items-center gap-2">
-                        <span class="truncate text-[15px] font-semibold text-text">{{ g.name || t("route.untitled") }}</span>
+                        <span class="truncate text-[15px] font-semibold text-text">{{
+                          g.name || t("route.untitled")
+                        }}</span>
                         <RcBadge v-if="roleOf(g.id)" variant="brand" size="xs">
                           {{ t("role.badge", { role: t("roles." + roleOf(g.id)) }) }}
                         </RcBadge>
                       </div>
                       <div class="mt-0.5 font-mono text-[11px] text-faint truncate">{{ g.id }}</div>
                     </div>
-                    <div v-if="canEditGroup(g.id)" class="flex shrink-0 items-center gap-1" @click.stop>
+                    <div
+                      v-if="canEditGroup(g.id)"
+                      class="flex shrink-0 items-center gap-1"
+                      @click.stop
+                    >
                       <RcButton
                         variant="ghost"
                         size="icon"
@@ -210,17 +216,28 @@
                         {{ (g.members ?? []).length || (g.adminIds || []).length || 0 }}
                       </span>
                     </div>
-                    <div v-if="g.owners?.length" class="flex items-center justify-between text-[11.5px]">
+                    <div
+                      v-if="g.owners?.length"
+                      class="flex items-center justify-between text-[11.5px]"
+                    >
                       <span class="text-faint font-semibold">{{ t("groups.owners") }}</span>
-                      <span class="truncate max-w-[170px] text-muted text-right font-mono text-[11px]">
+                      <span
+                        class="truncate max-w-[170px] text-muted text-right font-mono text-[11px]"
+                      >
                         {{ g.owners.join(", ") }}
                       </span>
                     </div>
                   </div>
 
-                  <div class="flex items-center justify-between pt-2 border-t border-border/70 text-xs">
-                    <span class="text-faint text-[11px]">{{ t("group.routesIn", { name: "" }).replace(/[\s:：]/g, '') }}</span>
-                    <span class="inline-flex items-center gap-1 font-semibold text-accent hover:underline">
+                  <div
+                    class="flex items-center justify-between pt-2 border-t border-border/70 text-xs"
+                  >
+                    <span class="text-faint text-[11px]">{{
+                      t("group.routesIn", { name: "" }).replace(/[\s:：]/g, "")
+                    }}</span>
+                    <span
+                      class="inline-flex items-center gap-1 font-semibold text-accent hover:underline"
+                    >
                       {{ t("groups.open") }}
                       <ArrowRight :size="12" />
                     </span>
