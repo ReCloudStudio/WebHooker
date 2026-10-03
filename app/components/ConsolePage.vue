@@ -108,7 +108,7 @@
 
             <p v-if="groupRoutesError" class="err">{{ groupRoutesError }}</p>
 
-            <section class="routes">
+            <section class="space-y-2.5">
               <RouteCard
                 v-for="(r, i) in groupRoutes"
                 :key="r.id"
@@ -159,58 +159,73 @@
 
             <p v-if="groupsError" class="err">{{ groupsError }}</p>
 
-            <section class="routes">
+            <section class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
               <RcCard
                 v-for="(g, i) in groups"
                 :key="g.id"
                 variant="outline"
                 :hoverable="true"
-                padding="md"
-                class="console-group-card"
-                :style="{ animationDelay: i * 45 + 'ms' }"
+                padding="none"
+                class="console-group-card transition-all hover:border-border-strong hover:shadow-xs"
+                :style="{ animationDelay: i * 35 + 'ms' }"
                 @click="enterGroup(g)"
               >
-                <template #header
-                  ><div class="card-head">
-                    <div class="card-title">
-                      <span class="route-name">{{ g.name || t("route.untitled") }}</span>
-                      <span class="route-id">{{ g.id }}</span>
-                      <RcBadge v-if="roleOf(g.id)" variant="brand" size="xs">{{
-                        t("role.badge", { role: t("roles." + roleOf(g.id)) })
-                      }}</RcBadge>
+                <div class="p-4 space-y-3">
+                  <div class="flex items-start justify-between gap-2.5">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="truncate text-[15px] font-semibold text-text">{{ g.name || t("route.untitled") }}</span>
+                        <RcBadge v-if="roleOf(g.id)" variant="brand" size="xs">
+                          {{ t("role.badge", { role: t("roles." + roleOf(g.id)) }) }}
+                        </RcBadge>
+                      </div>
+                      <div class="mt-0.5 font-mono text-[11px] text-faint truncate">{{ g.id }}</div>
                     </div>
-                    <div v-if="canEditGroup(g.id)" class="card-actions" @click.stop>
+                    <div v-if="canEditGroup(g.id)" class="flex shrink-0 items-center gap-1" @click.stop>
                       <RcButton
                         variant="ghost"
                         size="icon"
+                        class="h-7 w-7 text-muted hover:text-text"
                         :title="t('groupEditor.editTitle')"
                         @click="openEditGroup(g)"
-                        ><Pencil :size="15"
-                      /></RcButton>
-                      <RcButton variant="ghost" color="error" size="icon" @click="onDeleteGroup(g)"
-                        ><Trash2 :size="15"
-                      /></RcButton>
-                    </div></div
-                ></template>
-                <div class="target">
-                  <span
-                    ><b>{{ t("groups.members") }}</b
-                    ><code>{{
-                      (g.members ?? []).length || (g.adminIds || []).length || "—"
-                    }}</code></span
-                  >
-                  <span
-                    ><b>{{ t("groups.owners") }}</b
-                    ><code>{{
-                      g.owners && g.owners.length ? g.owners.join(", ") : t("groups.any")
-                    }}</code></span
-                  >
+                      >
+                        <Pencil :size="13.5" />
+                      </RcButton>
+                      <RcButton
+                        variant="ghost"
+                        color="error"
+                        size="icon"
+                        class="h-7 w-7 text-muted hover:text-bad"
+                        @click="onDeleteGroup(g)"
+                      >
+                        <Trash2 :size="13.5" />
+                      </RcButton>
+                    </div>
+                  </div>
+
+                  <div class="space-y-1.5 text-xs">
+                    <div class="flex items-center justify-between text-[11.5px]">
+                      <span class="text-faint font-semibold">{{ t("groups.members") }}</span>
+                      <span class="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-text">
+                        {{ (g.members ?? []).length || (g.adminIds || []).length || 0 }}
+                      </span>
+                    </div>
+                    <div v-if="g.owners?.length" class="flex items-center justify-between text-[11.5px]">
+                      <span class="text-faint font-semibold">{{ t("groups.owners") }}</span>
+                      <span class="truncate max-w-[170px] text-muted text-right font-mono text-[11px]">
+                        {{ g.owners.join(", ") }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between pt-2 border-t border-border/70 text-xs">
+                    <span class="text-faint text-[11px]">{{ t("group.routesIn", { name: "" }).replace(/[\s:：]/g, '') }}</span>
+                    <span class="inline-flex items-center gap-1 font-semibold text-accent hover:underline">
+                      {{ t("groups.open") }}
+                      <ArrowRight :size="12" />
+                    </span>
+                  </div>
                 </div>
-                <template #footer
-                  ><span class="console-open"
-                    ><ArrowRight :size="15" />{{ t("groups.open") }}</span
-                  ></template
-                >
               </RcCard>
             </section>
 

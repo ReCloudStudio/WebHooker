@@ -284,19 +284,19 @@
 
   /* ---- Route cards ---- */
   .route-card {
-    @apply flex animate-rise items-start gap-4 rounded border border-border bg-surface p-4 transition-[border-color,opacity] duration-150;
+    @apply flex animate-rise items-center gap-4 rounded-xl border border-border bg-surface px-5 py-3.5 shadow-xs transition-all duration-150;
   }
 
   .route-card:hover {
-    @apply border-border-strong;
+    @apply border-border-strong shadow-sm;
   }
 
   .route-card.disabled {
-    @apply opacity-50;
+    @apply opacity-60;
   }
 
   .route-card-main {
-    @apply min-w-0 flex-1 space-y-3;
+    @apply min-w-0 flex-1 space-y-2.5;
   }
 
   .route-card-header {
@@ -304,7 +304,15 @@
   }
 
   .route-card-title {
-    @apply flex min-w-0 items-center gap-2;
+    @apply flex min-w-0 flex-wrap items-center gap-2;
+  }
+
+  .route-name {
+    @apply text-[15px] font-semibold tracking-tight text-text;
+  }
+
+  .route-id {
+    @apply rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-faint;
   }
 
   .route-card-badges {
@@ -312,7 +320,7 @@
   }
 
   .route-badge {
-    @apply inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10.5px] font-semibold;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium;
   }
 
   .route-badge-dot {
@@ -320,11 +328,15 @@
   }
 
   .route-badge-dc {
-    @apply bg-accent-dim/30 text-accent-text;
+    @apply border-accent/20 bg-accent-dim/30 text-accent-text;
   }
 
   .route-badge-tg {
-    @apply bg-info-dim/30 text-info;
+    @apply border-info/20 bg-info-dim/30 text-info;
+  }
+
+  .route-badge-fs {
+    @apply border-warn/20 bg-warn-dim/30 text-warn;
   }
 
   .route-badge-fallback {
@@ -340,15 +352,15 @@
   }
 
   .route-card-filters {
-    @apply flex flex-wrap gap-1.5;
+    @apply flex flex-wrap items-center gap-2 text-xs;
   }
 
   .route-chip {
-    @apply inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-0.5 text-[11px];
+    @apply inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-2 px-2.5 py-1 text-[11.5px];
   }
 
   .route-chip-type {
-    @apply font-bold uppercase tracking-wider text-faint;
+    @apply font-bold uppercase tracking-wider text-faint text-[10px];
   }
 
   .route-chip-val {
@@ -364,35 +376,35 @@
   }
 
   .route-chip-empty {
-    @apply italic;
+    @apply italic text-muted;
   }
 
   .route-card-targets {
-    @apply space-y-1.5;
+    @apply flex flex-wrap items-center gap-2 text-xs;
   }
 
   .route-target {
-    @apply space-y-1;
+    @apply inline-flex items-center;
   }
 
   .route-target-row {
-    @apply flex items-center gap-2 text-xs;
+    @apply inline-flex items-center gap-1.5 rounded-md border border-border/80 bg-surface-2/60 px-2 py-0.5 text-xs;
   }
 
   .route-target-label {
-    @apply shrink-0 rounded border border-border bg-surface-2 px-1.5 py-px text-[10px] font-bold uppercase tracking-wider text-faint;
+    @apply shrink-0 text-[10px] font-bold uppercase tracking-wider text-faint;
   }
 
   .route-target-id {
-    @apply rounded-[5px] bg-surface-2 px-1.5 py-px font-mono text-[11.5px] leading-relaxed text-text;
+    @apply font-mono text-[11.5px] text-text;
   }
 
   .route-card-actions {
-    @apply flex shrink-0 flex-col gap-0.5;
+    @apply flex shrink-0 items-center gap-1 self-center;
   }
 
   .route-action-btn {
-    @apply flex h-7 w-7 items-center justify-center rounded text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:pointer-events-none disabled:opacity-25;
+    @apply flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:pointer-events-none disabled:opacity-25;
   }
 
   .route-action-btn-danger:hover {

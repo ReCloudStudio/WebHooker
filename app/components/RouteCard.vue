@@ -68,32 +68,34 @@
         </div>
       </div>
 
-      <div class="route-card-filters">
-        <span v-if="summary" class="route-chip">
-          <span class="route-chip-val">{{ summary }}</span>
-        </span>
-        <span v-else class="route-chip route-chip-empty">
-          <span class="route-chip-type">{{ t("route.noFilters") }}</span>
-        </span>
-      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="route-card-filters">
+          <span v-if="summary" class="route-chip">
+            <span class="route-chip-val">{{ summary }}</span>
+          </span>
+          <span v-else class="route-chip route-chip-empty">
+            <span class="route-chip-type">{{ t("route.noFilters") }}</span>
+          </span>
+        </div>
 
-      <div class="route-card-targets" v-if="route.targets.length">
-        <div v-for="(tg, i) in route.targets" :key="i" class="route-target">
-          <div class="route-target-row">
-            <span class="route-target-label">
-              <template v-if="tg.platform === 'telegram' || tg.platform === 'feishu'">{{
-                t("route.chat")
-              }}</template>
-              <template v-else-if="tg.threadId">{{ t("route.thread") }}</template>
-              <template v-else>{{ t("route.channel") }}</template>
-            </span>
-            <code class="route-target-id">
-              <template v-if="tg.platform === 'telegram' || tg.platform === 'feishu'">{{
-                tg.chatId
-              }}</template>
-              <template v-else-if="tg.threadId">{{ tg.threadId }}</template>
-              <template v-else>{{ tg.channelId }}</template>
-            </code>
+        <div v-if="route.targets.length" class="route-card-targets">
+          <div v-for="(tg, i) in route.targets" :key="i" class="route-target">
+            <div class="route-target-row">
+              <span class="route-target-label">
+                <template v-if="tg.platform === 'telegram' || tg.platform === 'feishu'">{{
+                  t("route.chat")
+                }}</template>
+                <template v-else-if="tg.threadId">{{ t("route.thread") }}</template>
+                <template v-else>{{ t("route.channel") }}</template>
+              </span>
+              <code class="route-target-id">
+                <template v-if="tg.platform === 'telegram' || tg.platform === 'feishu'">{{
+                  tg.chatId
+                }}</template>
+                <template v-else-if="tg.threadId">{{ tg.threadId }}</template>
+                <template v-else>{{ tg.channelId }}</template>
+              </code>
+            </div>
           </div>
         </div>
       </div>
