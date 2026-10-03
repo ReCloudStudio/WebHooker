@@ -26,7 +26,53 @@ const { toasts, dismiss } = useToasts();
 </script>
 
 <style scoped>
-.recloud-toasts { position: fixed; z-index: 70; right: 1rem; bottom: 1rem; display: grid; width: min(calc(100vw - 2rem), 390px); gap: .65rem; }
-.recloud-toast { display: flex; align-items: center; gap: .7rem; cursor: pointer; box-shadow: 0 16px 38px rgb(var(--wh-text) / .14); } .recloud-toast :deep(.rc-card-body) { display: flex; width: 100%; align-items: center; gap: .7rem; padding: .1rem; } .recloud-toast :deep(svg) { flex: none; color: rgb(var(--wh-ok)); } .recloud-toast.bad :deep(svg) { color: rgb(var(--wh-bad)); } .recloud-toast span { flex: 1; font-size: .8rem; font-weight: 700; } .recloud-toast .toast-close { color: rgb(var(--wh-faint)); }
-.toast-enter-active, .toast-leave-active { transition: opacity 180ms ease, transform 180ms ease; } .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(16px); }
+.recloud-toasts {
+  position: fixed;
+  z-index: 70;
+  right: 1rem;
+  bottom: 1rem;
+  display: grid;
+  width: min(calc(100vw - 2rem), 390px);
+  gap: 0.65rem;
+}
+.recloud-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  cursor: pointer;
+  box-shadow: 0 16px 38px rgb(var(--wh-text) / 0.14);
+}
+.recloud-toast :deep(.rc-card-body) {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.1rem;
+}
+.recloud-toast :deep(svg) {
+  flex: none;
+  color: rgb(var(--wh-ok));
+}
+.recloud-toast.bad :deep(svg) {
+  color: rgb(var(--wh-bad));
+}
+.recloud-toast span {
+  flex: 1;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.recloud-toast .toast-close {
+  color: rgb(var(--wh-faint));
+}
+.toast-enter-active,
+.toast-leave-active {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(16px);
+}
 </style>

@@ -18,7 +18,9 @@
           :disabled="saving"
           @update:model-value="onRoleChange(m, $event)"
         />
-        <RcBadge v-else size="xs" class="role-pill" :class="m.role">{{ t("roles." + m.role) }}</RcBadge>
+        <RcBadge v-else size="xs" class="role-pill" :class="m.role">{{
+          t("roles." + m.role)
+        }}</RcBadge>
         <RcButton
           v-if="canEdit"
           type="button"
@@ -62,12 +64,21 @@
       <ul v-if="invites.length" class="invite-list">
         <li v-for="inv in invites" :key="inv.token" class="invite-row">
           <code class="invite-token">{{ shortToken(inv.token) }}</code>
-          <RcBadge size="xs" class="role-pill" :class="inv.role">{{ t("roles." + inv.role) }}</RcBadge>
+          <RcBadge size="xs" class="role-pill" :class="inv.role">{{
+            t("roles." + inv.role)
+          }}</RcBadge>
           <span class="invite-exp">{{ fmtExp(inv.expiresAt) }}</span>
           <RcButton type="button" variant="ghost" size="sm" @click="copyInvite(inv)">
             {{ copied === inv.token ? t("members.copied") : t("members.copyLink") }}
           </RcButton>
-          <RcButton type="button" variant="destructive" size="sm" class="icon-btn danger" @click="revoke(inv)">{{ t("members.revoke") }}</RcButton>
+          <RcButton
+            type="button"
+            variant="destructive"
+            size="sm"
+            class="icon-btn danger"
+            @click="revoke(inv)"
+            >{{ t("members.revoke") }}</RcButton
+          >
         </li>
       </ul>
       <p v-else class="empty-log">{{ t("members.noInvites") }}</p>
@@ -101,7 +112,9 @@ const roleOptions = computed(() => [
   { label: t("roles.admin"), value: "admin" },
   { label: t("roles.viewer"), value: "viewer" },
 ]);
-const inviteRoleOptions = computed(() => roleOptions.value.filter((option) => option.value !== "owner"));
+const inviteRoleOptions = computed(() =>
+  roleOptions.value.filter((option) => option.value !== "owner"),
+);
 
 watch(
   () => props.group,

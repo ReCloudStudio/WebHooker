@@ -3,7 +3,9 @@
     <aside class="console-sidebar">
       <NuxtLink class="console-brand" to="/">
         <AppLogo :size="32" />
-        <span><strong>WebHooker</strong><small>{{ t("app.tagline") }}</small></span>
+        <span
+          ><strong>WebHooker</strong><small>{{ t("app.tagline") }}</small></span
+        >
       </NuxtLink>
       <p class="console-nav-label">{{ t("app.tagline") }}</p>
       <nav class="console-nav">
@@ -30,24 +32,42 @@
           <h1>{{ pageTitle }}</h1>
         </div>
         <div class="console-actions">
-          <RcBadge v-if="!needLogin && loadingAny" variant="soft" size="sm" dot class="console-status">
+          <RcBadge
+            v-if="!needLogin && loadingAny"
+            variant="soft"
+            size="sm"
+            dot
+            class="console-status"
+          >
             {{ t("status.loading") }}
           </RcBadge>
-          <RcButton v-if="view === 'overview'" variant="ghost" size="sm" @click="refreshOverview"><RefreshCw :size="15" />{{ t("metrics.refresh") }}</RcButton>
+          <RcButton v-if="view === 'overview'" variant="ghost" size="sm" @click="refreshOverview"
+            ><RefreshCw :size="15" />{{ t("metrics.refresh") }}</RcButton
+          >
           <ThemeToggle />
-          <RcButton variant="ghost" size="sm" @click="toggle"><Languages :size="15" />{{ t("app.langToggle") }}</RcButton>
+          <RcButton variant="ghost" size="sm" @click="toggle"
+            ><Languages :size="15" />{{ t("app.langToggle") }}</RcButton
+          >
           <RcButton
             v-if="!needLogin && selectedGroup && canEditRoutes(selectedGroup.id)"
             @click="openNew"
-          ><Plus :size="16" />{{ t("app.newRoute") }}</RcButton>
+            ><Plus :size="16" />{{ t("app.newRoute") }}</RcButton
+          >
           <RcButton
             v-if="!needLogin && !selectedGroup && view === 'groups' && isSuper"
             @click="openNewGroup"
-          ><Plus :size="16" />{{ t("app.newGroup") }}</RcButton>
+            ><Plus :size="16" />{{ t("app.newGroup") }}</RcButton
+          >
         </div>
       </header>
 
-      <div class="console-mobile-nav"><RcTabs :model-value="activeNav" :items="mobileNav" @update:model-value="switchView($event as View)" /></div>
+      <div class="console-mobile-nav">
+        <RcTabs
+          :model-value="activeNav"
+          :items="mobileNav"
+          @update:model-value="switchView($event as View)"
+        />
+      </div>
 
       <main class="console-content">
         <div v-if="needLogin" class="console-login">
@@ -55,7 +75,9 @@
             <template #header><LockKeyhole :size="24" /></template>
             <h2>{{ t("login.title") }}</h2>
             <p>{{ forbidden ? t("login.forbidden") : t("login.prompt") }}</p>
-            <a href="/admin/login"><RcButton size="lg"><LogIn :size="17" />{{ t("login.button") }}</RcButton></a>
+            <a href="/admin/login"
+              ><RcButton size="lg"><LogIn :size="17" />{{ t("login.button") }}</RcButton></a
+            >
           </RcCard>
         </div>
 
@@ -74,10 +96,14 @@
           <template v-else-if="selectedGroup">
             <section class="console-context-bar">
               <div>
-                <RcButton variant="ghost" size="sm" @click="exitGroup"><ArrowLeft :size="15" />{{ t("group.back") }}</RcButton>
+                <RcButton variant="ghost" size="sm" @click="exitGroup"
+                  ><ArrowLeft :size="15" />{{ t("group.back") }}</RcButton
+                >
                 <p>{{ t("group.routesIn", { name: selectedGroup.name }) }}</p>
               </div>
-              <RcBadge :variant="groupRoutesLoading ? 'soft' : 'success'" size="sm" dot>{{ groupRoutes.length }}</RcBadge>
+              <RcBadge :variant="groupRoutesLoading ? 'soft' : 'success'" size="sm" dot>{{
+                groupRoutes.length
+              }}</RcBadge>
             </section>
 
             <p v-if="groupRoutesError" class="err">{{ groupRoutesError }}</p>
@@ -100,7 +126,9 @@
 
             <section v-if="!groupRoutesLoading && !groupRoutes.length" class="console-empty">
               <RcEmptyState :title="t('routes.emptyGroup')">
-                <RcButton v-if="canEditRoutes(selectedGroup.id)" @click="openNew"><Plus :size="16" />{{ t("routes.createFirst") }}</RcButton>
+                <RcButton v-if="canEditRoutes(selectedGroup.id)" @click="openNew"
+                  ><Plus :size="16" />{{ t("routes.createFirst") }}</RcButton
+                >
               </RcEmptyState>
             </section>
 
@@ -120,8 +148,13 @@
 
           <template v-else-if="view === 'groups'">
             <section class="console-context-bar">
-              <div><p>{{ t("kpi.groups") }}</p><strong>{{ groups.length }}</strong></div>
-              <RcBadge v-if="groupsLoading" variant="soft" size="sm" dot>{{ t("status.loading") }}</RcBadge>
+              <div>
+                <p>{{ t("kpi.groups") }}</p>
+                <strong>{{ groups.length }}</strong>
+              </div>
+              <RcBadge v-if="groupsLoading" variant="soft" size="sm" dot>{{
+                t("status.loading")
+              }}</RcBadge>
             </section>
 
             <p v-if="groupsError" class="err">{{ groupsError }}</p>
@@ -137,20 +170,28 @@
                 :style="{ animationDelay: i * 45 + 'ms' }"
                 @click="enterGroup(g)"
               >
-                <template #header><div class="card-head"><div class="card-title">
-                    <span class="route-name">{{ g.name || t("route.untitled") }}</span>
-                    <span class="route-id">{{ g.id }}</span>
-                    <RcBadge v-if="roleOf(g.id)" variant="brand" size="xs">{{ t("role.badge", { role: t("roles." + roleOf(g.id)) }) }}</RcBadge>
-                  </div>
-                  <div v-if="canEditGroup(g.id)" class="card-actions" @click.stop>
-                    <RcButton
-                      variant="ghost" size="icon"
-                      :title="t('groupEditor.editTitle')"
-                      @click="openEditGroup(g)"
-                    ><Pencil :size="15" /></RcButton>
-                    <RcButton variant="ghost" color="error" size="icon" @click="onDeleteGroup(g)"><Trash2 :size="15" /></RcButton>
-                  </div>
-                </div></template>
+                <template #header
+                  ><div class="card-head">
+                    <div class="card-title">
+                      <span class="route-name">{{ g.name || t("route.untitled") }}</span>
+                      <span class="route-id">{{ g.id }}</span>
+                      <RcBadge v-if="roleOf(g.id)" variant="brand" size="xs">{{
+                        t("role.badge", { role: t("roles." + roleOf(g.id)) })
+                      }}</RcBadge>
+                    </div>
+                    <div v-if="canEditGroup(g.id)" class="card-actions" @click.stop>
+                      <RcButton
+                        variant="ghost"
+                        size="icon"
+                        :title="t('groupEditor.editTitle')"
+                        @click="openEditGroup(g)"
+                        ><Pencil :size="15"
+                      /></RcButton>
+                      <RcButton variant="ghost" color="error" size="icon" @click="onDeleteGroup(g)"
+                        ><Trash2 :size="15"
+                      /></RcButton>
+                    </div></div
+                ></template>
                 <div class="target">
                   <span
                     ><b>{{ t("groups.members") }}</b
@@ -165,17 +206,27 @@
                     }}</code></span
                   >
                 </div>
-                <template #footer><span class="console-open"><ArrowRight :size="15" />{{ t("groups.open") }}</span></template>
+                <template #footer
+                  ><span class="console-open"
+                    ><ArrowRight :size="15" />{{ t("groups.open") }}</span
+                  ></template
+                >
               </RcCard>
             </section>
 
             <section v-if="!groupsLoading && !groups.length" class="console-empty">
-              <RcEmptyState :title="t('groups.empty')"><RcButton v-if="isSuper" @click="openNewGroup"><Plus :size="16" />{{ t("groups.createFirst") }}</RcButton></RcEmptyState>
+              <RcEmptyState :title="t('groups.empty')"
+                ><RcButton v-if="isSuper" @click="openNewGroup"
+                  ><Plus :size="16" />{{ t("groups.createFirst") }}</RcButton
+                ></RcEmptyState
+              >
             </section>
           </template>
 
           <template v-else-if="view === 'logs'">
-            <section v-if="logsLoading" class="console-context-bar"><RcBadge variant="soft" size="sm" dot>{{ t("status.loading") }}</RcBadge></section>
+            <section v-if="logsLoading" class="console-context-bar">
+              <RcBadge variant="soft" size="sm" dot>{{ t("status.loading") }}</RcBadge>
+            </section>
             <SendLogs
               :logs="logs"
               :loading="logsLoading"
@@ -297,7 +348,9 @@ const nav = computed(() => [
   { id: "metrics" as View, label: t("tab.metrics"), path: "/admin/metrics" },
 ]);
 
-const mobileNav = computed(() => nav.value.map(({ id, label }) => ({ value: id, label, icon: navIcon(id) })));
+const mobileNav = computed(() =>
+  nav.value.map(({ id, label }) => ({ value: id, label, icon: navIcon(id) })),
+);
 
 function navIcon(id: View) {
   const icons = {
@@ -594,14 +647,242 @@ async function onDeleteGroup(group: Group): Promise<void> {
 </script>
 
 <style scoped>
-.console-shell { display: grid; grid-template-columns: 264px minmax(0, 1fr); min-height: 100vh; background: rgb(var(--wh-bg)); color: rgb(var(--wh-text)); }
-.console-sidebar { position: sticky; top: 0; display: flex; height: 100vh; flex-direction: column; border-right: 1px solid rgb(var(--wh-border)); background: linear-gradient(165deg, rgb(var(--wh-surface)), rgb(var(--wh-surface-2))); padding: 1.25rem .85rem; }
-.console-brand { display: flex; align-items: center; gap: .7rem; padding: .45rem .55rem 1.75rem; color: rgb(var(--wh-text)); text-decoration: none; } .console-brand :deep(svg) { color: rgb(var(--wh-accent)); } .console-brand span { display: grid; gap: .1rem; } .console-brand strong { font-size: 1rem; letter-spacing: -.04em; } .console-brand small, .console-nav-label, .console-kicker { color: rgb(var(--wh-faint)); font-size: .62rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
-.console-nav-label { margin: 0 .65rem .45rem; } .console-nav { display: grid; gap: .2rem; } .console-nav-item { display: flex; align-items: center; gap: .7rem; width: 100%; border: 0; border-radius: .65rem; background: transparent; padding: .7rem; color: rgb(var(--wh-muted)); font: inherit; font-size: .82rem; font-weight: 700; text-align: left; transition: background-color 150ms ease, color 150ms ease; cursor: pointer; } .console-nav-item:hover { background: rgb(var(--wh-surface-2)); color: rgb(var(--wh-text)); } .console-nav-item.active { background: rgb(var(--wh-accent)); color: white; box-shadow: 0 8px 18px rgb(var(--wh-accent) / .2); }
-.console-sidebar-footer { display: grid; gap: .9rem; margin-top: auto; padding: .9rem .55rem .25rem; border-top: 1px solid rgb(var(--wh-border)); } .console-sidebar-footer a { display: inline-flex; align-items: center; gap: .55rem; color: rgb(var(--wh-muted)); font-size: .8rem; font-weight: 700; text-decoration: none; } .console-sidebar-footer a:hover { color: rgb(var(--wh-bad)); }
-.console-main { min-width: 0; } .console-topbar { position: sticky; top: 0; z-index: 20; display: flex; min-height: 76px; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid rgb(var(--wh-border)); background: color-mix(in srgb, rgb(var(--wh-bg)) 87%, transparent); padding: .8rem clamp(1rem, 3vw, 2.5rem); backdrop-filter: blur(18px); } .console-topbar h1 { margin: .1rem 0 0; font-size: 1.15rem; letter-spacing: -.035em; } .console-kicker { margin: 0; } .console-actions { display: flex; align-items: center; justify-content: flex-end; gap: .45rem; } .console-status { white-space: nowrap; }
-.console-mobile-nav { display: none; } .console-content { width: min(100% - 2rem, 1240px); margin: 0 auto; padding: clamp(1.25rem, 3vw, 2.5rem) 0 5rem; } .console-login { display: grid; min-height: 62vh; place-items: center; } .console-login-card { width: min(100%, 430px); text-align: center; } .console-login-card :deep(.rc-card-header) { justify-content: center; color: rgb(var(--wh-accent)); } .console-login-card h2 { margin: .35rem 0 .65rem; font-size: 1.35rem; letter-spacing: -.035em; } .console-login-card p { margin: 0 0 1.4rem; color: rgb(var(--wh-muted)); }
-.console-context-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding: .8rem 1rem; border: 1px solid rgb(var(--wh-border)); border-radius: .85rem; background: rgb(var(--wh-surface) / .6); } .console-context-bar > div { display: flex; align-items: center; gap: .8rem; } .console-context-bar p { margin: 0; color: rgb(var(--wh-muted)); font-size: .8rem; font-weight: 700; } .console-context-bar strong { font-size: 1.25rem; letter-spacing: -.04em; } .console-empty { padding: 4rem 1rem; } .console-group-card { cursor: pointer; } .console-open { display: inline-flex; align-items: center; gap: .35rem; color: rgb(var(--wh-accent)); font-size: .75rem; font-weight: 800; }
-@media (max-width: 900px) { .console-shell { display: block; } .console-sidebar { display: none; } .console-mobile-nav { display: block; border-bottom: 1px solid rgb(var(--wh-border)); padding: .5rem 1rem; overflow-x: auto; } .console-mobile-nav :deep(.rc-tabs) { min-width: max-content; } }
-@media (max-width: 620px) { .console-topbar { align-items: flex-start; flex-direction: column; } .console-actions { width: 100%; justify-content: flex-start; overflow-x: auto; padding-bottom: .05rem; } .console-status { display: none; } .console-content { width: min(100% - 1.25rem, 1240px); } }
+.console-shell {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  min-height: 100vh;
+  background: rgb(var(--wh-bg));
+  color: rgb(var(--wh-text));
+}
+.console-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  border-right: 1px solid rgb(var(--wh-border));
+  background: linear-gradient(165deg, rgb(var(--wh-surface)), rgb(var(--wh-surface-2)));
+  padding: 1.25rem 0.85rem;
+}
+.console-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.45rem 0.55rem 1.75rem;
+  color: rgb(var(--wh-text));
+  text-decoration: none;
+}
+.console-brand :deep(svg) {
+  color: rgb(var(--wh-accent));
+}
+.console-brand span {
+  display: grid;
+  gap: 0.1rem;
+}
+.console-brand strong {
+  font-size: 1rem;
+  letter-spacing: -0.04em;
+}
+.console-brand small,
+.console-nav-label,
+.console-kicker {
+  color: rgb(var(--wh-faint));
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.console-nav-label {
+  margin: 0 0.65rem 0.45rem;
+}
+.console-nav {
+  display: grid;
+  gap: 0.2rem;
+}
+.console-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  padding: 0.7rem;
+  color: rgb(var(--wh-muted));
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: left;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+  cursor: pointer;
+}
+.console-nav-item:hover {
+  background: rgb(var(--wh-surface-2));
+  color: rgb(var(--wh-text));
+}
+.console-nav-item.active {
+  background: rgb(var(--wh-accent));
+  color: white;
+  box-shadow: 0 8px 18px rgb(var(--wh-accent) / 0.2);
+}
+.console-sidebar-footer {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: auto;
+  padding: 0.9rem 0.55rem 0.25rem;
+  border-top: 1px solid rgb(var(--wh-border));
+}
+.console-sidebar-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: rgb(var(--wh-muted));
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.console-sidebar-footer a:hover {
+  color: rgb(var(--wh-bad));
+}
+.console-main {
+  min-width: 0;
+}
+.console-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(var(--wh-border));
+  background: color-mix(in srgb, rgb(var(--wh-bg)) 87%, transparent);
+  padding: 0.8rem clamp(1rem, 3vw, 2.5rem);
+  backdrop-filter: blur(18px);
+}
+.console-topbar h1 {
+  margin: 0.1rem 0 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.035em;
+}
+.console-kicker {
+  margin: 0;
+}
+.console-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+.console-status {
+  white-space: nowrap;
+}
+.console-mobile-nav {
+  display: none;
+}
+.console-content {
+  width: min(100% - 2rem, 1240px);
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2.5rem) 0 5rem;
+}
+.console-login {
+  display: grid;
+  min-height: 62vh;
+  place-items: center;
+}
+.console-login-card {
+  width: min(100%, 430px);
+  text-align: center;
+}
+.console-login-card :deep(.rc-card-header) {
+  justify-content: center;
+  color: rgb(var(--wh-accent));
+}
+.console-login-card h2 {
+  margin: 0.35rem 0 0.65rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.035em;
+}
+.console-login-card p {
+  margin: 0 0 1.4rem;
+  color: rgb(var(--wh-muted));
+}
+.console-context-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgb(var(--wh-border));
+  border-radius: 0.85rem;
+  background: rgb(var(--wh-surface) / 0.6);
+}
+.console-context-bar > div {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.console-context-bar p {
+  margin: 0;
+  color: rgb(var(--wh-muted));
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.console-context-bar strong {
+  font-size: 1.25rem;
+  letter-spacing: -0.04em;
+}
+.console-empty {
+  padding: 4rem 1rem;
+}
+.console-group-card {
+  cursor: pointer;
+}
+.console-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: rgb(var(--wh-accent));
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+@media (max-width: 900px) {
+  .console-shell {
+    display: block;
+  }
+  .console-sidebar {
+    display: none;
+  }
+  .console-mobile-nav {
+    display: block;
+    border-bottom: 1px solid rgb(var(--wh-border));
+    padding: 0.5rem 1rem;
+    overflow-x: auto;
+  }
+  .console-mobile-nav :deep(.rc-tabs) {
+    min-width: max-content;
+  }
+}
+@media (max-width: 620px) {
+  .console-topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .console-actions {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.05rem;
+  }
+  .console-status {
+    display: none;
+  }
+  .console-content {
+    width: min(100% - 1.25rem, 1240px);
+  }
+}
 </style>

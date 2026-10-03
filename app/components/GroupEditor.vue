@@ -183,7 +183,10 @@
               { label: 'Telegram', value: 'telegram' },
               { label: t('groupEditor.logFeishu'), value: 'feishu' },
             ]"
-            @update:model-value="form.logPlatform = ($event === 'none' ? '' : $event) as '' | 'discord' | 'telegram' | 'feishu'"
+            @update:model-value="
+              form.logPlatform = ($event === 'none' ? '' : $event) as
+                '' | 'discord' | 'telegram' | 'feishu'
+            "
           />
           <template v-if="form.logPlatform === 'discord'">
             <RcInput
@@ -414,4 +417,3 @@ function save(): void {
   box-shadow: 0 -8px 24px -16px rgba(15, 23, 42, 0.18);
 }
 </style>
-

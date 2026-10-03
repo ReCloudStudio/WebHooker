@@ -12,7 +12,8 @@ export function isDebugMode(env: Env): boolean {
   if (env.DEBUG_MODE === "true") return true;
   const anyEnv = env as unknown as Record<string, string | undefined>;
   if (anyEnv["debug_mode"] === "true") return true;
-  const proc = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process;
+  const proc = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } })
+    .process;
   if (proc?.env?.NODE_ENV !== "test") {
     if (proc?.env?.DEBUG_MODE === "true" || proc?.env?.debug_mode === "true") return true;
   }

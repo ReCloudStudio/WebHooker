@@ -2,7 +2,12 @@
   <RcCard variant="outline" padding="none" :class="cardClass">
     <div class="route-card-main">
       <div class="route-card-header">
-        <RcSwitch v-if="!readonly" :model-value="route.enabled" size="sm" @update:model-value="onToggle" />
+        <RcSwitch
+          v-if="!readonly"
+          :model-value="route.enabled"
+          size="sm"
+          @update:model-value="onToggle"
+        />
         <span v-if="readonly" class="dot" :class="route.enabled ? 'ok' : 'bad'"></span>
         <div class="route-card-title">
           <span class="route-name">{{ route.name || t("route.untitled") }}</span>
@@ -40,9 +45,26 @@
                   : "Discord"
             }}
           </RcBadge>
-          <RcBadge v-if="route.fallback" variant="warning" size="xs" class="route-badge route-badge-fallback">{{ t("route.fallback") }}</RcBadge>
-          <RcBadge v-if="route.stop" variant="destructive" size="xs" class="route-badge route-badge-stop">{{ t("route.stop") }}</RcBadge>
-          <RcBadge v-if="route.discordRoleIds?.length" size="xs" class="route-badge route-badge-role">@roles</RcBadge>
+          <RcBadge
+            v-if="route.fallback"
+            variant="warning"
+            size="xs"
+            class="route-badge route-badge-fallback"
+            >{{ t("route.fallback") }}</RcBadge
+          >
+          <RcBadge
+            v-if="route.stop"
+            variant="destructive"
+            size="xs"
+            class="route-badge route-badge-stop"
+            >{{ t("route.stop") }}</RcBadge
+          >
+          <RcBadge
+            v-if="route.discordRoleIds?.length"
+            size="xs"
+            class="route-badge route-badge-role"
+            >@roles</RcBadge
+          >
         </div>
       </div>
 

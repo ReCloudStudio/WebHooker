@@ -16,6 +16,11 @@ const lang = computed(() => pickLang(String(route.query.lang ?? "")));
 const contact = computed(() => legalContact(lang.value, String(config.public.legalContact ?? "")));
 
 useHead({
-  meta: [{ name: "description", content: lang.value === "zh" ? "WebHooker 隐私政策" : "WebHooker Privacy Policy" }],
+  meta: [
+    {
+      name: "description",
+      content: lang.value === "zh" ? "WebHooker 隐私政策" : "WebHooker Privacy Policy",
+    },
+  ],
 });
 </script>

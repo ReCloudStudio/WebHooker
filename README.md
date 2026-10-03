@@ -74,7 +74,7 @@ bunx wrangler dev    # Start local dev server
 | `FEISHU_APP_SECRET`         | Feishu app secret — required for Feishu routes                                                 |
 | `BASE_URL`                  | Public URL for OAuth callbacks and the Telegram webhook sync                                   |
 | `ADMIN_USER_IDS`            | Comma-separated GitHub user IDs (or logins) allowed to access `/admin`                         |
-| `DEBUG_MODE`                | Local development only: set to exact `true` to bypass all `/admin` authentication               |
+| `DEBUG_MODE`                | Local development only: set to exact `true` to bypass all `/admin` authentication              |
 | `ALLOW_SELF_SIGNUP`         | `1` to give access-less GitHub users a personal group on first login (default off)             |
 | `AUDIT_RETENTION_DAYS`      | Audit-log retention in days for the scheduled cleanup (default 90)                             |
 | `NUXT_PUBLIC_DOCS_URL`      | Optional docs site URL used by the landing page                                                |

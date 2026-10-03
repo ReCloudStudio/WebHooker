@@ -15,9 +15,15 @@ const emit = defineEmits<{ (e: "remove"): void }>();
 const { t } = useI18n();
 
 const NODE_KINDS = ["all", "any"] as const;
-const filterTypeOptions = computed(() => FILTER_TYPES.map((value) => ({ label: t("filter." + value), value })));
-const filterOpOptions = computed(() => FILTER_OPS.map((value) => ({ label: t("filterOp." + value), value })));
-const nodeKindOptions = computed(() => NODE_KINDS.map((value) => ({ label: t("filterNode." + value), value })));
+const filterTypeOptions = computed(() =>
+  FILTER_TYPES.map((value) => ({ label: t("filter." + value), value })),
+);
+const filterOpOptions = computed(() =>
+  FILTER_OPS.map((value) => ({ label: t("filterOp." + value), value })),
+);
+const nodeKindOptions = computed(() =>
+  NODE_KINDS.map((value) => ({ label: t("filterNode." + value), value })),
+);
 
 function addChild(kind: "leaf" | "all" | "any" | "not"): void {
   props.node.children.push(blankNode(kind));
@@ -60,7 +66,12 @@ function unwrapNot(): void {
         :placeholder="t('routeEditor.valuesPlaceholder')"
       />
 
-      <RcCheckbox v-model="node.leaf.exclude" class="node-exclude" :label="t('routeEditor.not')" :title="t('routeEditor.not')" />
+      <RcCheckbox
+        v-model="node.leaf.exclude"
+        class="node-exclude"
+        :label="t('routeEditor.not')"
+        :title="t('routeEditor.not')"
+      />
 
       <RcButton
         v-if="deletable"
@@ -79,13 +90,31 @@ function unwrapNot(): void {
       <div class="node-group-head">
         <RcSelect v-model="node.kind" class="node-combo" :options="nodeKindOptions" />
         <div class="node-actions">
-          <RcButton type="button" variant="ghost" size="xs" class="node-add" @click="addChild('leaf')">
+          <RcButton
+            type="button"
+            variant="ghost"
+            size="xs"
+            class="node-add"
+            @click="addChild('leaf')"
+          >
             + {{ t("routeEditor.addLeaf") }}
           </RcButton>
-          <RcButton type="button" variant="ghost" size="xs" class="node-add" @click="addChild('all')">
+          <RcButton
+            type="button"
+            variant="ghost"
+            size="xs"
+            class="node-add"
+            @click="addChild('all')"
+          >
             + {{ t("routeEditor.addGroup") }}
           </RcButton>
-          <RcButton type="button" variant="ghost" size="xs" class="node-add" @click="addChild('not')">
+          <RcButton
+            type="button"
+            variant="ghost"
+            size="xs"
+            class="node-add"
+            @click="addChild('not')"
+          >
             + {{ t("routeEditor.addNot") }}
           </RcButton>
           <RcButton

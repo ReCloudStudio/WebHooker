@@ -74,7 +74,7 @@ bunx wrangler dev    # 启动本地开发服务器
 | `FEISHU_APP_SECRET`         | 飞书应用密钥 —— 飞书路由必需                                                |
 | `BASE_URL`                  | 公网地址（用于 OAuth 回调与 Telegram webhook 同步）                         |
 | `ADMIN_USER_IDS`            | 允许访问 `/admin` 的 GitHub 用户 ID（或登录名），逗号分隔                   |
-| `DEBUG_MODE`                | 仅本地开发：精确设为 `true` 时跳过全部 `/admin` 身份验证                   |
+| `DEBUG_MODE`                | 仅本地开发：精确设为 `true` 时跳过全部 `/admin` 身份验证                    |
 | `ALLOW_SELF_SIGNUP`         | 设为 `1` 时，无权限的 GitHub 用户首次登录自动获得个人分组（默认关闭）       |
 | `AUDIT_RETENTION_DAYS`      | 定时清理时审计日志的保留天数（默认 90）                                     |
 | `NUXT_PUBLIC_DOCS_URL`      | 可选；落地页使用的文档站点 URL                                              |
